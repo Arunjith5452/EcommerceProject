@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+
+    .signup-container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .signin-link {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .signin-link a {
+      color: #000;
+      text-decoration: none;
+      margin-left: 5px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .create-button {
+      width: 100%;
+      padding: 12px;
+      /* background-color: #008000; */
+      background-color: #F3F2EE;
+      color: rgb(13, 13, 13);
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 20px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .social-login {
+      display: flex;
+      justify-content: center;
+    }
+
+    .google-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      text-decoration: none;
+      color: #000;
+    }
+
+    .google-button img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-top: 20px;
+    }
+
+    .footer a {
+      color: #000;
+      text-decoration: none;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="signup-container">
+    <h1>Create an account</h1>
+    <div class="signin-link">
+      I already have an account <a href="/login">Sign in</a>
+    </div>
+
+    <form id="signform" action="/signup" method="POST">
+      <div class="form-group">
+        <input type="text" id="username" name="username" placeholder="Username">
+        <div id="error1" class="error-message"></div>
+      </div>
+
+      <div class="form-group">
+        <input type="tel" id="mobile" name="mobile" placeholder="Mobile">
+        <div id="error2" class="error-message"></div>
+      </div>
+
+      <div class="form-group">
+        <input type="email" id="email" name="email" placeholder="Email">
+        <div id="error3" class="error-message"></div>
+      </div>
+
+
+      <div class="form-group">
+        <input type="password" id="password" name="password" placeholder="Password">
+        <button type="button" class="toggle-password">👁</button>
+        <div id="error4" class="error-message"></div>
+      </div>
+
+      <div class="form-group">
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password">
+        <div id="error5" class="error-message"></div>
+      </div>
+      <%if(locals.message && message.length>0){%>
+        <div class="error-message">
+          <%=message%>
+
+        </div>
+        <%}%>
+          <button type="submit" class="create-button">Create an account</button>
+    </form>
+
+    <div class="divider">or continue with</div>
+
+    <div class="social-login">
+      <a href="/auth/google" class="google-button">
+        <img src="img/icon/googleicon.png" alt="Google">
+        Google
+      </a>
+    </div>
+  </div>
+  <script>
+    // Toggle password visibility
+    const togglePassword = document.querySelector('.toggle-password');
+    const passwordInput = document.querySelector('#password');
+
+    togglePassword.addEventListener('click', () => {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      togglePassword.textContent = type === 'password' ? '👁' : '👁‍🗨';
+    });
+
+
+    const username = document.getElementById('username')
+    const mobile = document.getElementById('mobile')
+    const email = document.getElementById('email')
+    const password = document.getElementById('password')
+    const confirmPassword = document.getElementById('confirmPassword')
+    const error1 = document.getElementById('error1')
+    const error2 = document.getElementById('error2')
+    const error3 = document.getElementById('error3')
+    const error4 = document.getElementById('error4')
+    const error5 = document.getElementById('error5')
+    const signform = document.getElementById('signform')
+
+    function usernameValidateChecking(e) {
+
+      const usernameval = username.value
+      const usernamepattern = /^[A-Za-z\s]+$/;
+
+      if (usernameval.trim() === "") {
+        error1.style.display = "block";
+        error1.innerHTML = "Please enter a valid username";
+      } else if (!usernamepattern.test(usernameval)) {
+        error1.style.display = "block";
+        error1.innerHTML = "username can only contain alphabets and spaces";
+      } else {
+        error1.style.display = "none";
+        error1.innerHTML = "";
+      }
+    }
+
+
+
+    function mobileValidateChecking(e) {
+      const mobileval = mobile.value
+
+      if (mobileval.trim() === "") {
+        error2.style.display = "block";
+        error2.innerHTML = "Enter valid phone number";
+      } else if (mobileval.length < 10 || mobileval.length > 10) {
+        error2.style.display = "block";
+        error2.innerHTML = "Enter 10 digit";
+      } else {
+        error2.style.display = "none";
+        error2.innerHTML = "";
+
+      }
+    }
+
+    function emailValidateChecking(e) {
+      const emailval = email.value
+      const emailpattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+      if (!emailpattern.test(emailval)) {
+        error3.style.display = "block";
+        error3.innerHTML = "Invalid Format";
+      } else {
+        error3.style.display = "none";
+        error3.innerHTML = "";
+      }
+
+    }
+
+
+    function passwordValidateChecking(e) {
+      const passwordval = password.value
+      const confirmPasswordval = confirmPassword.value
+      const alpha = /[a-zA-Z]/;
+      const digit = /\d/;
+
+      if (passwordval.length < 8) {
+        error4.style.display = "block";
+        error4.innerHTML = "Should contain atleast 8 characters";
+      } else if (!alpha.test(passwordval) || !digit.test(passwordval)) {
+        error4.style.display = "block";
+        error4.innerHTML = "should contain numbers and alphabets";
+      } else {
+        error4.style.display = "none";
+        error4.innerHTML = "";
+      }
+
+      if (passwordval != confirmPasswordval) {
+        error5.style.display = "block"
+        error5.innerHTML = "Password do not match"
+      } else {
+        error5.style.display = "none";
+        error5.innerHTML = "";
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      signform.addEventListener('submit', (e) => {
+
+        usernameValidateChecking();
+        mobileValidateChecking();
+        emailValidateChecking();
+        passwordValidateChecking();
+
+        if (!username || !email || !mobile || !password || !confirmPassword || !error1 || !error2 || !error3 || !error4 || !error5 || !signform) {
+          console.error("One or more elements not found")
+        }
+
+        if (error1.innerHTML || error2.innerHTML || error3.innerHTML || error4.innerHTML || error5.innerHTML) {
+          e.preventDefault()
+        }
+
+      })
+    })
+
+
+  </script>
+</body>
+
+</html>
