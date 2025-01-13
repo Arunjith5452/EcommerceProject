@@ -1,0 +1,574 @@
+<%-include("../../views/partials/user/header")%>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .breadcrumb {
+            word-spacing: 1px;
+            color: #666;
+            font-size: 15px;
+        }
+
+        .breadcrumb a {
+            color: #666;
+            text-decoration: none;
+        }
+
+        .product-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .product-gallery {
+            position: relative;
+        }
+
+        .main-image {
+            overflow: hidden;
+            cursor: zoom-in;
+            position: relative;
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .main-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+            display: block;
+        }
+
+        .zoom-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .thumbnail {
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .thumbnail.active {
+            border-color: #008080;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .product-info h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stars {
+            color: #ffc107;
+        }
+
+        .review-count {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .price-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .sale-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #008080;
+        }
+
+        .regular-price {
+            text-decoration: line-through;
+            color: #666;
+        }
+
+        .discount {
+            color: #28a745;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .features {
+            margin-bottom: 30px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .quantity-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .quantity-input {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .quantity-btn {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .quantity-value {
+            padding: 10px 20px;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+        }
+
+        .add-to-cart {
+            padding: 12px 30px;
+            background-color: #008080;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .wishlist-btn {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: none;
+            cursor: pointer;
+        }
+
+        .product-meta {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .product-meta p {
+            margin-bottom: 8px;
+        }
+
+        .stock {
+            color: #28a745;
+        }
+
+        .reviews-section {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #eee;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .reviews-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .write-review-btn {
+            padding: 10px 20px;
+            background-color: #008080;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .review-form {
+            display: none;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+        }
+
+        .review-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 5px;
+            font-size: 24px;
+            color: #ddd;
+            cursor: pointer;
+        }
+
+        .star-rating .star:hover,
+        .star-rating .star.active {
+            color: #ffc107;
+        }
+
+        .image-upload {
+            margin-top: 10px;
+        }
+
+        .submit-review-btn {
+            padding: 12px 30px;
+            background-color: #008080;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .review-card {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reviewer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #008080;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .reviewer-name {
+            font-weight: bold;
+        }
+
+        .review-date {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .review-rating {
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+
+        .review-text {
+            color: #444;
+            line-height: 1.6;
+        }
+
+        .review-images {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .review-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .helpful-btn {
+            padding: 5px 15px;
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            color: #666;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .helpful-btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        @media (max-width: 768px) {
+            .product-detail {
+                grid-template-columns: 1fr;
+            }
+
+            .main-image {
+                cursor: default;
+            }
+
+            .main-image img {
+                transform: none !important;
+            }
+        }
+    </style>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/"> home </a> / <a href="/shop"> shop </a> /product details
+        </div>
+
+        <div class="product-detail">
+            <div class="product-gallery">
+                <div class="main-image">
+                    <img src="/uploads/product-images/<%=product.productImage[0]%>" alt="product-image">
+                </div>
+                <div class="thumbnail-grid">
+                    <%for(let i=0;i<product.productImage.length;i++){%>
+                        <div class="thumbnail">
+                            <img src="/uploads/product-images/<%=product.productImage[i]%>" alt="Thumbnail 1">
+                        </div>
+                    <%}%>
+                </div>
+            </div>
+
+            <div class="product-info">
+                <h1><%=product.productName%></h1>
+                <div class="rating">
+                    <div class="stars">★★★★☆</div>
+                    <span class="review-count">(25 reviews)</span>
+                </div>
+
+                <div class="price-section">
+                    <span class="sale-price">₹<%=product.salePrice%></span>
+                    <span class="regular-price">₹<%=product.regularPrice%></span>
+                    <span class="discount"><%=totalOffer%>% Offer</span>
+                </div>
+
+                <p class="description"><%=product.description%></p>
+
+                <div class="features">
+                    <div class="feature-item">
+                        <span>👑</span>
+                        <span>1 Year Brand Warranty</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>🔄</span>
+                        <span>30 Day Return Policy</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>💳</span>
+                        <span>Cash on Delivery available</span>
+                    </div>
+                </div>
+
+                <div class="quantity-section">
+                    <div class="quantity-input">
+                        <button class="quantity-btn">-</button>
+                        <span class="quantity-value">1</span>
+                        <button class="quantity-btn">+</button>
+                    </div>
+                    <button class="add-to-cart">Add to cart</button>
+                    <button class="wishlist-btn">❤️</button>
+                </div>
+
+                <div class="product-meta">
+                    <p>Stock Code: FWM15VKT</p>
+                    <p>Tags: <%=category.name%></p>
+                    <p>Availability: <span class="stock"><%=quantity%> Items in Stock</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Section -->
+        <div class="reviews-section">
+            <div class="reviews-header">
+                <h2 class="reviews-title">Customer Reviews</h2>
+                <button class="write-review-btn" onclick="toggleReviewForm()">Write a Review</button>
+            </div>
+
+            <!-- Review Form -->
+            <div class="review-form" id="reviewForm">
+                <form onsubmit="submitReview(event)">
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <div class="star-rating" id="ratingStars">
+                            <span class="star" data-rating="1">★</span>
+                            <span class="star" data-rating="2">★</span>
+                            <span class="star" data-rating="3">★</span>
+                            <span class="star" data-rating="4">★</span>
+                            <span class="star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Review Title</label>
+                        <input type="text" required placeholder="Sum up your review in a short title">
+                    </div>
+                    <div class="form-group">
+                        <label>Your Review</label>
+                        <textarea required placeholder="Write your review here. What did you like or dislike? What did you use this product for?"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Add Photos (optional)</label>
+                        <input type="file" accept="image/*" multiple class="image-upload">
+                    </div>
+                    <button type="submit" class="submit-review-btn">Submit Review</button>
+                </form>
+            </div>
+
+            <!-- Review List -->
+            <div class="review-list">
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">J</div>
+                            <div>
+                                <div class="reviewer-name">John Doe</div>
+                                <div class="review-date">January 10, 2024</div>
+                            </div>
+                        </div>
+                        <div class="review-rating">★★★★★</div>
+                    </div>
+                    <div class="review-text">
+                        Great product! The quality is exceptional and it arrived exactly as described. 
+                        Very happy with my purchase and would definitely recommend it to others.
+                    </div>
+                    <button class="helpful-btn">👍 Helpful (12)</button>
+                </div>
+
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">S</div>
+                            <div>
+                                <div class="reviewer-name">Sarah Smith</div>
+                                <div class="review-date">January 8, 2024</div>
+                            </div>
+                        </div>
+                        <div class="review-rating">★★★★☆</div>
+                    </div>
+                    <div class="review-text">
+                        Very satisfied with the product. Shipping was fast and the item meets all my expectations. 
+                        The only minor issue was with the packaging, but the product itself is perfect.
+                    </div>
+                    <div class="review-images">
+                        <img src="/api/placeholder/80/80" alt="Review image" class="review-image">
+                        <img src="/api/placeholder/80/80" alt="Review image" class="review-image">
+                    </div>
+                    <button class="helpful-btn">👍 Helpful (8)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mainImage = document.querySelector('.main-image img');
+            const thumbnails = document.querySelectorAll('.thumbnail img');
+
+            thumbnails.forEach(thumbnail => {
+                thumbnail.addEventListener('click', function () {
+                    mainImage.src = this.src;
+
+                    thumbnails.forEach(thumb => {
+                        thumb.parentElement.classList.remove('active');
+                    });
+
+                    this.parentElement.classList.add('active');
+                });
+            });
+
+            const mainImageContainer = document.querySelector('.main-image');
+
+            function zoomImage(e) {
+                const rect = mainImage.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+                mainImage.style.transform = 'scale(2)';
+                mainImage.style.transformOrigin = `${x}% ${y}%`;
+            }
+
+            function resetImage() {
+                mainImage.style.transform = 'scale(1)';
+            }
+
+            mainImageContainer.addEventListener('mousemove', zoomImage);
+            mainImageContainer.addEventListener('mouseleave', resetImage);
+            mainImageContainer.addEventListener('mouseenter', function () {
+                mainImage.style.transition = 'transform 0.1s ease-out';
+            });
+        });
+    </script>
+<%-include("../../views/partials/user/footer")%>

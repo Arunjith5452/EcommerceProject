@@ -87,28 +87,30 @@
         }
 
         .social-login {
-            display: flex;
-            justify-content: center;
-            gap: 12px; /* This ensures spacing between buttons */
-            margin-top: 20px; /* Added some margin to separate social login from main buttons */
-        }
+      display: flex;
+      justify-content: center;
+    }
 
-        .social-button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            font-size: 14px;
-        }
+    .google-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      text-decoration: none;
+      color: #000;
+    }
 
-        .social-button img {
-            width: 20px;
-            height: 20px;
-        }
+    .google-button img {
+      width: 20px;
+      height: 20px;
+    }
 
         .error-message {
             color: red;
@@ -143,13 +145,14 @@
             </div>
             <button type="submit" class="login-button">Login</button>
         </form>
+        
+        <div class="divider">or continue with</div>
 
         <div class="social-login">
-            <button class="social-button">
-                <img src="img/icon/googleicon.png" alt="Google" />
-                Google
-            </button>
-            <!-- You can add other social login buttons here -->
+            <a href="/auth/google" class="google-button">
+              <img src="img/icon/googleicon.png" alt="Google">
+              Google
+            </a>
         </div>
     </div>
 </body>

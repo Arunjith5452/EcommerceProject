@@ -88,7 +88,6 @@
             <!-- Media Upload Cards -->
             <div class="col-lg-6">
                 <div class="row">
-                    <!-- First Media Upload -->
                     <div class="col-lg-6">
                         <div class="card mb-4">
                             <div class="card-header">
@@ -96,10 +95,8 @@
                             </div>
                             <div class="card-body">
                                 <div id="addedImagesContainer1" class="thumbnails-container"></div>
-                                <!-- Add this img element -->
                                 <img id="imageView1" src="" alt="Preview" style="max-width: 100%; display: none;" />
                                 <div class="input-upload">
-                                    <!-- Modify the input to include an ID -->
                                     <input class="form-control" type="file" id="input1" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 1)" />
                                     <div id="images-error1" class="error-message"></div>
@@ -113,7 +110,6 @@
                         </div>
                     </div>
 
-                    <!-- Second Media Upload -->
                     <div class="col-lg-6">
                         <div class="card mb-4">
                             <div class="card-header">
@@ -121,10 +117,8 @@
                             </div>
                             <div class="card-body">
                                 <div id="addedImagesContainer2" class="thumbnails-container"></div>
-                                <!-- Add this img element -->
                                 <img id="imageView2" src="" alt="Preview" style="max-width: 100%; display: none;" />
                                 <div class="input-upload">
-                                    <!-- Modify the input to include an ID -->
                                     <input class="form-control" type="file" id="input2" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 2)" />
                                     <div id="images-error1" class="error-message"></div>
@@ -138,7 +132,6 @@
                         </div>
                     </div>
 
-                    <!-- Third Media Upload -->
                     <div class="col-lg-6">
                         <div class="card mb-4">
                             <div class="card-header">
@@ -146,10 +139,8 @@
                             </div>
                             <div class="card-body">
                                 <div id="addedImagesContainer3" class="thumbnails-container"></div>
-                                <!-- Add this img element -->
                                 <img id="imageView3" src="" alt="Preview" style="max-width: 100%; display: none;" />
                                 <div class="input-upload">
-                                    <!-- Modify the input to include an ID -->
                                     <input class="form-control" type="file" id="input3" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 3)" />
                                     <div id="images-error1" class="error-message"></div>
@@ -163,7 +154,6 @@
                         </div>
                     </div>
 
-                    <!-- Fourth Media Upload -->
                     <div class="col-lg-6">
                         <div class="card mb-4">
                             <div class="card-header">
@@ -171,10 +161,8 @@
                             </div>
                             <div class="card-body">
                                 <div id="addedImagesContainer4" class="thumbnails-container"></div>
-                                <!-- Add this img element -->
                                 <img id="imageView4" src="" alt="Preview" style="max-width: 100%; display: none;" />
                                 <div class="input-upload">
-                                    <!-- Modify the input to include an ID -->
                                     <input class="form-control" type="file" id="input4" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 4)" />
                                     <div id="images-error1" class="error-message"></div>
@@ -217,7 +205,6 @@ function validateAndSubmit() {
             document.getElementById("imageView4").src = URL.createObjectURL(event.target.files[0])
         }
 
-    // Global object to store cropped images
 const croppedImages = {};
 
 function viewImage(event, index) {
@@ -233,7 +220,6 @@ function viewImage(event, index) {
         image.src = dataURL;
         image.style.display = 'block';
         
-        // Initialize cropper
         let cropper = new Cropper(image, {
             aspectRatio: 1,
             viewMode: 1,
@@ -257,7 +243,6 @@ function viewImage(event, index) {
             return;
         }
 
-        // Remove existing event listeners
         let newSaveButton = saveButton.cloneNode(true);
         saveButton.parentNode.replaceChild(newSaveButton, saveButton);
         
@@ -265,7 +250,6 @@ function viewImage(event, index) {
             let croppedCanvas = cropper.getCroppedCanvas();
             croppedImg.src = croppedCanvas.toDataURL('image/jpeg', 1.0);
 
-            // Store the cropped image data
             croppedImages[index] = croppedCanvas.toDataURL('image/jpeg', 0.9);
             
             cropperContainer.style.display = 'none';
@@ -285,12 +269,10 @@ async function handleSubmit(event) {
     const form = document.getElementById('productSubmitForm');
     const formData = new FormData(form);
     
-    // Add cropped images to form data
     for (const [index, dataUrl] of Object.entries(croppedImages)) {
         try {
             const response = await fetch(dataUrl);
             const blob = await response.blob();
-            // Use a more unique filename
             const filename = `image-${Date.now()}-${index}.jpg`;
             formData.append('images', blob, filename);
         } catch (error) {

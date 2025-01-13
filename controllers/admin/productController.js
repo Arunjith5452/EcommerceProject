@@ -38,7 +38,6 @@ const addProducts = async (req, res) => {
         if (productExists) {
             return res.status(400).json({ success: false, message: "Product already exists" });
         }
- 
         
         const images = [];
         if (req.files && req.files.length > 0) {
@@ -112,7 +111,7 @@ const getAllProducts = async (req,res) => {
         
    const search = req.query.search || "";
    const page = req.query.page || 1;
-   const limit = 4;
+   const limit = 5;
 
    const productData = await Product.find({
 
@@ -259,7 +258,7 @@ const editProduct = async (req, res) => {
         const updateFields = {
             productName: data.productName,
             description: data.descriptionData, 
-            category: data.category._id, 
+            category: data.category, 
             regularPrice: data.regularPrice,
             salePrice: data.salePrice, 
             quantity: data.quantity,

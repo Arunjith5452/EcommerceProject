@@ -83,7 +83,7 @@ const forgotEmailValid = async (req,res) => {
             return res.json({success:false,message:"Failed to send otp. Please try again"});
         }
      }else{
-        return res.render("forget-password",{message:"User with this email does not exist"});
+        return res.render("forgot-password",{message:"User with this email does not exist"});
      }
 
     } catch (error) {
@@ -170,5 +170,6 @@ module.exports = {
     verifyForgotPassOtp,
     getResetPassPage,
     resendOtp,
-    postNewPassword
+    postNewPassword,
+    
 }

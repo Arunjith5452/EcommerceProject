@@ -142,23 +142,20 @@
   </div>
 
   <script>
-    // Get DOM elements
     let timerElement = document.getElementById('timer');
     let resendButton = document.getElementById('resend-btn');
     let timer = 30;
     let interval;
 
-    // Get all OTP input elements
     const otpInputs = document.querySelectorAll('.otp-input');
 
     function startTimer() {
-      // Clear any existing interval first
       if (interval) {
         clearInterval(interval);
       }
 
       resendButton.disabled = true;
-      timer = 30;  // Reset timer
+      timer = 30;  
 
       interval = setInterval(() => {
         timer--;
@@ -189,7 +186,7 @@
             title: 'OTP Resent',
             text: 'A new OTP has been sent to your registered email.'
           });
-          startTimer();  // Restart timer
+          startTimer();  
         } else {
           throw new Error(response.message || 'Failed to resend OTP');
         }
@@ -206,37 +203,28 @@
       }
     }
 
-    // Add input handling for each OTP input box
     otpInputs.forEach((input, index) => {
-      // Handle input changes
       input.addEventListener('input', (e) => {
-        // Allow only numbers
         input.value = input.value.replace(/[^0-9]/g, '');
         
-        // Auto focus next input when a number is entered
         if (input.value && index < otpInputs.length - 1) {
           otpInputs[index + 1].focus();
         }
         
-        // Check if all inputs are filled
         if (isOTPComplete()) {
           document.querySelector('.btn-primary').focus();
         }
       });
 
-      // Handle keydown events
       input.addEventListener('keydown', (e) => {
-        // Handle backspace
         if (e.key === 'Backspace' || e.key === 'Delete') {
           if (input.value === '') {
-            // Move to previous input if current is empty
             if (index > 0) {
               e.preventDefault();
               otpInputs[index - 1].value = '';
               otpInputs[index - 1].focus();
             }
           } else {
-            // Clear current input
             input.value = '';
           }
         }
@@ -245,12 +233,10 @@
 
     });
 
-    // Function to check if OTP is complete
     function isOTPComplete() {
       return [...otpInputs].every(input => input.value.length === 1);
     }
-
-    function validateOTP() {
+function validateOTP() {
       let otpInput = "";
       otpInputs.forEach(input => {
         otpInput += input.value;
@@ -288,14 +274,11 @@
       });
       return false;
     }
-
-    // Initialize timer and focus first input on page load
     document.addEventListener('DOMContentLoaded', () => {
       startTimer();
       otpInputs[0].focus();
     });
 
-    // Add event listener to resend button
     resendButton.addEventListener('click', resendOTP);
   </script>
 </body>

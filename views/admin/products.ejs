@@ -10,7 +10,7 @@
 <header class="card-header text-center mb-20">
     <form action="" method="get" class="d-inline">
         <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px;">
-            <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products or brands" name="search">
+            <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products" name="search">
             <button class="btn  border-0" type="submit">Search</button>
         </div>
     </form>
@@ -83,18 +83,7 @@
 </div>
 </div>
 </div>
-
-<div class="container mt-3">
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center mb-20" style="margin-right: 200px;">
-            <% for (let i = 1; i <= totalPages; i++) { %>
-            <li class="page-item <%=(i === currentPage) ? 'active' : '' %>">
-                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
-            </li>
-            <% } %>
-        </ul>
-    </nav>
- </div>
+<%-include("../../views/partials/admin/pagination")%>
  <script>
   async function addOffer(productId) {
     const {value:amount} =await Swal.fire({
@@ -117,12 +106,15 @@
         .then((response)=>response.json())
         .then(data=>{
             if(data.status===true){
-                location.reload();
                 Swal.fire(
                     'offer added',
                     'The offer has been added successfully',
                     'success'
-                );
+                ).then((result) => {
+                if (result.isConfirmed) {
+                    location.reload();
+                }
+            });
             }else{
                 alert("Failed")
             }
@@ -159,8 +151,11 @@
             .then((response)=> response.json())
             .then((data)=>{
                 if(data.status===true){
-                    location.reload()
-                    Swal.fire('Removed!','The offer has been removed','success')
+                    Swal.fire('Removed!','The offer has been removed','success').then((result) => {
+                if (result.isConfirmed) {
+                    location.reload();
+                }
+            });
                 }else if(data.status===false){
                     Swal.fire('failed')
                 }else{
