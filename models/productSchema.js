@@ -31,10 +31,18 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    quantity: {
-        type: Number,
-        default: 0
-    },
+    sizeVariants: [{
+        size: {
+            type: String,
+            required: true,
+            enum:['S', 'M', 'L', 'XL', 'XXL']
+        },
+        quantity: {
+            type: Number,
+            required: true,
+            min: 0
+        }
+    }],
     color: {
         type: String,
         required: true
@@ -49,7 +57,7 @@ const productSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Available", "out of stock", "Discountinued"],
+        enum: ["Available", "out of stock", "Discontinued"],
         required: true,
         default: "Available"
     },

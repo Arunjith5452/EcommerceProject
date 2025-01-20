@@ -8,18 +8,27 @@ const productDetails = async (req,res) => {
         
         const userId = req.session.user;
         const userData = await User.findById(userId);
-        const productId = req.query.id;
+        const productId = req.params.id;
+
+        if (!productId) {
+          return res.redirect("/pageNotFound");
+      }
         const product = await Product.findById(productId).populate('category');
         const findCategory = product.category;
+        console.log('Product Category:', findCategory);
+        const relatedProduct = await Product.find({category:findCategory,_id:{$ne:productId}}).sort({ createdAt: -1 }).limit(4)
+        console.log('Related Products:', relatedProduct.length);
         const categoryOffer = findCategory ? findCategory.categoryOffer || 0 : 0
         const productOffer = product.productOffer || 0;
         const totalOffer = categoryOffer + productOffer;
+        const totalQuantity = product.sizeVariants.reduce((sum, variant) => sum + variant.quantity, 0);
         return res.render("product-details",{
             user:userData,
             product:product,
-            quantity:product.quantity,
+            totalQuantity:totalQuantity,
             totalOffer:totalOffer,
             category:findCategory,
+            relatedProduct
         })
 
     } catch (error) {

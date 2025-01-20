@@ -1,8 +1,7 @@
-const mongoose = require("mongoose")
-const { Schema } = mongoose
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const cartSchema = new mongoose.Schema({
-
     userId: {
         type: Schema.Types.ObjectId,
         ref: "User",
@@ -13,6 +12,11 @@ const cartSchema = new mongoose.Schema({
             type: Schema.Types.ObjectId,
             ref: "Product",
             required: true
+        },
+        size: {  
+            type: String,
+            enum: ['S', 'M', 'L', 'XL', 'XXL',null],
+            default:null
         },
         quantity: {
             type: Number,
@@ -35,8 +39,7 @@ const cartSchema = new mongoose.Schema({
             default: "none"
         }
     }]
+});
 
-})
-
-const Cart = mongoose.model("Cart", cartSchema)
+const Cart = mongoose.model("Cart", cartSchema);
 module.exports = Cart;

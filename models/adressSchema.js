@@ -21,7 +21,7 @@ const addressSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        landmark: {
+        landMark: {
             type: String,
             required: true
         },

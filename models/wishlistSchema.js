@@ -9,11 +9,11 @@ const wishlistSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    product: [{
+    products: [{
         productId: {
             type: Schema.Types.ObjectId,
             ref: "Product",
-            required: trusted
+            required: true
         },
         addedOn: {
             type: Date,

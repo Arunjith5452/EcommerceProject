@@ -1,27 +1,43 @@
-<%-include("../../views/partials/user/header")%>
+
+    <%- include("../../views/partials/user/header") %>
+
+    
     <style>
-        * {
+       .product-details-container * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
 
-        .container {
+        .product-details-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            padding-top: 80px;
+            
         }
+        .page-header {
+         margin-bottom: 50px;
+         background-color: #f1f1f1;
 
-        .breadcrumb {
-            word-spacing: 1px;
-            color: #666;
-            font-size: 15px;
+      
+       }
+        .breadcrumb-wrap {
+            background-color: #e9ecef;
+            padding: 15px 0;
+            background-color: #f1f1f1;
+
         }
 
         .breadcrumb a {
-            color: #666;
+            color: #1b1b1c;
             text-decoration: none;
+        }
+
+        .breadcrumb span {
+            margin: 0 5px;
+            color: #6c757d;
         }
 
         .product-detail {
@@ -369,6 +385,165 @@
             background-color: #f5f5f5;
         }
 
+        /* Size Selection Styles */
+        .size-selection {
+            margin-bottom: 30px;
+        }
+
+        .size-label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .size-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .size-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .size-btn:hover:not(.disabled) {
+            border-color: #008080;
+            color: #008080;
+        }
+
+        .size-btn.active {
+            background-color: #008080;
+            color: white;
+            border-color: #008080;
+        }
+
+        .size-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            background-color: #f5f5f5;
+        }
+
+        .selected-size-stock {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Related Products Styles */
+        .related-products {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #eee;
+        }
+
+        .related-products h2 {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .related-products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .related-product-item {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .related-product-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .related-product-item a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .product-image {
+            position: relative;
+            padding-top: 100%;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .related-product-item:hover .product-image img {
+            transform: scale(1.05);
+        }
+
+        .product-info {
+            padding: 15px;
+        }
+
+        .product-info h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .product-price {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #008080;
+        }
+
+        .regular-price {
+            font-size: 14px;
+            color: #666;
+            text-decoration: line-through;
+        }
+
+        .view-details-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #008080;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .view-details-btn:hover {
+            background-color: #006666;
+        }
+
+        @media (max-width: 768px) {
+            .related-products-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .related-products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .product-detail {
                 grid-template-columns: 1fr;
@@ -384,10 +559,17 @@
         }
     </style>
 
-    <div class="container">
-        <div class="breadcrumb">
-            <a href="/"> home </a> / <a href="/shop"> shop </a> /product details
+    <div class="product-details-container">
+        <div class="page-header breadcrumb-wrap">
+            <div class="container">
+                <div class="breadcrumb">
+                    <a href="/" rel="nofollow">Home</a>
+                    <span><a href="/shop" rel="nofollow">Shop</a></span> 
+                    <span><a href="/" rel="nofollow">productDetails</a></span> 
+                </div>
+            </div>
         </div>
+
 
         <div class="product-detail">
             <div class="product-gallery">
@@ -399,12 +581,14 @@
                         <div class="thumbnail">
                             <img src="/uploads/product-images/<%=product.productImage[i]%>" alt="Thumbnail 1">
                         </div>
-                    <%}%>
+                        <%}%>
                 </div>
             </div>
 
             <div class="product-info">
-                <h1><%=product.productName%></h1>
+                <h1>
+                    <%=product.productName%>
+                </h1>
                 <div class="rating">
                     <div class="stars">★★★★☆</div>
                     <span class="review-count">(25 reviews)</span>
@@ -413,10 +597,14 @@
                 <div class="price-section">
                     <span class="sale-price">₹<%=product.salePrice%></span>
                     <span class="regular-price">₹<%=product.regularPrice%></span>
-                    <span class="discount"><%=totalOffer%>% Offer</span>
+                    <span class="discount">
+                        <%=totalOffer%>% Offer
+                    </span>
                 </div>
 
-                <p class="description"><%=product.description%></p>
+                <p class="description">
+                    <%=product.description%>
+                </p>
 
                 <div class="features">
                     <div class="feature-item">
@@ -433,20 +621,49 @@
                     </div>
                 </div>
 
+                <div class="size-selection">
+                    <label class="size-label">Select Size</label>
+                    <div class="size-options">
+                        <% product.sizeVariants.forEach(variant=> { %>
+                            <button class="size-btn <%= variant.quantity === 0 ? 'disabled' : '' %>"
+                                data-size="<%= variant.size %>" data-quantity="<%= variant.quantity %>"
+                                <%=variant.quantity===0 ? 'disabled' : '' %>>
+                                <%= variant.size %>
+                            </button>
+                            <% }); %>
+                    </div>
+                    <p class="selected-size-stock"></p>
+                </div>
+
+                <!-- New Add to Cart and Wishlist Section -->
                 <div class="quantity-section">
                     <div class="quantity-input">
-                        <button class="quantity-btn">-</button>
+                        <button class="quantity-btn" onclick="decrementQuantity()">-</button>
                         <span class="quantity-value">1</span>
-                        <button class="quantity-btn">+</button>
+                        <button class="quantity-btn" onclick="incrementQuantity()">+</button>
                     </div>
-                    <button class="add-to-cart">Add to cart</button>
-                    <button class="wishlist-btn">❤️</button>
+                    <div class="action-buttons">
+                        <button class="add-to-cart" onclick="addToCart()">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    </div>
                 </div>
+
 
                 <div class="product-meta">
                     <p>Stock Code: FWM15VKT</p>
-                    <p>Tags: <%=category.name%></p>
-                    <p>Availability: <span class="stock"><%=quantity%> Items in Stock</span></p>
+                    <p>Tags: <%=category.name%>
+                    </p>
+                    <p>Availability:</p>
+                    <% if (totalQuantity> 0) { %>
+                        <ul class="stock">
+                            <% product.sizeVariants.forEach(variant=> { %>
+                                <li>Size: <%= variant.size %> - <%= variant.quantity %> Items in Stock</li>
+                                <% }); %>
+                        </ul>
+                        <% } else { %>
+                            <p class="out-of-stock">Out of Stock</p>
+                            <% } %>
                 </div>
             </div>
         </div>
@@ -477,7 +694,8 @@
                     </div>
                     <div class="form-group">
                         <label>Your Review</label>
-                        <textarea required placeholder="Write your review here. What did you like or dislike? What did you use this product for?"></textarea>
+                        <textarea required
+                            placeholder="Write your review here. What did you like or dislike? What did you use this product for?"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Add Photos (optional)</label>
@@ -501,7 +719,7 @@
                         <div class="review-rating">★★★★★</div>
                     </div>
                     <div class="review-text">
-                        Great product! The quality is exceptional and it arrived exactly as described. 
+                        Great product! The quality is exceptional and it arrived exactly as described.
                         Very happy with my purchase and would definitely recommend it to others.
                     </div>
                     <button class="helpful-btn">👍 Helpful (12)</button>
@@ -519,7 +737,7 @@
                         <div class="review-rating">★★★★☆</div>
                     </div>
                     <div class="review-text">
-                        Very satisfied with the product. Shipping was fast and the item meets all my expectations. 
+                        Very satisfied with the product. Shipping was fast and the item meets all my expectations.
                         The only minor issue was with the packaging, but the product itself is perfect.
                     </div>
                     <div class="review-images">
@@ -528,6 +746,40 @@
                     </div>
                     <button class="helpful-btn">👍 Helpful (8)</button>
                 </div>
+            </div>
+            <div class="related-products">
+                <h2>Related Products</h2>
+                <% if (relatedProduct && relatedProduct.length> 0) { %>
+                    <div class="related-products-grid">
+                        <% relatedProduct.forEach(product=> { %>
+                            <div class="related-product-item">
+                                <a href="/productDetails/<%= product._id %>">
+                                    <div class="product-image">
+                                        <img src="/uploads/product-images/<%= product.productImage[0] %>"
+                                            alt="<%= product.productName %>">
+                                    </div>
+                                    <div class="product-info">
+                                        <h3>
+                                            <%= product.productName %>
+                                        </h3>
+                                        <div class="product-price">
+                                            <span class="price">₹<%= product.salePrice %></span>
+                                            <% if (product.regularPrice> product.salePrice) { %>
+                                                <span class="regular-price">₹<%= product.regularPrice %></span>
+                                                <% } %>
+                                        </div>
+                                    </div>
+                                </a>
+                                <!-- View Details Button -->
+                                <a href="/productDetails/<%= product._id %>">
+                                    <button class="view-details-btn">View Details</button>
+                                </a>
+                            </div>
+                            <% }) %>
+                    </div>
+                    <%}else{%>
+                        <p>No related products found</p>
+                        <% } %>
             </div>
         </div>
     </div>
@@ -570,5 +822,119 @@
                 mainImage.style.transition = 'transform 0.1s ease-out';
             });
         });
+        // Size Selection Functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const sizeButtons = document.querySelectorAll('.size-btn');
+            const stockDisplay = document.querySelector('.selected-size-stock');
+            const addToCartBtn = document.querySelector('.add-to-cart');
+            let selectedSize = null;
+
+            sizeButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    if (this.classList.contains('disabled')) return;
+
+                    // Remove active class from all buttons
+                    sizeButtons.forEach(btn => btn.classList.remove('active'));
+
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    // Update selected size and stock display
+                    selectedSize = this.dataset.size;
+                    const quantity = this.dataset.quantity;
+                    stockDisplay.textContent = `Size ${selectedSize}: ${quantity} items in stock`;
+
+                    // Enable add to cart button
+                    addToCartBtn.disabled = false;
+                });
+            });
+
+            // Quantity Control
+            let quantity = 1;
+            const quantityValue = document.querySelector('.quantity-value');
+
+            window.incrementQuantity = function () {
+                const activeButton = document.querySelector('.size-btn.active');
+                if (!activeButton) return;
+
+                const maxStock = parseInt(activeButton.dataset.quantity);
+                if (quantity < maxStock) {
+                    quantity++;
+                    quantityValue.textContent = quantity;
+                }
+            }
+
+            window.decrementQuantity = function () {
+                if (quantity > 1) {
+                    quantity--;
+                    quantityValue.textContent = quantity;
+                }
+            }
+
+            // Add to Cart Functionality
+            window.addToCart = function () {
+                if (!selectedSize) {
+                    alert('Please select a size first');
+                    return;
+                }
+
+                const productId = window.location.pathname.split('/').pop();
+                const data = {
+                    productId: productId,
+                    size: selectedSize,
+                    quantity: quantity
+                };
+
+                fetch('/addToCart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Product added to cart successfully!');
+                            // Update cart count if needed
+                        } else {
+                            alert(data.message || 'Error adding product to cart');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error adding product to cart');
+                    });
+            }
+
+            // // Wishlist Functionality
+            // window.toggleWishlist = function () {
+            //     const productId = window.location.pathname.split('/').pop();
+
+            //     fetch('/wishlist/toggle', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify({ productId })
+            //     })
+            //         .then(response => response.json())
+            //         .then(data => {
+            //             const wishlistBtn = document.querySelector('.wishlist-btn i');
+            //             if (data.added) {
+            //                 wishlistBtn.classList.remove('far');
+            //                 wishlistBtn.classList.add('fas');
+            //                 alert('Added to wishlist!');
+            //             } else {
+            //                 wishlistBtn.classList.remove('fas');
+            //                 wishlistBtn.classList.add('far');
+            //                 alert('Removed from wishlist!');
+            //             }
+            //         })
+            //         .catch(error => {
+            //             console.error('Error:', error);
+            //             alert('Error updating wishlist');
+            //         });
+            // }
+        });
     </script>
-<%-include("../../views/partials/user/footer")%>

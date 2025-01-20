@@ -24,7 +24,7 @@
                 <th scope="col"><b>Sale Price</b></th>
                 <th scope="col"><b>Offer Price</b></th>
                 <th scope="col"><b>Offer</b></th>
-                <th scope="col"><b>Quantity</b></th>
+                <th scope="col"><b>Variants</b></th>
                 <th scope="col"><b>Action</b></th>
                 <th scope="col"><b>Edit</b></th>
                 <th scope="col"><b>Delete</b></th>
@@ -54,7 +54,17 @@
                     </button>
                 <%}%>
                 </td>
-                <td><%=data[i].quantity%></td>
+                <td>
+                    <%if(data[i].sizeVariants && data[i].sizeVariants.length > 0) {%>
+                      <ul class="list-unstyled">
+                        <%data[i].sizeVariants.forEach(function(variant) { %>
+                          <li><%= variant.size %>: <%= variant.quantity %></li>
+                        <% })%>
+                      </ul>
+                    <%} else {%>
+                      No Variants
+                    <%}%>
+                  </td>
                 <td>
                 <%if(data[i].isBlocked===false){%>
                     <button class="btn btn-danger" style="width: 80px;">

@@ -45,18 +45,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    wishlist: [{
-        type: Schema.Types.ObjectId,
-        ref: "Wishlist"
-    }],
     orderHistory: [{
         type: Schema.Types.ObjectId,
         ref: "Order"
     }],
-    createdOn: {
-        type: Date,
-        default: Date.now
-    },
     referalCode: {
         type: String,
         // required:true
@@ -80,8 +72,7 @@ const userSchema = new mongoose.Schema({
             default: Date.now
         }
     }]
-
-})
+},{timestamps:true})
 
 
 

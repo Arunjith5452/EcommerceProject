@@ -165,9 +165,9 @@
     }
 
     .product-name {
-        font-size: 13px;
+        font-size: 16px;
         color: #333;
-        margin-bottom: 6px;
+        margin-bottom: 0px;
         font-weight: 500;
         display: -webkit-box;
         -webkit-box-orient: vertical;
@@ -188,39 +188,6 @@
         margin-left: 8px;
         font-size: 12px;
     }
-
-    .add-to-cart {
-        width: 100%;
-        padding: 8px;
-        border: none;
-        background: #f8f9fa;
-        color: #1e918b;
-        border-radius: 4px;
-        font-weight: 500;
-        font-size: 12px;
-        transition: all 0.2s;
-        cursor: pointer;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .add-to-cart:hover {
-        background: #074c12;
-        color: white;
-    }
-
-    /* .discount-badge {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        background: #1e918b;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 500;
-        z-index: 2;
-    } */
 
     .pagination {
         display: flex;
@@ -300,6 +267,16 @@
                     <button type="submit" class="search-button">Search</button>
                 </form>
             </div>
+            <div class="col-lg-6 col-md-6 col-sm-6">
+                <div class="shop__product__option__right">
+                    <p>Sort by Price:</p>
+                    <select id="priceSort" onchange="sortProducts(this.value)">
+                        <option value="default" <%= selectedSort === 'default' ? 'selected' : '' %>>Default</option>
+                        <option value="low" <%= selectedSort === 'low' ? 'selected' : '' %>>Low To High</option>
+                        <option value="high" <%= selectedSort === 'high' ? 'selected' : '' %>>High To Low</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="product-list-container">
@@ -333,12 +310,11 @@
             <main class="product-grid">
                 <%for(let i=0;i<products.length;i++){%>
                     <div class="product-card">
-                        <!-- <div class="discount-badge">-20%</div> -->
                         <button class="wishlist-btn" onclick="addToWishlist('<%=products[i]._id%>')">
                             <i class="fas fa-heart"></i>
                         </button>
                         <div class="product-img-wrap">
-                            <a href="/productDetails?id=<%=products[i]._id%>">
+                            <a href="/productDetails/<%=products[i]._id%>">
                                 <img class="product-img" 
                                      src="/uploads/product-images/<%=products[i].productImage[0]%>" 
                                      alt="<%=products[i].productName%>"
@@ -351,9 +327,13 @@
                                 <span class="current-price">₹<%=products[i].salePrice.toLocaleString('en-IN')%></span>
                                 <span class="original-price">₹<%=products[i].regularPrice.toLocaleString('en-IN')%></span>
                             </div>
-                            <button onclick="window.location.href='/addToCart?id=<%=products[i]._id%>'" class="add-to-cart">
-                                Add to Cart
-                            </button>
+                           
+                                <div class="product-offer" style="color: green; font-size: 15px">
+                                     <%=products[i].totalOffer%>% Offer
+                                </div>
+                                <div class="product-delivery" style="color: rgb(82, 82, 82); font-size: 12px;">
+                                    Free Delivery
+                                </div>
                         </div>
                     </div>
                 <%}%>
@@ -362,17 +342,23 @@
 
         <div class="pagination">
             <% if (currentPage > 1) { %>
-                <a href="/shop?page=<%= currentPage - 1 %>">Prev</a>
+                <a href="?page=<%= currentPage - 1 %>&sort=<%= selectedSort %>">Prev</a>
             <% } %>
-
+        
             <% for (let i = 1; i <= totalPages; i++) { %>
-                <a class="<%= currentPage === i ? 'active' : '' %>" href="/shop?page=<%= i %>"><%= i %></a>
+                <a class="<%= currentPage === i ? 'active' : '' %>" 
+                   href="?page=<%= i %>&sort=<%= selectedSort %>">
+                   <%= i %>
+                </a>
             <% } %>
-
+        
             <% if (currentPage < totalPages) { %>
-                <a href="/shop?page=<%= currentPage + 1 %>">Next</a>
+                <a href="?page=<%= currentPage + 1 %>&sort=<%= selectedSort %>">Next</a>
             <% } %>
         </div>
+    </section>
+</div>
+
     </section>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
@@ -416,6 +402,11 @@ function addToWishlist(productId){
   })
 }
 
+function sortProducts(value) {
+    let currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('sort', value);
+    window.location.href = currentUrl.toString();
+}
 
 </script>
 <%-include("../../views/partials/user/footer")%>

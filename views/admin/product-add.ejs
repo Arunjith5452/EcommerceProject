@@ -16,7 +16,8 @@
                         <h4>Basic</h4>
                     </div>
                     <div class="card-body">
-                        <form id="productSubmitForm" method="post" action="/admin/addProducts" enctype="multipart/form-data" onsubmit="return handleSubmit(event)">
+                        <form id="productSubmitForm" method="post" action="/admin/addProducts"
+                            enctype="multipart/form-data" onsubmit="return handleSubmit(event)">
                             <input type="hidden" name="croppedImages" id="croppedImagesInput" />
                             <div class="mb-4">
                                 <label for="product_name" class="form-label">Product title</label>
@@ -35,7 +36,7 @@
                                     <div class="mb-4">
                                         <label class="form-label">Regular price</label>
                                         <div class="row gx-2">
-                                            <input name="regularPrice" placeholder="$" type="text" class="form-control"
+                                            <input name="regularPrice" placeholder="₹" type="text" class="form-control"
                                                 id="regularPrice" />
                                             <div id="regularPrice-error" class="error-message"></div>
                                         </div>
@@ -44,7 +45,7 @@
                                 <div class="col-lg-6">
                                     <div class="mb-4">
                                         <label class="form-label">Sale price</label>
-                                        <input name="salePrice" placeholder="$" type="text" class="form-control"
+                                        <input name="salePrice" placeholder="₹" type="text" class="form-control"
                                             id="salePrice" />
                                         <div id="salePrice-error" class="error-message"></div>
                                     </div>
@@ -62,20 +63,43 @@
                                 <div id="category-error" class="error-message"></div>
                             </div>
                             <div class="row">
-                                <div class="col-lg-6">
-                                    <div class="mb-4">
+                                <div class="col-lg-4">
+                                    <div class="mb-2">
                                         <label class="form-label">Color</label>
                                         <input name="color" type="text" placeholder="e.g., Red, Blue"
                                             class="form-control" id="color" />
                                         <div id="color-error" class="error-message"></div>
                                     </div>
                                 </div>
-                                <div class="col-lg-6">
+                                <div class="col-lg-8">
                                     <div class="mb-4">
-                                        <label class="form-label">Quantity</label>
-                                        <input name="quantity" type="number" placeholder="Enter quantity"
-                                            class="form-control" id="quantity" />
-                                        <div id="quantity-error" class="error-message"></div>
+                                        <label class="form-label">Product Sizes and Quantities</label>
+                                        <div id="sizesContainer">
+                                            <div class="size-entry mb-3">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <select name="sizes[]" class="form-control">
+                                                            <option value="">Select Size</option>
+                                                            <option value="S">Small (S)</option>
+                                                            <option value="M">Medium (M)</option>
+                                                            <option value="L">Large (L)</option>
+                                                            <option value="XL">Extra Large (XL)</option>
+                                                            <option value="XXL">Double XL (XXL)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <input type="number" name="quantities[]" class="form-control"
+                                                            placeholder="Quantity" min="0">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <button type="button"
+                                                            class="btn btn-danger remove-size">Remove</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary" id="addMoreSizes">Add More
+                                            Sizes</button>
                                     </div>
                                 </div>
                             </div>
@@ -181,16 +205,16 @@
     </section>
     <script>
 
-function validateAndSubmit() {
-    if (validateForm()) {
-        const form = document.getElementById('productSubmitForm');
-        if (form) {
-            form.submit();
-        } else {
-            console.error('Form not found');
+        function validateAndSubmit() {
+            if (validateForm()) {
+                const form = document.getElementById('productSubmitForm');
+                if (form) {
+                    form.submit();
+                } else {
+                    console.error('Form not found');
+                }
+            }
         }
-    }
-}
 
         function viewImage1(event) {
             document.getElementById("imageView1").src = URL.createObjectURL(event.target.files[0])
@@ -205,101 +229,121 @@ function validateAndSubmit() {
             document.getElementById("imageView4").src = URL.createObjectURL(event.target.files[0])
         }
 
-const croppedImages = {};
+        const croppedImages = {};
 
-function viewImage(event, index) {
-    let input = event.target;
-    let reader = new FileReader();
-    reader.onload = function () {
-        let dataURL = reader.result;
-        let image = document.getElementById("imageView" + index);
-        if (!image) {
-            console.error('Image view element not found');
-            return;
+        function viewImage(event, index) {
+            let input = event.target;
+            let reader = new FileReader();
+            reader.onload = function () {
+                let dataURL = reader.result;
+                let image = document.getElementById("imageView" + index);
+                if (!image) {
+                    console.error('Image view element not found');
+                    return;
+                }
+                image.src = dataURL;
+                image.style.display = 'block';
+
+                let cropper = new Cropper(image, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    guides: true,
+                    background: false,
+                    autoCropArea: 1,
+                    zoomable: true
+                });
+
+                let croppedImg = document.getElementById("croppedImg" + index);
+                if (!croppedImg) {
+                    console.error('Cropped image element not found');
+                    return;
+                }
+                let cropperContainer = croppedImg.parentNode;
+                cropperContainer.style.display = 'block';
+
+                let saveButton = document.getElementById("saveButton" + index);
+                if (!saveButton) {
+                    console.error('Save button not found');
+                    return;
+                }
+
+                let newSaveButton = saveButton.cloneNode(true);
+                saveButton.parentNode.replaceChild(newSaveButton, saveButton);
+
+                newSaveButton.addEventListener('click', function () {
+                    let croppedCanvas = cropper.getCroppedCanvas();
+                    croppedImg.src = croppedCanvas.toDataURL('image/jpeg', 1.0);
+
+                    croppedImages[index] = croppedCanvas.toDataURL('image/jpeg', 0.9);
+
+                    cropperContainer.style.display = 'none';
+                    cropper.destroy();
+                });
+            };
+            reader.readAsDataURL(input.files[0]);
         }
-        image.src = dataURL;
-        image.style.display = 'block';
-        
-        let cropper = new Cropper(image, {
-            aspectRatio: 1,
-            viewMode: 1,
-            guides: true,
-            background: false,
-            autoCropArea: 1,
-            zoomable: true
-        });
 
-        let croppedImg = document.getElementById("croppedImg" + index);
-        if (!croppedImg) {
-            console.error('Cropped image element not found');
-            return;
-        }
-        let cropperContainer = croppedImg.parentNode;
-        cropperContainer.style.display = 'block';
+        async function handleSubmit(event) {
+            event.preventDefault();
 
-        let saveButton = document.getElementById("saveButton" + index);
-        if (!saveButton) {
-            console.error('Save button not found');
-            return;
-        }
+            if (!validateForm()) {
+                return false;
+            }
 
-        let newSaveButton = saveButton.cloneNode(true);
-        saveButton.parentNode.replaceChild(newSaveButton, saveButton);
-        
-        newSaveButton.addEventListener('click', function () {
-            let croppedCanvas = cropper.getCroppedCanvas();
-            croppedImg.src = croppedCanvas.toDataURL('image/jpeg', 1.0);
+            const form = document.getElementById('productSubmitForm');
+            const formData = new FormData(form);
 
-            croppedImages[index] = croppedCanvas.toDataURL('image/jpeg', 0.9);
-            
-            cropperContainer.style.display = 'none';
-            cropper.destroy();
-        });
-    };
-    reader.readAsDataURL(input.files[0]);
-}
+            const sizes = document.getElementsByName('sizes[]');
+            const quantities = document.getElementsByName('quantities[]');
+            const sizeVariants = [];
 
-async function handleSubmit(event) {
-    event.preventDefault();
-    
-    if (!validateForm()) {
-        return false;
+            // Create size variants array
+            for (let i = 0; i < sizes.length; i++) {
+                if (sizes[i].value && quantities[i].value) {
+                    sizeVariants.push({
+                        size: sizes[i].value,
+                        quantity: parseInt(quantities[i].value)
+                    });
+                }
+            }
+            console.log('Size Variants before sending:', sizeVariants);
+            // Add size variants to formData
+            formData.append('sizeVariants', JSON.stringify(sizeVariants));
+            for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
     }
-    
-    const form = document.getElementById('productSubmitForm');
-    const formData = new FormData(form);
-    
-    for (const [index, dataUrl] of Object.entries(croppedImages)) {
-        try {
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            const filename = `image-${Date.now()}-${index}.jpg`;
-            formData.append('images', blob, filename);
-        } catch (error) {
-            console.error(`Error processing image ${index}:`, error);
+
+            for (const [index, dataUrl] of Object.entries(croppedImages)) {
+                try {
+                    const response = await fetch(dataUrl);
+                    const blob = await response.blob();
+                    const filename = `image-${Date.now()}-${index}.jpg`;
+                    formData.append('images', blob, filename);
+                } catch (error) {
+                    console.error(`Error processing image ${index}:`, error);
+                }
+            }
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    window.location.href = '/admin/addProducts';
+                } else {
+                    displayErrorMessage('error-message', result.message || 'Error saving product');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                displayErrorMessage('error-message', 'Error saving product. Please try again.');
+            }
+
+            return false;
         }
-    }
-    
-    try {
-        const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            window.location.href = '/admin/addProducts';
-        } else {
-            displayErrorMessage('error-message', result.message || 'Error saving product');
-        }
-    } catch (error) {
-        console.error('Submission error:', error);
-        displayErrorMessage('error-message', 'Error saving product. Please try again.');
-    }
-    
-    return false;
-}
         const selectedImages = [];
         function handleFileSelect(event) {
             const addedImagesContainer = document.getElementById("addedImagesContainer");
@@ -310,8 +354,6 @@ async function handleSubmit(event) {
                 selectedImages.push(file);
                 const thumbnail = document.createElement("div")
                 thumbnail.classList.add("thumbnail");
-
-
                 const img = document.createElement("img");
                 img.src = URL.createObjectURL(file);
                 img.alt = "thumbnail";
@@ -336,7 +378,85 @@ async function handleSubmit(event) {
 
         }
 
+        document.addEventListener('DOMContentLoaded', function () {
+            const sizesContainer = document.getElementById('sizesContainer');
+            const addMoreSizesBtn = document.getElementById('addMoreSizes');
 
+            // Function to create new size entry
+            function createSizeEntry() {
+                const sizeEntry = document.createElement('div');
+                sizeEntry.className = 'size-entry mb-3';
+                sizeEntry.innerHTML = `
+            <div class="row">
+                <div class="col-md-4">
+                    <select name="sizes[]" class="form-control">
+                        <option value="">Select Size</option>
+                        <option value="S">Small (S)</option>
+                        <option value="M">Medium (M)</option>
+                        <option value="L">Large (L)</option>
+                        <option value="XL">Extra Large (XL)</option>
+                        <option value="XXL">Double XL (XXL)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="number" name="quantities[]" class="form-control" placeholder="Quantity" min="0">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger remove-size">Remove</button>
+                </div>
+            </div>
+        `;
+                return sizeEntry;
+            }
+
+            // Add new size entry
+            addMoreSizesBtn.addEventListener('click', function () {
+                sizesContainer.appendChild(createSizeEntry());
+            });
+
+            // Remove size entry
+            sizesContainer.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-size')) {
+                    const sizeEntry = e.target.closest('.size-entry');
+                    if (sizesContainer.children.length > 1) {
+                        sizeEntry.remove();
+                    } else {
+                        alert('At least one size entry is required.');
+                    }
+                }
+            });
+
+            // Form validation
+            document.getElementById('productSubmitForm').addEventListener('submit', function (e) {
+                const sizes = document.getElementsByName('sizes[]');
+                const quantities = document.getElementsByName('quantities[]');
+                let isValid = true;
+                let errorMessage = '';
+
+                // Check for duplicate sizes
+                const selectedSizes = Array.from(sizes).map(size => size.value);
+                const uniqueSizes = new Set(selectedSizes.filter(size => size !== ''));
+                if (selectedSizes.length !== uniqueSizes.size) {
+                    isValid = false;
+                    errorMessage += 'Duplicate sizes are not allowed.\n';
+                }
+
+                // Validate each entry
+                for (let i = 0; i < sizes.length; i++) {
+                    if (!sizes[i].value || !quantities[i].value || quantities[i].value < 0) {
+                        isValid = false;
+                        errorMessage += 'Please select sizes and enter valid quantities.\n';
+                        break;
+                    }
+                }
+
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert(errorMessage);
+                }
+            });
+        });
 
 
         function validateForm() {
@@ -347,7 +467,6 @@ async function handleSubmit(event) {
             const saleprice = document.getElementsByName('salePrice')[0].value;
             const color = document.getElementsByName('color')[0].value;
             const category = document.getElementsByName('category')[0].value;
-            const quantity = document.getElementsByName('quantity')[0].value
             const images = document.getElementById('input1')
             let isValid = true
 
@@ -358,22 +477,15 @@ async function handleSubmit(event) {
             } else if (!/^[a-zA-Z\s]+$/.test(name.trim())) {
                 displayErrorMessage('productName-error', 'Product name should contain only alphabetic characters.');
                 isValid = false;
+            } else if (name.trim().length < 3 || name.trim().length > 25) {
+                displayErrorMessage('productName-error', 'Product name must be between 3 and 50 characters')
+                isValid = false;
             }
-
             if (description.trim() === "") {
                 displayErrorMessage('description-error', 'Please enter a product description.');
                 isValid = false;
             } else if (!/^[a-zA-Z\s]+$/.test(description.trim())) {
                 displayErrorMessage('description-error', 'Product description should contain only alphabetic characters.');
-                isValid = false;
-            }
-
-
-
-
-
-            if (!quantity || parseInt(quantity) < 0) {
-                displayErrorMessage('quantity-error', 'Please enter a valid non-negative quantity.');
                 isValid = false;
             }
 
@@ -408,18 +520,41 @@ async function handleSubmit(event) {
                 displayErrorMessage("images-error", 'Please select an image.');
                 isValid = false;
             }
+
+            const sizes = document.getElementsByName('sizes[]');
+            const quantities = document.getElementsByName('quantities[]');
+            let hasValidSizeEntry = false;
+
+            for (let i = 0; i < sizes.length; i++) {
+                if (sizes[i].value && quantities[i].value && quantities[i].value > 0) {
+                    hasValidSizeEntry = true;
+                } else if (sizes[i].value || quantities[i].value) {
+                    // If one field is filled but not both
+                    displayErrorMessage('size-quantity-error', 'Please complete all size and quantity fields.');
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (!hasValidSizeEntry) {
+                displayErrorMessage('size-quantity-error', 'Please add at least one size and quantity.');
+                isValid = false;
+            }
+
             return isValid;
+
+
         }
 
         function displayErrorMessage(elementId, message) {
-    const errorElement = document.getElementById(elementId);
-    if (errorElement) {
-        errorElement.innerText = message;
-        errorElement.style.display = "block";
-    } else {
-        console.error('Error element not found:', elementId);
-    }
-}
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.innerText = message;
+                errorElement.style.display = "block";
+            } else {
+                console.error('Error element not found:', elementId);
+            }
+        }
 
 
         function clearErrorMessages() {
@@ -428,7 +563,9 @@ async function handleSubmit(event) {
                 element.innerText = '';
             });
             const errorMessage = document.getElementById('errorMessage');
-
+            if (errorMessage) {
+                errorMessage.innerText = '';
+            }
 
         }
 

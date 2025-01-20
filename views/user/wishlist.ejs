@@ -120,7 +120,7 @@
             <div class="container">
                 <div class="breadcrumb">
                     <a href="/" rel="nofollow">Home</a>
-                    <span><a href="/" rel="nofollow">Shop</a></span> 
+                    <span><a href="/shop" rel="nofollow">Shop</a></span> 
                     <span><a href="/" rel="nofollow">My Wishlist</a></span> 
                 </div>
             </div>
@@ -142,24 +142,27 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% if (wishlist.length > 0) { %>
-                                        <% for (let product of wishlist) { %>
+                                    <% if (wishlist && wishlist.length > 0) { %>
+                                        <% for (let item of wishlist) { %>
                                             <tr>
                                                 <td class="image product-thumbnail">
-                                                    <img src="/uploads/product-images/<%= product.productImage[0] %>" alt="Product Image" />
+                                                        <img src="/uploads/product-images/<%= item.productId.productImage[0] %>" alt="Product Image" />
                                                 </td>
                                                 <td class="product-des product-name">
                                                     <h5 class="product-name">
-                                                        <a href=""> <%= product.productName %> </a>
+                                                        <a href=""> <%=item.productId.productName %> </a>
                                                     </h5>
-                                                    <p class="font-xs"> <%= product.category.name %> </p>
+                                                    <p class="font-xs">                                                     
+                                                            <%= item.productId.category.name %>                                      
+                                                    </p>
+                                                    
                                                 </td>
-                                                <td class="price" data-title="Price">₹<span> <%= product.salePrice %> </span></td>
+                                                <td class="price" data-title="Price">₹<span> <%= item.productId.salePrice %> </span></td>
                                                 <td class="text-center" data-title="Add to Cart">
-                                                    <a href="#" onclick="" class="btn btn-sm">Add to Cart</a>
+                                                    <a href="/addToCart/<%= item.productId._id %>" onclick="" class="btn btn-sm">Add to Cart</a>
                                                 </td>
                                                 <td class="action" data-title="Remove">
-                                                    <a class="btn btn-sm" href="#" onclick="confirmRemove('<%= product._id %>')">
+                                                    <a class="btn btn-sm" href="#" onclick="confirmRemove('<%= item.productId._id %>')">
                                                         <i class="fi-rs-trash"></i>
                                                     </a>
                                                 </td>
