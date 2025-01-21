@@ -1,405 +1,548 @@
 <%- include("../../views/partials/user/header") %>
-<!-- Cart Section End -->
+    <!-- Cart Section End -->
 
-<style>
-.breadcrumb-wrap {
-    background-color: #e9ecef;
-    padding: 15px 0;
-    margin-bottom: 30px;
-}
-.page-header {
-    margin-bottom: 20px;
-    background-color: #f1f1f1;
-}
-.breadcrumb {
-    display: flex;
-    align-items: center;
-}
+    <style>
+        .breadcrumb-wrap {
+            background-color: #e9ecef;
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
 
-.breadcrumb a {
-    color: #1b1b1c;
-    text-decoration: none;
-    font-size: 16px;
-}
+        .page-header {
+            margin-bottom: 20px;
+            background-color: #f1f1f1;
+        }
 
-.breadcrumb span {
-    margin: 0 5px;
-    color: #6c757d;
-}
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+        }
 
-.cart-section {
-    padding: 60px 0;
-    background-color: #f5f5f5;
-}
+        .breadcrumb a {
+            color: #1b1b1c;
+            text-decoration: none;
+            font-size: 16px;
+        }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 15px;
-}
+        .breadcrumb span {
+            margin: 0 5px;
+            color: #6c757d;
+        }
 
-.cart-table {
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-bottom: 30px;
-}
+        .cart-section {
+            padding: 60px 0;
+            background-color: #f5f5f5;
+        }
 
-.cart-table table {
-    width: 100%;
-    border-collapse: collapse;
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
 
+        .cart-table {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
 
-.cart-table th {
-    font-size: 16px;
-    color: #333;
-    padding: 20px 15px;
-    text-align: center;
-    border-bottom: 1px solid #eee;
-    white-space: nowrap;
-}
+        .cart-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
 
-.cart-table th:first-child {
-    text-align: center;  /* Changed to center */
-    width: 200px;  /* Fixed width instead of percentage */
-}
-.cart-table th.size-column {
-    width: 10%;
-}
+        .cart-table th {
+            font-size: 16px;
+            color: #333;
+            padding: 20px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
 
-.cart-table th.price-column {
-    width: 15%;
-}
-.cart-table th.quantity-column {
-    width: 20%;
-}
-.cart-table th.subtotal-column {
-    width: 15%;
-}
-.cart-table th.remove-column {
-    width: 10%;
-}
-.cart-table th:last-child {
-    width: 50px;
-}
+        a {
+            color: black;
+        }
 
-.cart-table td {
-    padding: 20px;
-    vertical-align: middle;
-    text-align: center;
-    font-size: 16px;
-}
-.cart-table td:first-child {
-    text-align: center;  /* Changed to center */
-}
+        a:hover {
+            color: #c0c1c2;
+        }
 
 
-.cart-item {
-    display: flex;
-    flex-direction: column;  /* Changed to column */
-    align-items: center;    /* Center items */
-    gap: 10px;
-    padding: 0 10px;
-}
+        .cart-table th:first-child {
+            text-align: center;
+            /* Changed to center */
+            width: 200px;
+            /* Fixed width instead of percentage */
+        }
+
+        .cart-table th.size-column {
+            width: 10%;
+        }
+
+        .cart-table th.price-column {
+            width: 15%;
+        }
+
+        .cart-table th.quantity-column {
+            width: 20%;
+        }
+
+        .cart-table th.subtotal-column {
+            width: 15%;
+        }
+
+        .cart-table th.remove-column {
+            width: 10%;
+        }
+
+        .cart-table th:last-child {
+            width: 50px;
+        }
+
+        .cart-table td {
+            padding: 20px;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .cart-table td:first-child {
+            text-align: center;
+            /* Changed to center */
+        }
 
 
-.cart-item img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    margin-bottom: 5px;
-}
+        .cart-item {
+            display: flex;
+            flex-direction: column;
+            /* Changed to column */
+            align-items: center;
+            /* Center items */
+            gap: 10px;
+            padding: 0 10px;
+        }
 
-.item-details {
-    text-align: center;  /* Center the text */
-    width: 100%;
-}
 
-.item-details h4 {
-    margin: 0;
-    font-size: 16px;
-    color: #333;
-    line-height: 1.2;
-}
-.size-info {
-    color: #666;
-    font-size: 14px;
-    margin: 4px 0;
-}
+        .cart-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin-bottom: 5px;
+        }
 
-.item-price {
-    color: #666;
-    font-size: 16px;
-    display: block;
-    margin-top: 4px;
-}
+        .item-details {
+            text-align: center;
+            /* Center the text */
+            width: 100%;
+        }
 
-.quantity-controls {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 120px;
-    margin: 0 auto;
-}
+        .item-details h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+            line-height: 1.2;
+        }
 
-.quantity-controls button {
-    width: 35px;
-    height: 35px;
-    border: none;
-    background: #f8f8f8;
-    cursor: pointer;
-    font-size: 16px;
-}
+        .size-info {
+            color: #666;
+            font-size: 14px;
+            margin: 4px 0;
+        }
 
-.quantity-controls input {
-    width: 50px;
-    height: 35px;
-    border: none;
-    text-align: center;
-    font-size: 16px;
-}
+        .item-price {
+            color: #666;
+            font-size: 16px;
+            display: block;
+            margin-top: 4px;
+        }
 
-.remove-item {
-    color: #dc3545;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 20px;
-}
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 120px;
+            margin: 0 auto;
+        }
 
-.cart-summary {
-    background: #fff;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+        .quantity-controls button {
+            width: 35px;
+            height: 35px;
+            border: none;
+            background: #f8f8f8;
+            cursor: pointer;
+            font-size: 16px;
+        }
 
-.summary-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-    font-size: 16px;
-}
+        .quantity-controls input {
+            width: 50px;
+            height: 35px;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+        }
 
-.summary-total {
-    font-size: 18px;
-    font-weight: bold;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid #eee;
-    display: flex;
-    justify-content: space-between;
-}
+        .remove-item {
+            color: #dc3545;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+        }
 
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    text-transform: uppercase;
-}
+        .cart-summary {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
 
-.btn-continue {
-    background: #f8f8f8;
-    color: #333;
-    border: 1px solid #ddd;
-}
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+        }
 
-.btn-checkout {
-    background: #333;
-    color: white;
-    width: 100%;
-    margin-top: 20px;
-    font-weight: 600;
-}
+        .summary-total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
 
-.cart-actions {
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 20px;
-}
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
 
-@media (max-width: 768px) {
-    .cart-grid {
-        flex-direction: column;
-    }
-    
-    .cart-table {
-        margin-bottom: 20px;
-    }
-    
-    .cart-table td {
-        display: block;
-        text-align: center;
-        padding: 10px;
-    }
-    
-    .cart-table thead {
-        display: none;
-    }
-}
-</style>
-<div class="page-header breadcrumb-wrap">
-    <div class="container">
-        <div class="breadcrumb">
-            <a href="/" rel="nofollow">Home</a>
-            <span><a href="/shop" rel="nofollow">Shop</a></span> 
-            <span><a href="/" rel="nofollow">Cart</a></span> 
+        .btn-continue {
+            background: #f8f8f8;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-checkout {
+            background: #333;
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .cart-actions {
+            display: flex;
+            justify-content: flex-start;
+            margin-top: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 350px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .notification-content {
+            background-color: #fff;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .notification.success .notification-content {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .notification.error .notification-content {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .close-notification {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cart-grid {
+                flex-direction: column;
+            }
+
+            .cart-table {
+                margin-bottom: 20px;
+            }
+
+            .cart-table td {
+                display: block;
+                text-align: center;
+                padding: 10px;
+            }
+
+            .cart-table thead {
+                display: none;
+            }
+        }
+    </style>
+    <div class="page-header breadcrumb-wrap">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="/" rel="nofollow">Home</a>
+                <span><a href="/shop" rel="nofollow">Shop</a></span>
+                <span><a href="/" rel="nofollow">Cart</a></span>
+            </div>
         </div>
     </div>
-</div>
-  <section class="cart-section">
-    <div class="container">
-        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-            <div style="flex: 1 1 65%;">
-                <div class="cart-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="min-width: 200px;">Product</th> 
-                                <th class="size-column">Size</th>
-                                <th class="price-column">Price</th>
-                                <th class="quantity-column">Quantity</th>
-                                <th class="subtotal-column">Subtotal</th>
-                                <th class="remove-column">Remove</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <%if(cart.length > 0){%>
-                                <% cart.forEach(items=> {%>
-                                    <tr data-cart-item-id="<%= items._id %>">
-                                        <td>
-                                            <div class="cart-item">
-                                         
-                                                <img src="/uploads/product-images/<%= items.productId.productImage[0] %>" alt="Product">
-                                                <div class="item-details">
-                                                    <h4><%=items.productId.productName || 'Product not found'%></h4>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td><%=items.size || 'NO Size'%></td>
-                                            <td>₹ <%= items.productId.salePrice || 'Price not available'%></td>                                                                    
-                                        <td>
-                                            <div class="quantity-controls">
-                                                <button>-</button>
-                                                <input type="text" value="<%=items.quantity%>">
-                                                <button>+</button>
-                                            </div>
-                                        </td>
-                                        <td>₹ <%=items.totalPrice || 'N/A'%></td>
-                                        <td><button class="remove-item">×</button></td>
-                                    </tr>
-                                <%})%>
-                            <%}else{%>
+    <section class="cart-section">
+        <div class="container">
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                <div style="flex: 1 1 65%;">
+                    <div class="cart-table">
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td colspan="6" class="text-center">
-                                        <p class="lead mb-4">No items found in Cart</p>
-                                    </td>
+                                    <th style="min-width: 200px;">Product</th>
+                                    <th class="size-column">Size</th>
+                                    <th class="price-column">Price</th>
+                                    <th class="quantity-column">Quantity</th>
+                                    <th class="subtotal-column">Subtotal</th>
+                                    <th class="remove-column">Remove</th>
                                 </tr>
-                            <%}%>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="cart-actions">
-                    <button class="btn btn-continue"><a href="/shop" rel="nofollow">Continue Shopping</a></button>
-                </div>
-            </div>
+                            </thead>
+                            <tbody>
+                                <%if(cart.length> 0){%>
+                                    <% cart.forEach(items=> {%>
+                                        <tr data-cart-item-id="<%= items._id %>">
+                                            <td>
+                                                <div class="cart-item">
 
-            <div style="flex: 1 1 30%;">
-                <div class="cart-summary">
-                    <h3 style="font-size: 18px; margin-bottom: 20px;">Cart Totals</h3>
-                    <div class="summary-item">
-                        <span>Subtotal</span>
-                        <span>₹ <%=cart.reduce((acc,items)=>acc+items.totalPrice,0)%></span>
+                                                    <img src="/uploads/product-images/<%= items.productId.productImage[0] %>"
+                                                        alt="Product">
+                                                    <div class="item-details">
+                                                        <h4>
+                                                            <%=items.productId.productName || 'Product not found' %>
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <%=items.size || 'NO Size' %>
+                                            </td>
+                                            <td>₹ <%= items.productId.salePrice || 'Price not available' %>
+                                            </td>
+                                            <td>
+                                                <div class="quantity-controls">
+                                                    <button>-</button>
+                                                    <input type="text" value="<%=items.quantity%>">
+                                                    <button>+</button>
+                                                </div>
+                                            </td>
+                                            <td>₹ <%=items.totalPrice || 'N/A' %>
+                                            </td>
+                                            <td><button class="remove-item">×</button></td>
+                                        </tr>
+                                        <%})%>
+                                            <%}else{%>
+                                                <tr>
+                                                    <td colspan="6" class="text-center">
+                                                        <p class="lead mb-4">No items found in Cart</p>
+                                                    </td>
+                                                </tr>
+                                                <%}%>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="summary-item">
-                        <span>Shipping</span>
-                        <span>Free</span>
+                    <div id="notification" class="notification" style="display: none;">
+                        <div class="notification-content">
+                            <span id="notification-message"></span>
+                            <button class="close-notification">×</button>
+                        </div>
                     </div>
-                    <div class="summary-total">
-                        <span>Total</span>
-                        <span>₹ <%=cart.reduce((acc,items)=>acc+items.totalPrice,0)%></span>
+
+                    <div class="cart-actions">
+                        <button class="btn btn-continue"><a href="/shop" rel="nofollow">Continue Shopping</a></button>
                     </div>
-                    <button class="btn btn-checkout">Proceed to Checkout</button>
+                </div>
+
+                <div style="flex: 1 1 30%;">
+                    <div class="cart-summary">
+                        <h3 style="font-size: 18px; margin-bottom: 20px;">Cart Totals</h3>
+                        <div class="summary-item">
+                            <span>Subtotal</span>
+                            <span>₹ <%=cart.reduce((acc,items)=>acc+items.totalPrice,0)%></span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Shipping</span>
+                            <span>Free</span>
+                        </div>
+                        <div class="summary-total">
+                            <span>Total</span>
+                            <span>₹ <%=cart.reduce((acc,items)=>acc+items.totalPrice,0)%></span>
+                        </div>
+                        <a class="btn btn-checkout" href="/checkout">Proceed to
+                                Checkout</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
-<script>
-document.querySelectorAll('.quantity-controls button').forEach(button => {
+    </section>
+    <script>
+        document.querySelectorAll('.quantity-controls button').forEach(button => {
 
-    button.addEventListener('click', async (e) => {
-        const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
-        const inputField = e.target.closest('tr').querySelector('input[type="text"]');
-        if (!inputField) return; 
-        let quantity = parseInt(inputField.value);
+            button.addEventListener('click', async (e) => {
+                const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
+                const inputField = e.target.closest('tr').querySelector('input[type="text"]');
+                if (!inputField) return;
+                let quantity = parseInt(inputField.value);
 
-        if (e.target.textContent === '-') {
-            if (quantity > 1) quantity--;
-        } else if (e.target.textContent === '+') {
-            quantity++;
-        }
+                if (e.target.textContent === '-') {
+                    quantity--;
+                } else if (e.target.textContent === '+') {
+                    quantity++;
+                }
 
-        const response = await fetch(`/updateQuantity/${cartItemId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ quantity })
+                const response = await fetch(`/updateQuantity/${cartItemId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    showNotification(data.message || 'Error updating quantity');
+                    // Reset input field to previous value
+                    inputField.value = quantity > 5 ? 5 : quantity;
+                    return
+                }
+                if (data.status) {
+                    if (data.removed) {
+                        e.target.closest('tr').remove()
+                        showNotification('Item removed from cart');
+                    } else {
+                        inputField.value = quantity;
+                        const subtotalCell = e.target.closest('tr').querySelector('td:nth-child(5)');
+                        subtotalCell.textContent = `₹ ${data.newTotal}`;
+                    }
+                    updateCartSummary();
+                }
+            });
         });
 
-        const data = await response.json();
-        if (data.status) {
-            inputField.value = quantity;
-            
-            const subtotalCell = e.target.closest('tr').querySelector('td:nth-child(5)');
-            subtotalCell.textContent = `₹ ${data.newTotal}`;
-            updateCartSummary();
-          }
-    });
-});
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', async (e) => {
 
-document.querySelectorAll('.remove-item').forEach(button => {
-    button.addEventListener('click', async (e) => {
+                const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
 
-        const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
+                const response = await fetch(`/removeFromCart/${cartItemId}`, {
+                    method: 'DELETE',
+                });
 
-        const response = await fetch(`/removeFromCart/${cartItemId}`, {
-            method: 'DELETE',
+                const data = await response.json();
+                if (data.status) {
+                    e.target.closest('tr').remove();
+
+                    updateCartSummary()
+                    showNotification('Item removed from cart successfully');
+                }
+            });
         });
 
-        const data = await response.json();
-        if (data.status) {
-            e.target.closest('tr').remove();
+        function updateCartSummary() {
 
-            updateCartSummary()
+            const subtotals = Array.from(document.querySelectorAll('.cart-table tbody tr'))
+                .map(row => {
+                    const subtotalText = row.querySelector('td:nth-child(5)').textContent;
+                    return parseFloat(subtotalText.replace('₹', '').trim()) || 0;
+                })
+
+            const newTotal = subtotals.reduce((sum, value) => sum + value, 0);
+
+            const summarySubtotal = document.querySelector('.summary-item span:last-child');
+            const summaryTotal = document.querySelector('.summary-total span:last-child');
+
+            if (summarySubtotal && summaryTotal) {
+                summarySubtotal.textContent = `₹ ${newTotal}`;
+                summaryTotal.textContent = `₹ ${newTotal}`;
+            }
         }
-    });
-});
 
-function updateCartSummary(){
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const messageElement = document.getElementById('notification-message');
 
-    const subtotals = Array.from(document.querySelectorAll('.cart-table tbody tr'))
-    .map(row =>{
-        const subtotalText = row.querySelector('td:nth-child(5)').textContent;
-        return parseFloat(subtotalText.replace('₹', '').trim()) || 0;
-    })
+            // Set message and type
+            messageElement.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
 
-    const newTotal = subtotals.reduce((sum, value) => sum + value, 0);
-    
-    const summarySubtotal = document.querySelector('.summary-item span:last-child');
-    const summaryTotal = document.querySelector('.summary-total span:last-child');
-    
-    if (summarySubtotal && summaryTotal) {
-        summarySubtotal.textContent = `₹ ${newTotal}`;
-        summaryTotal.textContent = `₹ ${newTotal}`;
-    }
-}
+            // Auto-hide after 3 seconds
+            const timeout = setTimeout(() => {
+                hideNotification();
+            }, 3000);
 
-</script>
+            // Close button handler
+            document.querySelector('.close-notification').onclick = () => {
+                clearTimeout(timeout);
+                hideNotification();
+            };
+        }
+
+        function hideNotification() {
+            const notification = document.getElementById('notification');
+            notification.style.animation = 'slideOut 0.5s ease-out';
+            setTimeout(() => {
+                notification.style.display = 'none';
+                notification.style.animation = 'slideIn 0.5s ease-out';
+            }, 500);
+        }
+
+    </script>

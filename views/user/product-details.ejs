@@ -3,29 +3,28 @@
 
     
     <style>
-       .product-details-container * {
+       * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
 
-        .product-details-container {
+        .product-Details-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             padding-top: 80px;
-            
         }
         .page-header {
-         margin-bottom: 50px;
+         margin-bottom: 10px;
          background-color: #f1f1f1;
 
       
        }
         .breadcrumb-wrap {
             background-color: #e9ecef;
-            padding: 15px 0;
+            padding: 25px 0;
             background-color: #f1f1f1;
 
         }
@@ -531,18 +530,68 @@
         .view-details-btn:hover {
             background-color: #006666;
         }
+        .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 350px;
+    animation: slideIn 0.5s ease-out;
+}
 
-        @media (max-width: 768px) {
-            .related-products-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
+.notification-content {
+    background-color: #fff;
+    color: #333;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
 
-        @media (max-width: 480px) {
-            .related-products-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+.notification.success .notification-content {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.notification.error .notification-content {
+    background-color: #f44336;
+    color: white;
+}
+
+.close-notification {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
 
         @media (max-width: 768px) {
             .product-detail {
@@ -556,10 +605,20 @@
             .main-image img {
                 transform: none !important;
             }
+
+            .related-products-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .related-products-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
-    <div class="product-details-container">
+    <div class="product-Details-container">
         <div class="page-header breadcrumb-wrap">
             <div class="container">
                 <div class="breadcrumb">
@@ -667,7 +726,12 @@
                 </div>
             </div>
         </div>
-
+        <div id="notification" class="notification" style="display: none;">
+            <div class="notification-content">
+                <span id="notification-message"></span>
+                <button class="close-notification">×</button>
+            </div>
+        </div>
         <!-- Review Section -->
         <div class="reviews-section">
             <div class="reviews-header">
@@ -874,9 +938,11 @@
             // Add to Cart Functionality
             window.addToCart = function () {
                 if (!selectedSize) {
-                    alert('Please select a size first');
+                    showNotification('Please select a size first');
                     return;
                 }
+
+                console.log("selected size",selectedSize)
 
                 const productId = window.location.pathname.split('/').pop();
                 const data = {
@@ -884,6 +950,8 @@
                     size: selectedSize,
                     quantity: quantity
                 };
+
+                console.log(data)
 
                 fetch('/addToCart', {
                     method: 'POST',
@@ -895,17 +963,47 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            alert('Product added to cart successfully!');
+                            showNotification('Product added to cart successfully!');
                             // Update cart count if needed
                         } else {
-                            alert(data.message || 'Error adding product to cart');
+                            showNotification(data.message || 'Error adding product to cart');
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error adding product to cart');
+                        console.error('Error:', error.message);
+                        showNotification('Error adding product to cart');
                     });
             }
+
+            function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    const messageElement = document.getElementById('notification-message');
+    
+    // Set message and type
+    messageElement.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+
+    // Auto-hide after 3 seconds
+    const timeout = setTimeout(() => {
+        hideNotification();
+    }, 3000);
+
+    // Close button handler
+    document.querySelector('.close-notification').onclick = () => {
+        clearTimeout(timeout);
+        hideNotification();
+    };
+}
+
+function hideNotification() {
+    const notification = document.getElementById('notification');
+    notification.style.animation = 'slideOut 0.5s ease-out';
+    setTimeout(() => {
+        notification.style.display = 'none';
+        notification.style.animation = 'slideIn 0.5s ease-out';
+    }, 500);
+}
 
             // // Wishlist Functionality
             // window.toggleWishlist = function () {

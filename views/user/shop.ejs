@@ -2,9 +2,11 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
     .main-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
+        max-width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
     }
 
     .shop-topbar {
@@ -92,7 +94,7 @@
     .product-grid {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 20px;
         width: calc(100% - 280px);
     }
 
@@ -103,7 +105,7 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         transition: transform 0.2s, box-shadow 0.2s;
         overflow: hidden;
-        width: calc(32.333% - 8px);
+        width: calc(32.333% - 14px);
         height: 350px;
     }
 
@@ -232,13 +234,13 @@
         background: #074c12;
         color: white;
     }
-
     @media (max-width: 992px) {
-        .product-card {
-            width: calc(50% - 8px);
-        }
+    .main-container {
+        padding: 20px;
     }
+}
 
+    
     @media (max-width: 768px) {
         .product-list-container {
             flex-direction: column;
@@ -249,11 +251,20 @@
         .product-grid {
             width: 100%;
         }
-    }
-
-    @media (max-width: 576px) {
         .product-card {
-            width: 100%;
+            width: calc(50% - 10px);
+    }
+}
+@media (max-width: 576px) {
+    .product-card {
+        width: 100%;
+    }
+}
+
+
+    @media (max-width: 1200px) {
+        .product-card {
+            width: calc(50% - 10px) ;
         }
     }
 </style>

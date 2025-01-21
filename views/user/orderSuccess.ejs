@@ -1,0 +1,172 @@
+<%- include("../../views/partials/user/header") %>
+
+<style>
+    .success-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .success-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 30px;
+        text-align: center;
+    }
+
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        background: #4CAF50;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .success-icon i {
+        color: white;
+        font-size: 40px;
+    }
+
+    .success-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .order-id {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .order-details {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: left;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: #555;
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #000;
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: #333;
+    }
+
+    .btn-secondary {
+        background: #fff;
+        color: #000;
+        border: 2px solid #000;
+    }
+
+    .btn-secondary:hover {
+        background: #f8f8f8;
+    }
+
+    .delivery-info {
+        margin-top: 30px;
+        padding: 20px;
+        border: 1px dashed #ddd;
+        border-radius: 8px;
+    }
+
+    .delivery-info i {
+        color: #666;
+        margin-right: 8px;
+    }
+
+    .delivery-text {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+</style>
+
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        
+        <h1 class="success-title">Order Placed Successfully!</h1>
+        <p class="order-id">Order ID: <%= order.orderId %></p>
+
+        <div class="order-details">
+            <div class="detail-row">
+                <span class="detail-label">Order Date</span>
+                <span><%= new Date(order.createdOn).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }) %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Amount</span>
+                <span>₹<%= order.finalAmount %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Payment Method</span>
+                <span>Cash on Delivery</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Shipping Address</span>
+                <span>
+                    <%= order.address.name %><br>
+                    <%= order.address.landMark %><br>
+                    <%= order.address.city %>, <%= order.address.state %> <%= order.address.pincode %>
+                </span>
+            </div>
+        </div>
+
+        <div class="delivery-info">
+            <i class="fas fa-truck"></i>
+            <p class="delivery-text">Your order will be delivered within 5-7 business days.</p>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/orders/<%= order.orderId %>" class="btn btn-primary">Track Order</a>
+            <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
+        </div>
+    </div>
+</div>
+

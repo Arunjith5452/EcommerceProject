@@ -1,0 +1,476 @@
+<%- include("../../views/partials/user/header") %>
+<style>
+    .checkout-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 15px;
+    }
+
+    .checkout-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 30px;
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+
+    .checkout-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .section-heading {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .section-heading i {
+        margin-right: 10px;
+        color: #333;
+    }
+
+    .address-box {
+        border: 2px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .address-box.selected {
+        border-color: #000;
+        background-color: #f8f9fa;
+    }
+
+    .address-content {
+        display: flex;
+        gap: 15px;
+    }
+
+    .address-details p {
+        margin-bottom: 5px;
+        color: #4a4a4a;
+    }
+
+    .address-details .name {
+        font-weight: 600;
+        color: #000;
+    }
+
+    .add-address-btn {
+        color: #000;
+        font-weight: 600;
+        background: none;
+        border: none;
+        padding: 8px 0;
+        cursor: pointer;
+    }
+
+    .add-address-btn:hover {
+        text-decoration: underline;
+    }
+
+    .payment-option {
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 16px;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 16px;
+    }
+
+    .order-details h4 {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .order-quantity {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .order-summary {
+        border-top: 1px solid #e5e5e5;
+        margin-top: 20px;
+        padding-top: 20px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        color: #4a4a4a;
+    }
+
+    .summary-row.total {
+        font-weight: 700;
+        font-size: 18px;
+        color: #000;
+        margin-top: 15px;
+    }
+
+    .place-order-btn {
+        width: 100%;
+        background: #000;
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background-color 0.3s;
+    }
+
+    .place-order-btn:hover {
+        background: #333;
+    }
+
+    .delivery-info {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 14px;
+        margin-top: 16px;
+    }
+    .customer-details {
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #000;
+}
+
+.payment-methods {
+    display: grid;
+    gap: 16px;
+}
+
+.payment-option {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.payment-option:hover {
+    border-color: #000;
+}
+
+.payment-option.selected {
+    border-color: #000;
+    background-color: #f8f9fa;
+}
+
+.payment-content {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.payment-icon {
+    font-size: 24px;
+    color: #333;
+}
+
+.payment-details p {
+    margin: 0;
+}
+
+.payment-details .name {
+    font-weight: 600;
+    color: #000;
+}
+
+.payment-details .description {
+    font-size: 14px;
+    color: #666;
+}
+
+.required {
+    color: red;
+    margin-left: 2px;
+}
+.customer-details-display {
+    margin-bottom: 16px;
+}
+
+.details-group {
+    margin-bottom: 16px;
+}
+
+.details-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.detail-value {
+    padding: 10px 0;
+    color: #4a4a4a;
+    font-size: 14px;
+    margin: 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.details-group:last-child {
+    margin-bottom: 0;
+}
+
+.details-group:last-child .detail-value {
+    border-bottom: none;
+}
+
+
+    .delivery-info i {
+        margin-right: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .checkout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="checkout-container">
+    <h1 class="checkout-title">Checkout</h1>
+    
+    <div class="checkout-grid">
+        <!-- Left Column -->
+        <div class="main-content">
+            <!-- Customer Details Section -->
+          <!-- Customer Details Section -->
+<div class="checkout-card">
+    <div class="section-heading">
+        <i class="fas fa-user"></i>
+        Customer Details
+    </div>
+    
+    <div class="customer-details-display">
+        <div class="details-group">
+            <label>Full Name</label>
+            <p class="detail-value"><%=user.username%></p>
+        </div>
+        
+        <div class="details-group">
+            <label>Email</label>
+            <p class="detail-value"><%=user.email%></p>
+        </div>
+        
+        <div class="details-group">
+            <label>Phone Number</label>
+            <p class="detail-value"><%=user.mobile || 'Not provided'%></p>
+        </div>
+    </div>
+</div>
+            <div class="checkout-card">
+                <div class="section-heading">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Delivery Address
+                </div>
+
+                <%if(address && address.length > 0){%>
+               <%address.forEach((address,index)=>{%>
+                <div class="address-box <%=index ===0 ? 'selected' : '' %>">
+                    <div class="address-content">
+                        <input type="radio" name="address" value="<%=address._id%>" <%=index === 0 ? 'checked' : '' %>>
+                        <div class="address-details">
+                            <p class="name"><%=address.name%></p>
+                            <p><%=address.landMark%></p>
+                            <p><%=address.city%>,<%=address.state%> <%=address.pincode%></p>
+                            <p>Phone: <%= address.phone %></p>
+                            <p>Alt Phone: <%= address.altPhone %></p>
+                            <p class="address-type"><%= address.addressType %></p>
+                        </div>
+                    </div>
+                </div>
+                 <%})%>
+                 <%}%>
+                <a href="/editAddress" class="add-address-btn">+ Add New Address</a>
+            </div>
+
+            <!-- Payment Method Section -->
+            <div class="checkout-card">
+                <div class="section-heading">
+                    <i class="fas fa-credit-card"></i>
+                    Payment Method
+                </div>
+                
+                <div class="payment-methods">
+                    <div class="payment-option selected">
+                        <div class="payment-content">
+                            <input type="radio" name="payment" value="card" checked>
+                            <i class="fas fa-credit-card payment-icon"></i>
+                            <div class="payment-details">
+                                <p class="name">Credit/Debit Card</p>
+                                <p class="description">Pay securely with your card</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-option">
+                        <div class="payment-content">
+                            <input type="radio" name="payment" value="online">
+                            <i class="fas fa-mobile-alt payment-icon"></i>
+                            <div class="payment-details">
+                                <p class="name">Online Payment</p>
+                                <p class="description">UPI, Net Banking, Wallet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-option">
+                        <div class="payment-content">
+                            <input type="radio" name="payment" value="cod">
+                            <i class="fas fa-money-bill-wave payment-icon"></i>
+                            <div class="payment-details">
+                                <p class="name">Cash on Delivery</p>
+                                <p class="description">Pay when you receive</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Order Summary -->
+        <div class="order-summary-section">
+            <div class="checkout-card">
+                <div class="section-heading">Order Summary</div>
+                <%cart.items.forEach(item=>{%>
+                
+                <div class="order-item">
+                    <div class="order-details">
+                        <h4><%=item.productId.productName%></h4>
+                        <p class="order-quantity">Quantity: <%=item.quantity%></p>
+                        <% if (item.size) { %>
+                            <p class="order-size">Size: <%= item.size %></p>
+                        <% } %>
+                    </div>
+                    <div class="order-price">₹<%= item.totalPrice %></div>
+                </div>
+                 <%})%>
+                 <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span>₹<%= subtotal %></span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping</span>
+                        <span>Free delivery</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span>₹<%= subtotal %></span>
+                    </div>
+                </div>
+
+                <button class="place-order-btn" onclick="placeOrder()">Place Order</button>
+
+                <div class="delivery-info">
+                    <i class="fas fa-truck"></i>
+                    Estimated delivery: 3-5 business days
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add click handlers for payment options
+document.querySelectorAll('.payment-option').forEach(option => {
+    option.addEventListener('click', () => {
+        // Remove selected class from all options
+        document.querySelectorAll('.payment-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        // Add selected class to clicked option
+        option.classList.add('selected');
+        // Check the radio button
+        option.querySelector('input[type="radio"]').checked = true;
+    });
+});
+
+// public/js/checkout.js
+document.addEventListener('DOMContentLoaded', function() {
+    // Address selection
+    const addressBoxes = document.querySelectorAll('.address-box');
+    addressBoxes.forEach(box => {
+        box.onclick = function() {
+            addressBoxes.forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+        };
+    });
+
+    // Place order
+    window.placeOrder = async function() {
+        const selectedAddress = document.querySelector('.address-box.selected input[type="radio"]');
+        if (!selectedAddress) {
+            alert('Please select a delivery address');
+            return;
+        }
+
+        try {
+            const response = await fetch('/placeOrder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    addressId: selectedAddress.value
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = `/orderSuccess/${data.orderId}`;
+            } else {
+                alert('Error placing order: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error placing order. Please try again.');
+        }
+    };
+});
+</script>

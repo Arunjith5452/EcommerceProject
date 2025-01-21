@@ -18,6 +18,11 @@ const loadCart = async (req, res) => {
             })
         }
 
+        cart.items = cart.items.filter(item => item.quantity > 0);
+             if (cart.items.length !== cart.items.length) {
+            await cart.save();
+        }    
+
         return res.render("cart", {
             user: await User.findById(userId),
             cart: cart.items
@@ -33,7 +38,7 @@ const loadCart = async (req, res) => {
 
 const addToCart = async (req, res) => {
     try {
-        const {productId , selectedSize , quantity =1 } = req.body
+        const {productId , size , quantity =1 } = req.body
         const userId = req.session.user;
        
         console.log("Request body:", req.body);
@@ -51,9 +56,15 @@ const addToCart = async (req, res) => {
 
         console.log("Product size variants:", product.sizeVariants);
 
-        if(product.sizeVariants && product.sizeVariants.length > 0 && !selectedSize){
+        console.log("product",product.sizeVariants)
+
+        console.log(size)
+
+        if(product.sizeVariants && product.sizeVariants.length > 0 && !size){
             return res.status(404).json({error:'Please select a size'})
         }
+
+        console.log("expect error is not working so you can see my message in console")
 
         const price = product.salePrice
         if (isNaN(price) || isNaN(quantity)) {
@@ -72,27 +83,43 @@ const addToCart = async (req, res) => {
         }
 
 
-        const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId.toString() && item.size === selectedSize);
-        console.log("Found item index:", itemIndex); // Log if item exists
+        const itemIndex = cart.items.findIndex(item => 
+            item.productId.toString() === productId.toString() && 
+            item.size === size)
+                    console.log("Found item index:", itemIndex); 
+
+
+
 
         if (itemIndex > -1) {
+            const newQuantity = cart.items[itemIndex].quantity+quantity;
+            if(newQuantity>5){
+                return res.status(400).json({status:false,message:"Maximum quantity allowed is 5 items"})
+            }
             console.log("Updating existing item in cart");
 
             cart.items[itemIndex].quantity += quantity;
             cart.items[itemIndex].totalPrice = cart.items[itemIndex].quantity * price;
         } else {
+
+            if (quantity > 5) {
+                return res.status(400).json({ 
+                    status: false, 
+                    message: "Maximum quantity allowed is 5 items"
+                });
+            }
             console.log("Adding new item to cart");
 
             const newItem ={
                 productId: productId,
-                size:selectedSize,
+                size:size,
                 quantity: quantity,
                 price: price,
                 totalPrice: totalPrice
             }
 
-            if(selectedSize){
-                newItem.size = selectedSize
+            if(size){
+                newItem.size = size
             }
             console.log("New item to be added:", newItem);
 
@@ -126,6 +153,23 @@ const updateCartQuantity = async (req,res) => {
         const {quantity} = req.body;
             
         const cart = await Cart.findOne({userId : req.session.user});
+
+        if (quantity <= 0) {
+            cart.items = cart.items.filter(item => item._id.toString() !== cartItemId);
+            await cart.save();
+            return res.json({ 
+                status: true, 
+                removed: true,
+                message: 'Item removed from cart'
+            });
+        }
+
+        if (quantity > 5) {
+            return res.status(400).json({ 
+                status: false, 
+                message: 'Maximum quantity allowed is 5 items'
+            });
+        }
 
         const item = cart.items.find(item => item._id.toString() === cartItemId);
         if(item){

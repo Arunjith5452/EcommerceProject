@@ -8,6 +8,7 @@ const productController = require("../controllers/user/productController");
 const wishlistController = require("../controllers/user/wishlistController")
 const cartController = require("../controllers/user/cartController");
 const authController = require('../controllers/user/authController');
+const checkoutController = require("../controllers/user/checkoutController");
 const passport = require('passport');
 
 router.get("/pageNotFound", userController.pageNotFound);
@@ -66,6 +67,10 @@ router.post("/addToCart",userAuth,cartController.addToCart)
 router.post("/updateQuantity/:cartItemId",userAuth,cartController.updateCartQuantity)
 router.delete("/removeFromCart/:cartItemId",userAuth,cartController.removeFromCart)
 
+router.get("/checkout",userAuth,checkoutController.getCheckoutPage)
+router.post("/placeOrder",userAuth,checkoutController.placeOrder)
+
+router.post('/orderSuccess',userAuth,checkoutController.getOrderSuccess)
 
 router.get('/logout', userController.logout)
 
