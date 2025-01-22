@@ -95,6 +95,7 @@
     }
 
     .order-details h4 {
+        font-size: 20px;
         font-weight: 600;
         margin-bottom: 4px;
     }
@@ -102,6 +103,7 @@
     .order-quantity {
         color: #666;
         font-size: 14px;
+        margin-bottom: 5px;
     }
 
     .order-summary {
@@ -382,9 +384,7 @@
                     <div class="order-details">
                         <h4><%=item.productId.productName%></h4>
                         <p class="order-quantity">Quantity: <%=item.quantity%></p>
-                        <% if (item.size) { %>
-                            <p class="order-size">Size: <%= item.size %></p>
-                        <% } %>
+                            <p class="order-size">Size: <%= item.size %></p>           
                     </div>
                     <div class="order-price">₹<%= item.totalPrice %></div>
                 </div>
@@ -408,7 +408,7 @@
 
                 <div class="delivery-info">
                     <i class="fas fa-truck"></i>
-                    Estimated delivery: 3-5 business days
+                    Estimated delivery: 5-7 business days
                 </div>
             </div>
         </div>

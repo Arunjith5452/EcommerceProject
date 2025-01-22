@@ -70,7 +70,7 @@ router.delete("/removeFromCart/:cartItemId",userAuth,cartController.removeFromCa
 router.get("/checkout",userAuth,checkoutController.getCheckoutPage)
 router.post("/placeOrder",userAuth,checkoutController.placeOrder)
 
-router.post('/orderSuccess',userAuth,checkoutController.getOrderSuccess)
+router.get('/orderSuccess/:orderId',userAuth,checkoutController.getOrderSuccess)
 
 router.get('/logout', userController.logout)
 

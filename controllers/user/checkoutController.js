@@ -13,12 +13,45 @@ const getCheckoutPage = async (req,res) => {
             return res.redirect('/login');
         }
 
-    const cart = await Cart.findOne({userId}).populate('items.productId');
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.productId', 
+            select: 'productName sizeVariants' 
+        });
+            
+    console.log("cart products",cart)
 
     if(!cart || cart.items.length===0){
         return res.redirect('/cart');
     }
 
+    let isStockSufficient = true;
+    const stockCheckDetails = cart.items.map((item) => {
+        const productStock = item.productId.sizeVariants.find(
+            (variant) => variant.size === item.size
+        )?.quantity || 0; 
+    
+        if (item.quantity > productStock) {
+            isStockSufficient = false;
+        }
+    
+        return {
+            productName: item.productId.productName,
+            size: item.size,
+            quantityOrdered: item.quantity,
+            stockAvailable: productStock,
+            stockSufficient: item.quantity <= productStock
+        };
+    });
+    
+    console.log("Stock check details", stockCheckDetails);
+    
+    if (!isStockSufficient) {
+        console.log("Insufficient stock for one or more items in your cart.")
+        return res.status(400).send("Insufficient stock for one or more items in your cart.");
+    }
+    
+    console.log("Stock is sufficient for all items.");
+    
     const subtotal = cart.items.reduce((total,item)=>total + item.totalPrice,0)
 
     const userAddress = await Address.findOne({userId});
@@ -41,40 +74,67 @@ const getCheckoutPage = async (req,res) => {
     }
 }
 
-const placeOrder = async (req,res) => {
+const placeOrder = async (req, res) => {
     try {
-
         const userId = req.session.user;
         const {addressId} = req.body;
 
-        const cart = await Cart.findOne({userId}).populate('items.productId')
+        console.log('Received addressId:', addressId);
+        console.log('User ID:', userId);
 
-        if(!cart || cart.items.length === 0){
+
+        const cart = await Cart.findOne({userId}).populate('items.productId');
+        if(!cart || cart.items.length === 0) {
             throw new Error('Cart is empty');
         }
 
-        const user = await User.findById(userId);
+// Revalidate stock before placing order
+let isStockSufficient = true;
+const stockCheckDetails = await Promise.all(cart.items.map(async (item) => {
+    const product = item.productId;
+    const productStock = product.sizeVariants.find(
+        (variant) => variant.size === item.size
+    )?.quantity || 0;
 
-        const subtotal = cart.items.reduce((total,item)=>total +item.totalPrice,0);
-    
-        
+    if (item.quantity > productStock) {
+        isStockSufficient = false; 
+    }
+
+    return {
+        productName: product.productName,
+        size: item.size,
+        quantityOrdered: item.quantity,
+        stockAvailable: productStock,
+        stockSufficient: item.quantity <= productStock
+    };
+}));
+
+if (!isStockSufficient) {
+    return res.status(400).json({
+        success: false,
+        message: 'Some items are no longer in stock'
+    });
+}
+        const subtotal = cart.items.reduce((total, item) => total + item.totalPrice, 0);
 
         const order = new Order({
-            userId,
-            orderedItems:cart.items.map(item=>({
-                product:item.productId,
-                quantity:item.quantity,
-                price:item.price
+            orderedItems: cart.items.map(item => ({
+                product: item.productId._id,
+                quantity: item.quantity,
+                price: item.price,
+                size: item.size
             })),
-            totalPrice:subtotal,
-            finalAmount:subtotal,
-            address:addressId,
-            status:'Pending',
-            createdOn: new Date()
-        })
-          console.log("order",order)
+            totalPrice: subtotal,
+            finalAmount: subtotal,
+            address: userId,
+            status: 'Pending',
+            createdOn: new Date(),
+        });
+
+
         await order.save();
 
+        const user = await User.findById(userId)
         user.orderHistory.push(order._id);
         await user.save();
 
@@ -87,24 +147,63 @@ const placeOrder = async (req,res) => {
         });
 
     } catch (error) {
-        console.log("error",error)
+        console.log("Order creation error:", error);
         res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message || 'Error creating order'
         });
     }
-}
+};
 
-const getOrderSuccess = async(req,res) => {
+const getOrderSuccess = async(req, res) => {
     try {
+        const orderId = req.params.orderId;
         
-        res.render('orderSuccess')
+       
+        const order = await Order.findById(orderId)
+            .populate('orderedItems.product')
+            .populate('address') 
+            .lean();
+
+        if(!order) {
+            return res.status(404).render('error', {
+                message: 'Order not found',
+                user: req.user
+            });
+        }
+
+        console.log('Found order:', order);
+
+        const userAddress = await Address.findOne({
+            userId: order.address._id
+        });
+
+        const formattedOrder = {
+            orderId: order.orderId,
+            createdOn: order.createdOn,
+            finalAmount: order.finalAmount,
+            totalPrice: order.totalPrice,
+            discount: order.discount,
+            orderedItems: order.orderedItems,
+            address: userAddress ? userAddress.address[0] : null,  
+            status: order.status
+        };
+
+        console.log('Formatted order for template:', JSON.stringify(formattedOrder, null, 2));
+        
+        return res.render('orderSuccess', {
+            order: formattedOrder,
+            user: req.user
+        });
 
     } catch (error) {
-    
+        console.error('Error in order success:', error);
+        return res.status(500).render('error', {
+            message: 'Something went wrong',
+            user: req.user
+        });
     }
-}
-
+};
 module.exports={
     getCheckoutPage,
     placeOrder,
