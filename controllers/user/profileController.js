@@ -1,5 +1,7 @@
 const User = require("../../models/userSchema");
-const Address = require("../../models/adressSchema")
+const Product = require("../../models/productSchema")
+const Address = require("../../models/adressSchema");
+const Order = require("../../models/orderSchema")
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt")
 const env = require("dotenv").config();
@@ -171,9 +173,11 @@ const userProfile = async (req, res) => {
         const userId = req.session.user;
         const userData = await User.findById(userId)
         const addressData = await Address.findOne({ userId: userId })
+        const orders = await Order.find({'address':userId}).sort({createdOn:-1}).populate('orderedItems.product','productName')
         res.render('profile', {
             user: userData,
-            userAddress: addressData
+            userAddress: addressData,
+            orders: orders
         })
 
     } catch (error) {
@@ -507,6 +511,80 @@ const deleteAddress = async (req, res) => {
 }
 
 
+const viewOrderDetails = async (req,res) => {
+    try {
+        
+        const {orderId} = req.params;
+        const order = await Order.findOne({ orderId })
+    .populate({
+        path:'orderedItems.product',
+        select:'productName price sizeVariants productImage'
+    });
+
+
+        if(!order){
+            return res.status(404).json({message:'Order not found'})
+        }
+
+        return res.json(order);
+
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        res.status(500).json({ message: 'Error fetching order details' });
+    }
+}
+
+const cancelOrder = async (req,res) => {
+    try {
+        
+        const orderId = req.params.orderId;
+
+        const order = await Order.findOne({orderId:orderId});
+
+        if(!order){
+            return res.status(404).json({
+                success:false,
+                message:'Order not found'
+            })
+        }
+
+        if(order.status === "Cancelled"){
+            return res.status(400).json({
+                success:false,
+                message:'Order is already cancelled'
+            })
+        }
+
+        if(['Shipped','Delivered','Returned'].includes(order.status)){
+           return res.status(400).json({
+            success:false,
+            message:`Cannot cancel order in ${order.status} status`
+           }) 
+        }
+
+        order.status ='Cancelled';
+        order.cancelledDate = new Date();
+
+        await order.save();
+
+        for(const item of order.orderedItems){
+
+            await Product.findByIdAndUpdate(item.product,{
+                $inc:{quantity:item.quantity}
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Order cancelled successfully'
+        });
+
+    } catch (error) {
+        console.error('Error in cancelOrder:', error);
+        return res.status(500).json({success:false,message:'An error occured while canceling the order'})
+    }
+}
+
 module.exports = {
     getForgotPassPage,
     forgotEmailValid,
@@ -528,5 +606,7 @@ module.exports = {
     editAddress,
     postEditAddress,
     deleteAddress,
+    viewOrderDetails,
+    cancelOrder
 
 }
