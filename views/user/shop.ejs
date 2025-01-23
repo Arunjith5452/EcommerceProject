@@ -280,11 +280,13 @@
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6">
                 <div class="shop__product__option__right">
-                    <p>Sort by Price:</p>
+                    <p>Sort by :</p>
                     <select id="priceSort" onchange="sortProducts(this.value)">
                         <option value="default" <%= selectedSort === 'default' ? 'selected' : '' %>>Default</option>
                         <option value="low" <%= selectedSort === 'low' ? 'selected' : '' %>>Low To High</option>
                         <option value="high" <%= selectedSort === 'high' ? 'selected' : '' %>>High To Low</option>
+                        <option value="az" <%= selectedSort === 'az' ? 'selected' : '' %>>Name: A to Z</option>
+                        <option value="za" <%= selectedSort === 'za' ? 'selected' : '' %>>Name: Z to A</option>
                     </select>
                 </div>
             </div>
