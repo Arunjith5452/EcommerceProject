@@ -4,8 +4,10 @@ const adminController = require("../controllers/admin/adminController");
 const customerController = require("../controllers/admin/customerController");
 const categoryController = require("../controllers/admin/categoryController")
 const productController = require("../controllers/admin/productController");
+const orderController = require("../controllers/admin/orderController");
 const bannerController = require("../controllers/admin/bannerController");
 const couponController = require("../controllers/admin/couponController");
+
 const {adminAuth } = require("../middlewares/auth")
 const multer = require("multer");
 const storage = require("../helpers/multer");
@@ -42,6 +44,11 @@ router.get("/editProduct",adminAuth,productController.getEditProduct)
 router.post("/editProduct/:id",adminAuth,uploads.array('images',4),productController.editProduct);
 router.post("/deleteImage",adminAuth,productController.deleteSingleImage)
 router.delete("/deleteProduct",adminAuth,productController.deleteProduct)
+
+router.get("/orderList",adminAuth,orderController.orderList)
+router.patch('/updateOrderStatus/:orderId',adminAuth,orderController.updateOrderStatus);
+router.get('/userOrderDetails/:orderId', adminAuth, orderController.getOrderDetails);
+router.patch('/userOrderCancel/:orderId',adminAuth,orderController.cancelSingleItem);
 
 router.get("/banner",adminAuth,bannerController.getBannerPage)
 router.get("/addBanner",adminAuth,bannerController.getAddBannerPage)

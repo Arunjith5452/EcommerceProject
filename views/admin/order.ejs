@@ -1,0 +1,265 @@
+<%- include("../../views/partials/admin/header") %>
+    <section class="content-main">
+        <div class="content-header">
+            <h2 class="content-title card-title">Order List</h2>
+        </div>
+        <div class="card mb-4">
+            <header class="card-header">
+                <div class="row gx-3">
+                    <div class="col-lg-4 col-md-6 me-auto">
+                        <form action="" method="GET">
+                            <input type="text" name="search" value="<%= search %>" placeholder="Search..."
+                                class="form-control" />
+                        </form>
+                    </div>
+                </div>
+            </header>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#ID</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Date</th>
+                                <th scope="col" class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% orders.forEach((order)=> { %>
+                                <tr>
+                                    <td>
+                                        <%= order.orderId.slice(0,12)%>
+                                    </td>
+                                    <td><b>
+                                            <%= order.address.username %>
+                                        </b></td>
+                                    <td>
+                                        <%= order.address.email %>
+                                    </td>
+                                    <td>₹ <%=order.finalAmount%>
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm status-select"
+                                            onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
+                                            <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled'
+                                                , 'Returned' ].forEach(status=> { %>
+                                                <option value="<%= status %>" <%=order.status===status ? 'selected' : ''
+                                                    %>><%= status %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <%= formatDate(order.createdOn) %>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-md rounded font-sm"
+                                            onclick="showOrderDetails('<%= order.orderId %>')">Detail</button>
+                                       
+                                    </td>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <%- include("../../views/partials/admin/pagination") %>
+
+            <!-- Order Details Modal -->
+            <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Order Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="orderDetailsContent">
+                            <!-- Content loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .badge.alert-pending {
+                    background-color: #fff3cd;
+                    color: #856404;
+                }
+
+                .badge.alert-processing {
+                    background-color: #cce5ff;
+                    color: #004085;
+                }
+
+                .badge.alert-shipped {
+                    background-color: #d4edda;
+                    color: #155724;
+                }
+
+                .badge.alert-delivered {
+                    background-color: #28a745;
+                    color: #fff;
+                }
+
+                .badge.alert-cancelled {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                }
+
+                .badge.alert-returned {
+                    background-color: #e2e3e5;
+                    color: #383d41;
+                }
+
+                .table td {
+                    vertical-align: middle;
+                }
+
+                .dropdown-toggle::after {
+                    display: none;
+                }
+
+                .status-select {
+                    min-width: 120px;
+                    padding: 0.25rem;
+                }
+            </style>
+
+            <script>
+                function updateOrderStatus(orderId, status) {
+                    if (confirm(`Update Order Status to ${status}?`)) {
+                        fetch(`/admin/updateOrderStatus/${orderId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) location.reload();
+                                else alert('Error updating order status');
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error updating order status');
+                            });
+                    }
+                }
+                function showOrderDetails(orderId) {
+                    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                    const content = document.getElementById('orderDetailsContent');
+
+                    content.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+                    modal.show();
+
+                    fetch(`/admin/userOrderDetails/${orderId}`)
+                        .then(response => {
+                            console.log('Fetch Response:', {
+                                status: response.status,
+                                url: response.url,
+                                ok: response.ok
+                            });
+
+                            if (!response.ok) {
+                                return response.text().then(text => {
+                                    console.error('Error Response Text:', text);
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Received data:', data)
+                            content.innerHTML = `
+                <div class="container-fluid">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Order Information</h6>
+                            <p>Order ID: ${data.order.orderId}</p>
+                            <p>Date: ${new Date(data.order.createdOn).toLocaleString()}</p>
+                            <p>Status: <span class="badge alert-${data.order.status.toLowerCase()}">${data.order.status}</span></p>
+                            <p>Total: ₹${data.order.finalAmount}</p>
+                        </div>
+                        <div class="col-md-6">
+                             <h6>Customer Details</h6>
+                <p>Name: ${data.address.name}</p>
+                <p>Email: ${data.order.address.email}</p>
+                <p>Phone: ${data.address.phone || 'N/A'}</p>
+                <p>Address: ${data.address.landMark || 'N/A'}, ${data.address.city || 'N/A'}, ${data.address.state || 'N/A'} ${data.address.pincode || ''}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Items</h6>
+                           <table class="table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Image</th>                       
+            <th>Quantity</th>
+            <th>Size</th>
+            <th>Price</th>
+            <th>Total</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        ${data.order.orderedItems.map(item => `
+
+            <tr>
+                <td>${item.product.productName}</td>
+                <td><img src="/uploads/product-images/${item.product.productImage[0]}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                <td>${item.quantity}</td>
+                <td>${item.size}</td>
+                <td>₹${item.price}</td>
+                <td>₹${item.quantity * item.price}</td>
+                <td>
+                    ${data.status !== 'Cancelled' && data.status !== 'Delivered' ? `
+                        <button class="btn btn-sm btn-danger" onclick="cancelSingleItem('${orderId}', '${item.product._id}')">
+                            Cancel Item
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('')}
+    </tbody>
+</table>
+                        </div>
+                    </div>
+                </div>
+            `;
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            content.innerHTML = `<div class="alert alert-danger">Error loading order details: ${error.message}</div>`;
+                        });
+                }
+
+                function cancelSingleItem(orderId, productId) {
+                    if (confirm('Are you sure you want to cancel this item?')) {
+                        fetch(`/admin/userOrderCancel/${orderId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ productId })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Error cancelling item');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error cancelling item');
+                            });
+                    }
+                }
+            </script>
+            <%- include("../../views/partials/admin/footer") %>

@@ -48,7 +48,7 @@ router.get("/editAddress",userAuth,profileController.editAddress);
 router.post("/editAddress",userAuth,profileController.postEditAddress);
 router.get("/deleteAddress",userAuth,profileController.deleteAddress);
 router.get("/orderDetails/:orderId",userAuth,profileController.viewOrderDetails);
-router.post("/cancelOrder/:orderId",userAuth,profileController.cancelOrder); 
+router.post("/cancelOrder/:orderId",userAuth,profileController.cancelOrder);
 
 
 router.get("/addAddress",userAuth,profileController.addAddress)

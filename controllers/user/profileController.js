@@ -539,7 +539,7 @@ const cancelOrder = async (req,res) => {
         
         const orderId = req.params.orderId;
 
-        const order = await Order.findOne({orderId:orderId});
+        const order = await Order.findOne({orderId:orderId}).populate('orderedItems.product')
 
         if(!order){
             return res.status(404).json({
@@ -569,11 +569,18 @@ const cancelOrder = async (req,res) => {
 
         for(const item of order.orderedItems){
 
-            await Product.findByIdAndUpdate(item.product,{
-                $inc:{quantity:item.quantity}
-            })
-        }
+            const product = item.product
 
+            const sizeVariant = product.sizeVariants.find(variant => variant.size === item.size);
+
+            if (sizeVariant) {
+                await Product.findOneAndUpdate(
+                    { _id: product._id, "sizeVariants.size": item.size },
+                    { $inc: { "sizeVariants.$.quantity": item.quantity } }
+                );
+            }
+        }
+        
         res.status(200).json({
             success: true,
             message: 'Order cancelled successfully'
