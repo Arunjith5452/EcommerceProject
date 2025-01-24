@@ -8,8 +8,8 @@
                 <div class="row gx-3">
                     <div class="col-lg-4 col-md-6 me-auto">
                         <form action="" method="GET">
-                            <input type="text" name="search" value="<%= search %>" placeholder="Search..."
-                                class="form-control" />
+                            <!-- <input type="text" name="search" value="<%= search %>" placeholder="Search..." -->
+                                <!-- class="form-control" /> -->
                         </form>
                     </div>
                 </div>
@@ -46,7 +46,7 @@
                                         <select class="form-select form-select-sm status-select"
                                             onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
                                             <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled'
-                                                , 'Returned' ].forEach(status=> { %>
+                                                ,  ].forEach(status=> { %>
                                                 <option value="<%= status %>" <%=order.status===status ? 'selected' : ''
                                                     %>><%= status %>
                                                 </option>
@@ -213,7 +213,11 @@
 
             <tr>
                 <td>${item.product.productName}</td>
-                <td><img src="/uploads/product-images/${item.product.productImage[0]}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                <td><img 
+        src="/uploads/product-images/${item.product.productImage[0]}" 
+        style="width: 50px; height: 50px; object-fit: cover;"
+        onerror="this.src='/path/to/default/image.jpg'"
+    ></td>
                 <td>${item.quantity}</td>
                 <td>${item.size}</td>
                 <td>₹${item.price}</td>
@@ -229,7 +233,7 @@
         `).join('')}
     </tbody>
 </table>
-                        </div>
+                       </div>
                     </div>
                 </div>
             `;

@@ -12,15 +12,10 @@ const pageerror = async (req, res) => {
 const customerInfo = async (req, res) => {
     try {
 
-        let search = ""
-        if (req.query.search) {
-            search = req.query.search;
-        }
-        let page = 1;
-        if (req.query.page) {
-            page = req.query.page
-        }
-        const limit = 3
+        const search = req.query.search || "";
+        const page = req.query.page || 1;
+        const limit = 4;
+
         const userData = await User.find({
             isAdmin: false,
             $or: [
@@ -28,7 +23,7 @@ const customerInfo = async (req, res) => {
                 { username: { $regex: ".*" + search + ".*", $options: 'i' } },
                 { email: { $regex: ".*" + search + ".*", $options: 'i' } }
             ],
-        })
+        })  
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .exec();
@@ -44,7 +39,7 @@ const customerInfo = async (req, res) => {
 
         res.render("customers", {
             data: userData,
-            totalPages: count,
+            totalPages:Math.ceil(count / limit),
             currentPage: page,
         })
 

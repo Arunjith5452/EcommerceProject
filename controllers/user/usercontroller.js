@@ -329,13 +329,16 @@ const logout = async (req, res) => {
 }
 
 const getFilteredProducts = async (req) => {
+
     const categories = await Category.find({ isListed: true }).lean();
     const categoryIds = categories.map(category => category._id.toString());
 
     const page = parseInt(req.query.page) || 1;
     const limit = 6;
     const skip = (page - 1) * limit;
-    const sort = req.query.sort || "default";
+    const sort = req.query.sort || req.body.sort || 'default';
+
+    req.session.sort = sort;
 
     const query = {
         isBlocked: false,
@@ -400,6 +403,8 @@ const loadShoppingPage = async (req, res) => {
         delete req.query.category;
         delete req.body.query;
 
+        req.query.sort = req.query.sort || req.session.sort || 'default';
+
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
         
@@ -435,7 +440,7 @@ const loadShoppingPage = async (req, res) => {
             totalProducts,
             currentPage,
             totalPages,
-            selectedSort: 'default',
+            selectedSort: sort,
             searchQuery: null,
             priceRange: null,
         });
@@ -523,6 +528,9 @@ const filterByPrice = async (req, res) => {
 
 const searchProducts = async (req, res) => {
     try {
+        
+        req.query.sort = req.query.sort || 'default';
+
         const { 
             products, 
             totalPages, 

@@ -39,7 +39,7 @@ const addressSchema = new mongoose.Schema({
         },
         altPhone: {
             type: String,
-            required: true
+            required: false
         }
     }]
 })

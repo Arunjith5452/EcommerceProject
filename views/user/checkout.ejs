@@ -416,23 +416,17 @@
 </div>
 
 <script>
-// Add click handlers for payment options
 document.querySelectorAll('.payment-option').forEach(option => {
     option.addEventListener('click', () => {
-        // Remove selected class from all options
         document.querySelectorAll('.payment-option').forEach(opt => {
             opt.classList.remove('selected');
         });
-        // Add selected class to clicked option
         option.classList.add('selected');
-        // Check the radio button
         option.querySelector('input[type="radio"]').checked = true;
     });
 });
 
-// public/js/checkout.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Address selection
     const addressBoxes = document.querySelectorAll('.address-box');
     addressBoxes.forEach(box => {
         box.onclick = function() {
@@ -442,7 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     });
 
-    // Place order
     window.placeOrder = async function() {
         const selectedAddress = document.querySelector('.address-box.selected input[type="radio"]');
         if (!selectedAddress) {

@@ -230,6 +230,11 @@
         transition: all 0.2s;
     }
 
+    /* .category-brand-container ul {
+    list-style-type: none;
+    padding-left: 0;
+} */
+
     .price-button:hover {
         background: #074c12;
         color: white;
@@ -275,6 +280,7 @@
             <div class="search-bar">
                 <form action="/search" method="POST" class="search-form">
                     <input type="text" name="query" placeholder="Search items..." class="search-input" />
+                    <input type="hidden" name="sort" value="<%= selectedSort || 'default'%>">
                     <button type="submit" class="search-button">Search</button>
                 </form>
             </div>
@@ -417,7 +423,13 @@ function addToWishlist(productId){
 
 function sortProducts(value) {
     let currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('sort', value);
+    
+    if (currentUrl.pathname === '/search') {
+        currentUrl.searchParams.set('sort', value);
+        currentUrl.searchParams.set('searchSort', 'true');
+    } else {
+        currentUrl.searchParams.set('sort', value);
+    }   
     window.location.href = currentUrl.toString();
 }
 

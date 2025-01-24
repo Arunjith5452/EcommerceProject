@@ -89,7 +89,7 @@ const placeOrder = async (req, res) => {
             throw new Error('Cart is empty');
         }
 
-        // Revalidate stock before placing order
+
         let isStockSufficient = true;
         const stockCheckDetails = await Promise.all(cart.items.map(async (item) => {
             const product = item.productId;
@@ -169,24 +169,30 @@ const placeOrder = async (req, res) => {
 const getOrderSuccess = async (req, res) => {
     try {
         const orderId = req.params.orderId;
+        const userId = req.session.user;
 
 
         const order = await Order.findById(orderId)
-            .populate('orderedItems.product')
+            .populate({
+                path: 'orderedItems.product',
+                select: 'productName productImage sizeVariants' 
+            })
             .populate('address')
             .lean();
 
         if (!order) {
             return res.status(404).render('error', {
                 message: 'Order not found',
-                user: req.user
+                user: userId
             });
         }
 
         console.log('Found order:', order);
 
+        const user = await User.findById(userId)
+
         const userAddress = await Address.findOne({
-            userId: order.address._id
+            userId: order.address
         });
 
 
@@ -206,14 +212,13 @@ const getOrderSuccess = async (req, res) => {
 
         return res.render('orderSuccess', {
             order: formattedOrder,
-            user: req.user
+            user: user
         });
 
     } catch (error) {
         console.error('Error in order success:', error);
         return res.status(500).render('error', {
             message: 'Something went wrong',
-            user: req.user
         });
     }
 };

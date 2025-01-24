@@ -237,8 +237,7 @@
                     <div class="item-details">
                         <div class="item-name"><%= item.product ? item.product.productName : 'Product' %></div>
                         <div class="item-sizes">
-                            Available Sizes: 
-                            <%= item.product.sizeVariants.map(variant => variant.size).join(', ') %>
+                          Size: <%=item.size%>
                         </div>
                         <div class="item-price">
                             Qty: <%= item.quantity %> × ₹<%= item.price %>

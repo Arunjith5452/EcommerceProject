@@ -39,6 +39,9 @@
     <section class="content-main">
         <div class="card mx-auto card-login col-4">
             <div class="card-body">
+                <%if(message){%>
+                <div class="alert alert-danger"><%= message %></div>
+                <%}%>
                 <h4 class="card-title mb-4">Enter New Email</h4>
                 <form method="post" action="/update-email" onsubmit="return validateEmailForm()">
                     <div class="mb-3">

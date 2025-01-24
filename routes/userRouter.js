@@ -57,7 +57,8 @@ router.post("/addAddress",userAuth,profileController.postAddAddress);
 router.get("/shop",userAuth,userController.loadShoppingPage);
 router.get("/filter",userAuth,userController.filterProduct);
 router.get("/filterPrice",userAuth,userController.filterByPrice);
-router.post("/search",userAuth,userController.searchProducts)
+router.get('/search', userAuth,userController.searchProducts);
+router.post('/search',userAuth,userController.searchProducts);
 
 router.get("/productDetails/:id",userAuth,productController.productDetails);
 

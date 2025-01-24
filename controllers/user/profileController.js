@@ -208,9 +208,11 @@ const changeEmailValid = async (req, res) => {
         if (!currentUser) {
             return res.render("change-email", { message: "User with this email not exist" });
         }
+       
         if (currentUser.email != email) {
             return res.render("change-email", { message: "Please enter your current email address" })
         }
+         
         const otp = generateOtp();
         console.log("Generated OTP:", otp);
 
@@ -276,7 +278,7 @@ const getUpdateEmailPage = async (req, res) => {
         if (!req.session.userOtp) {
             return res.redirect('/change-email');
         }
-        return res.render('update-email');
+        return res.render('update-email',{message:null});
     } catch (error) {
         console.error("Error loading update email page:", error);
         return res.redirect("/pageNotFound");
@@ -287,8 +289,15 @@ const updateEmail = async (req, res) => {
 
         const newEmail = req.body.email;
         const userId = req.session.user;
+
+        const emailExists = await User.findOne({ email: newEmail, _id: { $ne: userId } });
+
+        if (emailExists) {
+            return res.render("update-email", { message: "This email already exists. Please try again with a new email." });
+        }
+
         await User.findByIdAndUpdate(userId, { email: newEmail });
-        return res.redirect("/userProfile")
+        return res.redirect("/userProfile?tab=dashboard")
 
     } catch (error) {
         console.error("The error is here", error)
@@ -408,7 +417,7 @@ const postAddAddress = async (req, res) => {
             userAddress.address.push({ addressType, name, city, landMark, state, pincode, phone, altPhone });
             await userAddress.save();
         }
-        return res.redirect("/userProfile")
+        return res.redirect("/userProfile?tab=address")
     } catch (error) {
         console.error("Error adding address:", error)
         return res.redirect("/pageNotFound")
@@ -474,7 +483,7 @@ const postEditAddress = async (req, res) => {
             }
         )
 
-        return res.redirect("/userProfile")
+        return res.redirect("/userProfile?tab=address")
 
     } catch (error) {
         console.error("Error in edit address", error);
@@ -502,7 +511,7 @@ const deleteAddress = async (req, res) => {
                 }
             })
 
-        return res.redirect("/userProfile")
+        return res.redirect("/userProfile?tab=address")
 
     } catch (error) {
         console.error("Error in delete address:", error);
@@ -583,7 +592,8 @@ const cancelOrder = async (req,res) => {
         
         res.status(200).json({
             success: true,
-            message: 'Order cancelled successfully'
+            message: 'Order cancelled successfully',
+            redirectUrl:'/userProfile?tab=orders'
         });
 
     } catch (error) {

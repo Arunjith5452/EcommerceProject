@@ -212,121 +212,126 @@
       border-radius: 20px;
       font-size: 12px;
     }
+
     .order-id {
-        font-size: 1.2em;
-        font-weight: bold;
+      font-size: 1.2em;
+      font-weight: bold;
     }
 
     .ordered-items-list {
-        list-style-type: none;
-        padding-left: 0;
-        margin: 0;
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
     }
 
     .ordered-item {
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid #ddd;
-        padding: 10px 0;
-        margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+      margin-bottom: 10px;
     }
 
     .item-image-container {
-        width: 60px;
-        height: 60px;
-        overflow: hidden;
-        margin-right: 15px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 60px;
+      height: 60px;
+      overflow: hidden;
+      margin-right: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
 
     .item-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .no-image {
-        color: #888;
-        font-size: 14px;
-        font-style: italic;
+      color: #888;
+      font-size: 14px;
+      font-style: italic;
     }
 
     .item-details {
-        flex-grow: 1;
+      flex-grow: 1;
     }
 
     .item-name {
-        font-weight: bold;
-        font-size: 1em;
+      font-weight: bold;
+      font-size: 1em;
     }
 
-    .item-size, .item-quantity, .item-price {
-        font-size: 0.9em;
-        color: #555;
+    .item-size,
+    .item-quantity,
+    .item-price {
+      font-size: 0.9em;
+      color: #555;
     }
 
     .total-amount {
-        font-weight: bold;
-        margin-top: 20px;
-        font-size: 1.1em;
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 1.1em;
     }
+
     .btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  border-radius: -90.8rem;
-  margin-bottom: 1px;
-}
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      border-radius: -90.8rem;
+      margin-bottom: 1px;
+    }
 
-.gap-2 {
-  gap: 0.5rem !important;
-}
+    .gap-2 {
+      gap: 0.5rem !important;
+    }
 
-.table td {
-  vertical-align: middle;
-}
+    .table td {
+      vertical-align: middle;
+    }
 
-.badge {
-  padding: 0.5em 0.75em;
-}
-.products-cell {
-    max-width: 300px;
-    padding: 10px 15px !important;
-}
+    .badge {
+      padding: 0.5em 0.75em;
+    }
 
-.product-name {
-    padding: 2px 0;
-    color: #4a5568;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    border-bottom: 1px solid #edf2f7;
-}
-
-.product-name:last-child {
-    border-bottom: none;
-}
-
-/* Table Styles */
-.table td {
-    vertical-align: middle;
-}
-
-.table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
     .products-cell {
-        max-width: 200px;
+      max-width: 300px;
+      padding: 10px 15px !important;
     }
-    
+
     .product-name {
-        font-size: 0.85rem;
+      padding: 2px 0;
+      color: #4a5568;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      border-bottom: 1px solid #edf2f7;
     }
-}
+
+    .product-name:last-child {
+      border-bottom: none;
+    }
+
+    /* Table Styles */
+    .table td {
+      vertical-align: middle;
+    }
+
+    .table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .products-cell {
+        max-width: 200px;
+      }
+
+      .product-name {
+        font-size: 0.85rem;
+      }
+    }
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -422,13 +427,15 @@
 
                           <div class="profile-stats">
                             <div class="stat-item">
-                              <%if(orders && orders.length > 0){%>
-                              <div class="stat-value"><%=orders.length%></div>
-                              <div class="stat-label">Orders</div>
-                              <%}else{%>
-                                <div class="stat-value">0</div>
+                              <%if(orders && orders.length> 0){%>
+                                <div class="stat-value">
+                                  <%=orders.length%>
+                                </div>
                                 <div class="stat-label">Orders</div>
-                                <%}%>
+                                <%}else{%>
+                                  <div class="stat-value">0</div>
+                                  <div class="stat-label">Orders</div>
+                                  <%}%>
                             </div>
                             <div class="stat-item">
                               <div class="stat-value">₹0</div>
@@ -474,7 +481,11 @@
                                     <p class="mb-2">PIN: <%=address.pincode%>
                                     </p>
                                     <p class="mb-3">
-                                      <%=address.phone%>
+                                      Primary Phone: <%=address.phone%>
+                                        <% if(address.altPhone) { %>
+                                          <br>Alternate Phone: <%=address.altPhone%>
+                                            <% } %>
+                                    </p>
                                     </p>
                                     <div class="d-flex gap-2">
                                       <a href="/editAddress?id=<%=address._id%>" class="btn btn-sm btn-primary">Edit</a>
@@ -522,10 +533,11 @@
                                       <td>#<%=order.orderId.slice(0,8)%>
                                       </td>
                                       <td class="products-cell">
-                                      <%order.orderedItems.forEach(item=>{%>
-                                        <div class="product-name"><%=item.product.productName%>,
-                                        </div>                                                                    
-                                      <%})%>
+                                        <%order.orderedItems.forEach(item=>{%>
+                                          <div class="product-name">
+                                            <%=item.product.productName%>,
+                                          </div>
+                                          <%})%>
                                       </td>
                                       <td>
                                         <%=new Date(order.createdOn).toLocaleDateString('en-Us',{ year: 'numeric' ,
@@ -556,8 +568,10 @@
                                             onclick="requestReturn('<%= order.orderId %>')">
                                             Return
                                           </button>
-                                          <% }else if(order.status !== 'Cancelled' && order.status !== 'Shipped' && order.status !== 'Returned') {%>
-                                            <button class="btn btn-sm btn-danger " onclick="cancelOrder('<%= order.orderId %>')">
+                                          <% }else if(order.status !=='Cancelled' && order.status !=='Shipped' &&
+                                            order.status !=='Returned' ) {%>
+                                            <button class="btn btn-sm btn-danger "
+                                              onclick="cancelOrder('<%= order.orderId %>')">
                                               Cancel Order
                                             </button>
                                             <%}%>
@@ -682,11 +696,11 @@
                 </div>
                 <script>
 
-    function viewOrderDetails(orderId) {
-        fetch(`/orderDetails/${orderId}`)
-            .then(response => response.json())
-            .then(order => {
-                let orderDetailsHTML = `
+                  function viewOrderDetails(orderId) {
+                    fetch(`/orderDetails/${orderId}`)
+                      .then(response => response.json())
+                      .then(order => {
+                        let orderDetailsHTML = `
                     <h5 class="order-id">Order ID: #${order.orderId.slice(0, 8)}</h5>
                     <p><strong>Status:</strong> ${order.status}</p>
                     <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>
@@ -695,10 +709,10 @@
                         ${order.orderedItems.map(item => `
                             <li class="ordered-item">
                                 <div class="item-image-container">
-                                    ${item.product.productImage.length > 0 ? 
-                                        `<img src="/uploads/product-images/${item.product.productImage[0]}" alt="${item.product.productName}" class="item-image">` :
-                                        `<span class="no-image">No Image Available</span>`
-                                    }
+                                    ${item.product.productImage.length > 0 ?
+                            `<img src="/uploads/product-images/${item.product.productImage[0]}" alt="${item.product.productName}" class="item-image">` :
+                            `<span class="no-image">No Image Available</span>`
+                          }
                                 </div>
                                 <div class="item-details">
                                     <span class="item-name">${item.product.productName}</span> <br>
@@ -711,36 +725,75 @@
                     </ul>
                     <h6 class="total-amount">Total: ₹${order.finalAmount}</h6>
                 `;
-                document.getElementById('orderDetailsContent').innerHTML = orderDetailsHTML;
-            })
-            .catch(error => {
-                console.error('Error fetching order details:', error);
-            });
-    }
+                        document.getElementById('orderDetailsContent').innerHTML = orderDetailsHTML;
+                      })
+                      .catch(error => {
+                        console.error('Error fetching order details:', error);
+                      });
+                  }
 
-    function cancelOrder(orderId){
-      if(confirm('Are you sure you want to cancel this order?')){
-        fetch(`/cancelOrder/${orderId}`,{
-          method:'POST',
-          headers:{
-            'Content-Type':'application/json'
-          }
-        })
-        .then(response => response.json())
-        .then(data=>{
-          if(data.success){
-              window.location.reload();
-          }else{
-            alert(data.message|| 'Failed to cancel order.Please try again');
-          }
-        })
-        .catch(error=>{
-          console.error('Error cancelling order:', error);
-          alert('An error occurred while cancelling the order. Please try again.');
-        })
-      }
+function cancelOrder(orderId) {
+  Swal.fire({
+    title: 'Cancel Order',
+    text: 'Are you sure you want to cancel this order?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, cancel it!',
+    cancelButtonText: 'No, keep it'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`/cancelOrder/${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire(
+            'Cancelled!', 
+            'Your order has been cancelled.', 
+            'success'
+          ).then(() => {
+            window.location.href = data.redirectUrl || '/userProfile?tab=orders';
+          });
+        } else {
+          Swal.fire(
+            'Error!',
+            data.message || 'Failed to cancel order. Please try again.',
+            'error'
+          );
+        }
+      })
+      .catch(error => {
+        console.error('Error cancelling order:', error);
+        Swal.fire(
+          'Error!',
+          'An error occurred while cancelling the order. Please try again.',
+          'error'
+        );
+      });
     }
+  });
+}
 
-                </script>
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-                <script src="https://kit.fontawesome.com/yourcode.js"></script>
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+    console.log("tabParam",tabParam)
+  if (tabParam) {
+    const tabTrigger = document.querySelector(`a[href="#${tabParam}"]`);
+    console.log("tabTrigger",tabTrigger)
+    if (tabTrigger) {
+      // Use Bootstrap's tab show method
+      const tab = new bootstrap.Tab(tabTrigger);
+      tab.show();
+    }
+  }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://kit.fontawesome.com/a valid-fontawesome-kit-code.js" crossorigin="anonymous"></script>

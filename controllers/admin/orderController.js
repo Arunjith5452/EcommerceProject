@@ -5,37 +5,29 @@ const Address = require("../../models/adressSchema")
 
 const orderList = async (req,res) => {
     try {
-
-        let search = ""
-        if(req.query.search){
-            search = req.query.search;
-        }
-        let page = 1;
-        
-        if(req.query.page){
-            page = req.query.page
-        }
-    
+        const search = req.query.search || "";
+        const page = req.query.page || 1;
         const limit = 5
-        const skip = (page - 1) * limit; 
         const query = {};
         if (search) {
             query.$or = [
-                { orderId: { $regex: search, $options: 'i' } },
-                { 'address.name': { $regex: search, $options: 'i' } },
-                { 'address.email': { $regex: search, $options: 'i' } }
+                { orderId: { $regex: new RegExp(search, 'i') } },  
+                { 'order.address.name': { $regex: new RegExp(search, 'i') } },
+                { 'order.address.email': { $regex: new RegExp(search, 'i') } }
             ];
         }
+        console.log("Search query:", JSON.stringify(query, null, 2));
 
         const orderData = await Order.find(query)
         .populate('address')
-        .sort({ createdAt: -1 })
-        .skip(skip)
+        .sort({ createdOn: -1 })
         .limit(limit)
+        .skip((page -1)*limit)
+        
 
-        console.log("orderData",orderData)
+        console.log("Fetched order data:", orderData);
 
-        const totalOrders = await Order.countDocuments();
+        const totalOrders = await Order.countDocuments(query);
         const totalPages = Math.ceil(totalOrders/limit)
 
         const getStatusColor = (status)=> {
