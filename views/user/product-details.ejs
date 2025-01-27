@@ -650,10 +650,10 @@
                 <h1>
                     <%=product.productName%>
                 </h1>
-                <div class="rating">
+                <!-- <div class="rating">
                     <div class="stars">★★★★☆</div>
                     <span class="review-count">(25 reviews)</span>
-                </div>
+                </div> -->
 
                 <div class="price-section">
                     <span class="sale-price">₹<%=product.salePrice%></span>
@@ -745,14 +745,14 @@
             <div class="review-form" id="reviewForm">
                 <form onsubmit="submitReview(event)">
                     <div class="form-group">
-                        <label>Rating</label>
+                        <!-- <label>Rating</label>
                         <div class="star-rating" id="ratingStars">
                             <span class="star" data-rating="1">★</span>
                             <span class="star" data-rating="2">★</span>
                             <span class="star" data-rating="3">★</span>
                             <span class="star" data-rating="4">★</span>
                             <span class="star" data-rating="5">★</span>
-                        </div>
+                        </div> -->
                     </div>
                     <div class="form-group">
                         <label>Review Title</label>
@@ -782,13 +782,13 @@
                                 <div class="review-date">January 10, 2024</div>
                             </div>
                         </div>
-                        <div class="review-rating">★★★★★</div>
+                        <!-- <div class="review-rating">★★★★★</div> -->
                     </div>
                     <div class="review-text">
                         Great product! The quality is exceptional and it arrived exactly as described.
                         Very happy with my purchase and would definitely recommend it to others.
                     </div>
-                    <button class="helpful-btn">👍 Helpful (12)</button>
+                    <!-- <button class="helpful-btn">👍 Helpful (12)</button> -->
                 </div>
 
                 <div class="review-card">
@@ -800,7 +800,7 @@
                                 <div class="review-date">January 8, 2024</div>
                             </div>
                         </div>
-                        <div class="review-rating">★★★★☆</div>
+                        <!-- <div class="review-rating">★★★★☆</div> -->
                     </div>
                     <div class="review-text">
                         Very satisfied with the product. Shipping was fast and the item meets all my expectations.
@@ -810,7 +810,7 @@
                         <img src="/api/placeholder/80/80" alt="Review image" class="review-image">
                         <img src="/api/placeholder/80/80" alt="Review image" class="review-image">
                     </div>
-                    <button class="helpful-btn">👍 Helpful (8)</button>
+                    <!-- <button class="helpful-btn">👍 Helpful (8)</button> -->
                 </div>
             </div>
             <div class="related-products">
@@ -888,7 +888,6 @@
                 mainImage.style.transition = 'transform 0.1s ease-out';
             });
         });
-        // Size Selection Functionality
         document.addEventListener('DOMContentLoaded', function () {
             const sizeButtons = document.querySelectorAll('.size-btn');
             const stockDisplay = document.querySelector('.selected-size-stock');
@@ -899,23 +898,18 @@
                 button.addEventListener('click', function () {
                     if (this.classList.contains('disabled')) return;
 
-                    // Remove active class from all buttons
                     sizeButtons.forEach(btn => btn.classList.remove('active'));
 
-                    // Add active class to clicked button
                     this.classList.add('active');
 
-                    // Update selected size and stock display
                     selectedSize = this.dataset.size;
                     const quantity = this.dataset.quantity;
                     stockDisplay.textContent = `Size ${selectedSize}: ${quantity} items in stock`;
 
-                    // Enable add to cart button
                     addToCartBtn.disabled = false;
                 });
             });
 
-            // Quantity Control
             let quantity = 1;
             const quantityValue = document.querySelector('.quantity-value');
 
@@ -937,7 +931,6 @@
                 }
             }
 
-            // Add to Cart Functionality
             window.addToCart = function () {
                 if (!selectedSize) {
                     showNotification('Please select a size first');
@@ -966,7 +959,6 @@
                     .then(data => {
                         if (data.success) {
                             showNotification('Product added to cart successfully!');
-                            // Update cart count if needed
                         } else {
                             showNotification(data.message || 'Error adding product to cart');
                         }
@@ -981,17 +973,14 @@
     const notification = document.getElementById('notification');
     const messageElement = document.getElementById('notification-message');
     
-    // Set message and type
     messageElement.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
 
-    // Auto-hide after 3 seconds
     const timeout = setTimeout(() => {
         hideNotification();
     }, 3000);
 
-    // Close button handler
     document.querySelector('.close-notification').onclick = () => {
         clearTimeout(timeout);
         hideNotification();

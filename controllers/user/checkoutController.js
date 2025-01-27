@@ -75,6 +75,32 @@ const getCheckoutPage = async (req, res) => {
     }
 }
 
+const addAddressCheckout = async (req,res) => {
+    console.log("the add address hit here")
+    try {
+        
+        const userId = req.session.user;
+        const userData = await User.findOne({ _id: userId });
+        const { addressType, name, city, landMark, state, pincode, phone, altPhone } = req.body;
+
+        const userAddress = await Address.findOne({ userId: userData._id });
+        if (!userAddress) {
+            const newAddress = new Address({
+                userId: userData._id,
+                address: [{ addressType, name, city, landMark, state, pincode, phone, altPhone }]
+            })
+            await newAddress.save();
+        } else {
+            userAddress.address.push({ addressType, name, city, landMark, state, pincode, phone, altPhone });
+            await userAddress.save();
+        }
+        res.json({ success: true, message: 'Address added successfully!' });    } catch (error) {
+        console.error("Error adding address:", error)
+        return res.redirect("/pageNotFound")
+    }
+}
+
+
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -222,8 +248,12 @@ const getOrderSuccess = async (req, res) => {
         });
     }
 };
+
+
+
 module.exports = {
     getCheckoutPage,
+    addAddressCheckout,
     placeOrder,
     getOrderSuccess
 }

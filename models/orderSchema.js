@@ -53,6 +53,15 @@ const orderSchema = new mongoose.Schema({
         required: true,
         enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned']
     },
+    returnReason:{
+        type:String,
+        trim:true
+    },
+    returnStatus:{
+        type:String,
+        enum:['','Pending','Approved', 'Rejected'],
+        default: ''
+    },
     createdOn: {
         type: Date,
         default: Date.now,

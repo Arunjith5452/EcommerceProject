@@ -543,12 +543,16 @@ const viewOrderDetails = async (req,res) => {
     }
 }
 
-const cancelOrder = async (req,res) => {
+const cancelSingleProduct = async (req,res) => {
+    console.log("The cancel single product is ready to work")
     try {
         
-        const orderId = req.params.orderId;
+        const {orderId} = req.params;
+        console.log("orderId",orderId)
 
-        const order = await Order.findOne({orderId:orderId}).populate('orderedItems.product')
+        const order = await Order.findOne({orderId}).populate('orderedItems.product')
+
+        console.log("order that are popu;ated",order)
 
         if(!order){
             return res.status(404).json({
@@ -602,6 +606,55 @@ const cancelOrder = async (req,res) => {
     }
 }
 
+const productReturn = async (req,res) => {
+    try {
+        
+        const orderId = req.params.orderId;
+        const {returnReason} = req.body;
+
+        const order = await Order.findOne({orderId:orderId}).populate('orderedItems.product')
+
+        if(!order){
+            return res.status(404).json({
+                success:false,
+                message:'Order not found'
+            })
+        }
+
+        if(order.status === "Returned"){
+            return res.status(400).json({
+                success:false,
+                message:'Order is already Returned'
+            })
+        }
+
+        if(order.status !== 'Delivered'){
+            return res.status(400).json({
+             success:false,
+             message:`Cannot return order in ${order.status} status`
+            }) 
+         }
+
+        order.status ='Return Request';
+        order.returnReason = returnReason;
+        order.returnRequestDate  = new Date();
+
+        await order.save();
+
+        
+        res.status(200).json({
+            success: true,
+            message: 'Order Returned successfully',
+            redirectUrl:'/userProfile?tab=orders'
+        });
+
+
+    } catch (error) {
+        console.error('Error in returnProduct:', error);
+        return res.status(500).json({success:false,message:'An error occured while returning the order'})
+    }
+}
+
 module.exports = {
     getForgotPassPage,
     forgotEmailValid,
@@ -624,6 +677,6 @@ module.exports = {
     postEditAddress,
     deleteAddress,
     viewOrderDetails,
-    cancelOrder
-
+    cancelSingleProduct,
+    productReturn
 }

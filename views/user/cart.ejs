@@ -1,5 +1,4 @@
 <%- include("../../views/partials/user/header") %>
-    <!-- Cart Section End -->
 
     <style>
         .breadcrumb-wrap {
@@ -73,9 +72,7 @@
 
         .cart-table th:first-child {
             text-align: center;
-            /* Changed to center */
             width: 200px;
-            /* Fixed width instead of percentage */
         }
 
         .cart-table th.size-column {
@@ -111,16 +108,13 @@
 
         .cart-table td:first-child {
             text-align: center;
-            /* Changed to center */
         }
 
 
         .cart-item {
             display: flex;
             flex-direction: column;
-            /* Changed to column */
             align-items: center;
-            /* Center items */
             gap: 10px;
             padding: 0 10px;
         }
@@ -135,7 +129,6 @@
 
         .item-details {
             text-align: center;
-            /* Center the text */
             width: 100%;
         }
 
@@ -459,7 +452,6 @@
                 const data = await response.json();
                 if (!response.ok) {
                     showNotification(data.message || 'Error updating quantity');
-                    // Reset input field to previous value
                     inputField.value = quantity > 5 ? 5 : quantity;
                     return
                 }
@@ -519,17 +511,14 @@
             const notification = document.getElementById('notification');
             const messageElement = document.getElementById('notification-message');
 
-            // Set message and type
             messageElement.textContent = message;
             notification.className = `notification ${type}`;
             notification.style.display = 'block';
 
-            // Auto-hide after 3 seconds
             const timeout = setTimeout(() => {
                 hideNotification();
             }, 3000);
 
-            // Close button handler
             document.querySelector('.close-notification').onclick = () => {
                 clearTimeout(timeout);
                 hideNotification();

@@ -283,7 +283,6 @@
                 title: 'Invalid OTP',
                 text: data.message || 'Please enter the correct OTP'
             });
-            // Clear OTP inputs on error
             otpInputs.forEach(input => {
                 input.value = '';
             });

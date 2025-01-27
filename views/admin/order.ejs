@@ -43,15 +43,18 @@
                                     <td>₹ <%=order.finalAmount%>
                                     </td>
                                     <td>
-                                        <select class="form-select form-select-sm status-select"
-                                            onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
-                                            <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled'
-                                                ,  ].forEach(status=> { %>
-                                                <option value="<%= status %>" <%=order.status===status ? 'selected' : ''
-                                                    %>><%= status %>
-                                                </option>
+                                        <% if (order.status === 'Return Request') { %>
+                                            <span class="badge bg-warning">Return Pending</span>
+                                        <% } else { %>
+                                            <select class="form-select form-select-sm status-select"
+                                                onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
+                                                <% ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'].forEach(status=> { %>
+                                                    <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %>>
+                                                        <%= status %>
+                                                    </option>
                                                 <% }) %>
-                                        </select>
+                                            </select>
+                                        <% } %>
                                     </td>
                                     <td>
                                         <%= formatDate(order.createdOn) %>
@@ -62,6 +65,7 @@
                                        
                                     </td>
                                 </tr>
+                              
                                 <% }); %>
                         </tbody>
                     </table>
@@ -174,6 +178,17 @@
                             return response.json();
                         })
                         .then(data => {
+                            let returnRequestButtons = '';
+        if (data.order.status === 'Return Request') {
+            returnRequestButtons = `
+                <div class="mt-3">
+                    <h6>Return Request</h6>
+                    <p>Reason: ${data.order.returnReason}</p>
+                    <button class="btn btn-success me-2" onclick="handleReturnRequest('${orderId}', 'approve')">Approve Return</button>
+                    <button class="btn btn-danger" onclick="handleReturnRequest('${orderId}', 'reject')">Reject Return</button>
+                </div>
+            `;
+        }
                             console.log('Received data:', data)
                             content.innerHTML = `
                 <div class="container-fluid">
@@ -236,6 +251,7 @@
                        </div>
                     </div>
                 </div>
+                            ${returnRequestButtons}
             `;
                         })
                         .catch(error => {
@@ -265,5 +281,26 @@
                             });
                     }
                 }
+                function handleReturnRequest(orderId, action) {
+    if (confirm(`Are you sure you want to ${action} this return request?`)) {
+        fetch(`/admin/handleReturnRequest/${orderId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error processing return request');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error processing return request');
+        });
+    }
+}
             </script>
             <%- include("../../views/partials/admin/footer") %>

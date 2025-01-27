@@ -33,8 +33,8 @@ app.use(express.static(path.join(__dirname, "./public")));
 
 app.use(nocache());
 
+app.use("/admin", adminRouter);
 app.use("/", userRouter);
-app.use("/admin", adminRouter)
 
 db()
 
@@ -43,4 +43,3 @@ app.listen(process.env.PORT, () => {
     console.log('server running')
 })
 
-module.exports = app;

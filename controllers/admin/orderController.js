@@ -163,11 +163,9 @@ const cancelSingleItem = async (req,res) => {
         if(!order){
             return res.status(404).json({success:false,message:'Order not found'});
         }
-// Remove the specific item
         order.orderedItems = order.orderedItems.filter(item => 
             item.product.toString() !== productId
         )
- // Recalculate total amount
         order.finalAmount = order.orderedItems.reduce((total , item)=>
         total + (item.quantity * item.product.price),0
     )
@@ -187,11 +185,57 @@ const cancelSingleItem = async (req,res) => {
     }
 }
 
+const handleReturnRequest = async (req,res) => {
+    try {
+        
+    const {orderId} = req.params;
+    const {action} = req.body;
+
+    const order = await Order.findOne({orderId});
+
+    if(!order){
+        return res.status(404).json({success: false,message: 'Order not found'});
+    }
+
+    if(order.status !== 'Return Request'){
+        return res.status(400).json({
+            success:false,
+            message:'No return request to process'
+        });
+    }
+
+    if(action === 'approve'){
+        order.status = 'Returned';
+            order.returnStatus = 'Approved';
+            order.returnApprovedDate = new Date();
+    }else if(action === 'reject'){
+        order.status = "Delivered"
+    }else {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid action' 
+        });
+    }
+
+await order.save()
+  
+res.json({ 
+    success: true, 
+    message: `Return request ${action}d successfully`,
+    order 
+});
+
+    } catch (error) {
+        console.error("Error handling return request:", error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
 
 module.exports = {
     orderList,
     updateOrderStatus,
     getOrderDetails,
-    cancelSingleItem
+    cancelSingleItem,
+    handleReturnRequest
 
 }

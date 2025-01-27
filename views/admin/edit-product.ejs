@@ -257,10 +257,8 @@
         console.log(pair[0] + ': ' + pair[1]);
     }
     
-    // Create an array to store size variants
     const sizeVariantsArray = [];
     
-    // Process each variant row
     Array.from(variants).forEach((row, index) => {
         const sizeSelect = row.querySelector('select');
         const quantityInput = row.querySelector('input[type="number"]');
@@ -274,10 +272,8 @@
         }
     });
     
-    // Convert size variants to JSON string
     const sizeVariantsJSON = JSON.stringify(sizeVariantsArray);
     
-    // Create hidden input for size variants if it doesn't exist
     let sizeVariantsInput = form.querySelector('input[name="sizeVariantsData"]');
     if (!sizeVariantsInput) {
         sizeVariantsInput = document.createElement('input');
@@ -287,7 +283,6 @@
     }
     sizeVariantsInput.value = sizeVariantsJSON;
     
-    // Log the final form data
     formData = new FormData(form);
     console.log("Final form data before submission:");
     for (let pair of formData.entries()) {
@@ -450,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function removeVariant(button) {
     button.closest('.variant-row').remove();
-    reindexVariants(); // Reindex after removing
+    reindexVariants(); 
 }
 
 function reindexVariants() {
@@ -461,7 +456,6 @@ function reindexVariants() {
         const sizeSelect = variant.querySelector('select');
         const quantityInput = variant.querySelector('input[type="number"]');
         
-        // Update names to maintain sequential indexing
         sizeSelect.name = `size${index}`;
         quantityInput.name = `quantity${index}`;
     });

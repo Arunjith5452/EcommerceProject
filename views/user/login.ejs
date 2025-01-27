@@ -14,6 +14,7 @@
             min-height: 100vh;
             margin: 0;
             background-color: #f5f5f5;
+            flex-direction: column;
         }
 
         .login-container {
@@ -58,12 +59,13 @@
             font-size: 14px;
         }
 
-        .forgot-password-link{
+        .forgot-password-link {
             font-size: 0.875rem;
-            color: #007bff ;
-             text-decoration: none;
+            color: #007bff;
+            text-decoration: none;
         }
-        .forgot-password-link:hover{
+
+        .forgot-password-link:hover {
             color: #0056b3;
             text-decoration: underline;
         }
@@ -87,72 +89,108 @@
         }
 
         .social-login {
-      display: flex;
-      justify-content: center;
-    }
+            display: flex;
+            justify-content: center;
+        }
 
-    .google-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      cursor: pointer;
-      font-size: 14px;
-      width: 100%;
-      text-decoration: none;
-      color: #000;
-    }
+        .google-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            text-decoration: none;
+            color: #000;
+        }
 
-    .google-button img {
-      width: 20px;
-      height: 20px;
-    }
+        .google-button img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .navbar {
+            background-color: #2c3e50;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            color: #fff;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .navbar h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+            font-family: initial; /* Removes inherited font family */
+        }
 
         .error-message {
             color: red;
             font-size: 15px;
         }
+
+        .content {
+            margin-top: 70px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
-        <h1>Welcome back</h1>
-        <div class="create-account">
-            Do not have an account?<a href="/signup">Create an account</a>
+    <header>
+        <div class="navbar">
+            <h1>FashionKart</h1>
         </div>
-
-        <form action="/login" method="POST">
-            <div class="form-group">
-                <input type="email" name="email" id="email" placeholder="Email">
+    </header>
+    <div class="content">
+        <div class="login-container">
+            <h1>Welcome back</h1>
+            <div class="create-account">
+                Do not have an account?<a href="/signup">Create an account</a>
             </div>
 
-            <div class="form-group">
-                <input type="password" name="password" id="password" placeholder="Password">
-            </div>
-            <%if(locals.message && message.length>0){%>
-                <div class="error-message">
-                    <%=message%>
+            <form action="/login" method="POST">
+                <div class="form-group">
+                    <input type="email" name="email" id="email" placeholder="Email">
                 </div>
-            <%}%>
 
-            <div class="form-group d-flex justify-content-end">
-                <a href="/forgot-password" class="forgot-password-link ms-auto">Forgot password?</a>
+                <div class="form-group">
+                    <input type="password" name="password" id="password" placeholder="Password">
+                </div>
+                <%if(locals.message && message.length>0){%>
+                    <div class="error-message">
+                        <%=message%>
+                    </div>
+                <%}%>
+
+                <div class="form-group d-flex justify-content-end">
+                    <a href="/forgot-password" class="forgot-password-link ms-auto">Forgot password?</a>
+                </div>
+                <button type="submit" class="login-button">Login</button>
+            </form>
+
+            <div class="divider">or continue with</div>
+
+            <div class="social-login">
+                <a href="/auth/google" class="google-button">
+                    <img src="img/icon/googleicon.png" alt="Google">
+                    Google
+                </a>
             </div>
-            <button type="submit" class="login-button">Login</button>
-        </form>
-        
-        <div class="divider">or continue with</div>
-
-        <div class="social-login">
-            <a href="/auth/google" class="google-button">
-              <img src="img/icon/googleicon.png" alt="Google">
-              Google
-            </a>
         </div>
     </div>
 </body>

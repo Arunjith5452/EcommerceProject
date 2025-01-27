@@ -297,7 +297,6 @@
             const quantities = document.getElementsByName('quantities[]');
             const sizeVariants = [];
 
-            // Create size variants array
             for (let i = 0; i < sizes.length; i++) {
                 if (sizes[i].value && quantities[i].value) {
                     sizeVariants.push({
@@ -307,7 +306,6 @@
                 }
             }
             console.log('Size Variants before sending:', sizeVariants);
-            // Add size variants to formData
             formData.append('sizeVariants', JSON.stringify(sizeVariants));
             for (let pair of formData.entries()) {
         console.log(pair[0] + ': ' + pair[1]);
@@ -382,7 +380,6 @@
             const sizesContainer = document.getElementById('sizesContainer');
             const addMoreSizesBtn = document.getElementById('addMoreSizes');
 
-            // Function to create new size entry
             function createSizeEntry() {
                 const sizeEntry = document.createElement('div');
                 sizeEntry.className = 'size-entry mb-3';
@@ -409,12 +406,10 @@
                 return sizeEntry;
             }
 
-            // Add new size entry
             addMoreSizesBtn.addEventListener('click', function () {
                 sizesContainer.appendChild(createSizeEntry());
             });
 
-            // Remove size entry
             sizesContainer.addEventListener('click', function (e) {
                 if (e.target.classList.contains('remove-size')) {
                     const sizeEntry = e.target.closest('.size-entry');
@@ -426,14 +421,13 @@
                 }
             });
 
-            // Form validation
             document.getElementById('productSubmitForm').addEventListener('submit', function (e) {
                 const sizes = document.getElementsByName('sizes[]');
                 const quantities = document.getElementsByName('quantities[]');
                 let isValid = true;
                 let errorMessage = '';
 
-                // Check for duplicate sizes
+
                 const selectedSizes = Array.from(sizes).map(size => size.value);
                 const uniqueSizes = new Set(selectedSizes.filter(size => size !== ''));
                 if (selectedSizes.length !== uniqueSizes.size) {
@@ -441,7 +435,6 @@
                     errorMessage += 'Duplicate sizes are not allowed.\n';
                 }
 
-                // Validate each entry
                 for (let i = 0; i < sizes.length; i++) {
                     if (!sizes[i].value || !quantities[i].value || quantities[i].value < 0) {
                         isValid = false;
@@ -529,7 +522,6 @@
                 if (sizes[i].value && quantities[i].value && quantities[i].value > 0) {
                     hasValidSizeEntry = true;
                 } else if (sizes[i].value || quantities[i].value) {
-                    // If one field is filled but not both
                     displayErrorMessage('size-quantity-error', 'Please complete all size and quantity fields.');
                     isValid = false;
                     break;
