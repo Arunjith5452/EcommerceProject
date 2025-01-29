@@ -33,10 +33,6 @@ const cartSchema = new mongoose.Schema({
         status: {
             type: String,
             default: "placed"
-        },
-        cancellationReason: {
-            type: String,
-            default: "none"
         }
     }]
 });

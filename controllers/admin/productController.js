@@ -266,7 +266,7 @@ const getEditProduct = async (req, res) => {
 const editProduct = async (req, res) => {
     try {
 
-      
+
 
         const id = req.params.id;
         const product = await Product.findOne({ _id: id });
@@ -292,7 +292,7 @@ const editProduct = async (req, res) => {
                 error: "Product with this name already exists. Please try with another name"
             });
         }
-       
+
         const images = [];
 
         if (req.files && req.files.length > 0) {

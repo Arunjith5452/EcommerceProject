@@ -614,9 +614,9 @@
                             <div class="mb-4">
                               <i class="fas fa-wallet fa-3x text-primary"></i>
                             </div>
-                            <h3 class="mb-2">₹0.00</h3>
+                            <h3 class="mb-2">₹<%= user.wallet%></h3>
                             <p class="text-muted">Current Balance</p>
-                            <button class="btn btn-primary mt-3">Add Money</button>
+                            <!-- <button class="btn btn-primary mt-3">Add Money</button> -->
                           </div>
                         </div>
                       </div>
@@ -641,12 +641,30 @@
                                 </tr>
                               </thead>
                               <tbody>
+                                <% if (user.walletHistory && user.walletHistory.length > 0) { %>
+                                  <% user.walletHistory.forEach(transaction => { %>
+                                    <tr>
+                                      <td><%= transaction.transactionId %></td>
+                                      <td><%= new Date(transaction.date).toLocaleDateString() %></td>
+                                      <td>
+                                        <span class="badge <%= transaction.type === 'credit' ? 'bg-success' : 'bg-danger' %>">
+                                          <%= transaction.type.toUpperCase() %>
+                                        </span>
+                                      </td>
+                                      <td>₹<%= transaction.amount%></td>
+                                      <td>
+                                        <span class="badge bg-success">Completed</span>
+                                      </td>
+                                    </tr>
+                                  <% }) %>
+                                <% } else { %>
                                 <tr>
                                   <td class="text-center text-muted" colspan="5">
                                     <i class="fas fa-history fa-3x mb-3"></i>
                                     <h6>No transactions found</h6>
                                   </td>
                                 </tr>
+                                <%}%>
                               </tbody>
                             </table>
                           </div>
@@ -692,188 +710,399 @@
                   </div>
                 </div>
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-                <script src="https://kit.fontawesome.com/a valid-fontawesome-kit-code.js"
-                  crossorigin="anonymous"></script>
+                <script src="https://kit.fontawesome.com/a-valid-fontawesome-kit-code.js" crossorigin="anonymous"></script>
                 <script>
 
-                  function viewOrderDetails(orderId) {
-                    fetch(`/orderDetails/${orderId}`)
-                      .then(response => response.json())
-                      .then(order => {
-                        let orderDetailsHTML = `
-        <div class="order-details-container">
-          <h5 class="order-id">Order ID: #${order.orderId.slice(0, 8)}</h5>
-          <p><strong>Status:</strong> ${order.status}</p>
-          <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>
-          <h6>Ordered Items:</h6>
-          <ul class="ordered-items-list">
-              ${order.orderedItems.map(item => `
-                  <li class="ordered-item d-flex justify-content-between align-items-center">
-                      <div class="item-info d-flex align-items-center">
-                          <div class="item-image-container me-3" style="width: 50px; height: 50px; overflow: hidden;">
-                              ${item.product.productImage.length > 0 ?
-                            `<img src="/uploads/product-images/${item.product.productImage[0]}" alt="${item.product.productName}" class="img-fluid">` :
-                            `<span class="no-image">No Image</span>`
-                          }
-                          </div>
-                          <div class="item-details">
-                              <span class="item-name">${item.product.productName}</span> <br>
-                              <span class="item-size">Size: ${item.size}</span> <br>
-                              <span class="item-quantity">Quantity: ${item.quantity}</span> <br>
-                              <span class="item-price">Price: ₹${item.price}</span>
-                          </div>
-                      </div>
-                      <div class="item-actions">
-                          ${order.status === 'Delivered' ?
-                            `<button class="btn btn-sm btn-warning me-2" onclick="requestReturn('${order.orderId}')">Return</button>` :
-                            (order.status !== 'Cancelled' && order.status !== 'Shipped' && order.status !== 'Returned') ?
-                              `<button class="btn btn-sm btn-danger" onclick="cancelSingleProduct('${order.orderId}')">Cancel</button>` :
-                              ''}
-                      </div>
-                  </li>
-              `).join('')}
-          </ul>
-          <h6 class="total-amount">Total: ₹${order.finalAmount}</h6>
-        </div>
-      `;
-                        document.getElementById('orderDetailsContent').innerHTML = orderDetailsHTML;
-                      })
-                      .catch(error => {
-                        console.error('Error fetching order details:', error);
-                      });
-                  }
 
-                  function cancelSingleProduct(orderId) {
-                    Swal.fire({
-                      title: 'Cancel Product',
-                      text: 'Are you sure you want to cancel this product from the order?',
-                      icon: 'warning',
-                      showCancelButton: true,
-                      confirmButtonColor: '#d33',
-                      cancelButtonColor: '#3085d6',
-                      confirmButtonText: 'Yes, cancel it!',
-                      cancelButtonText: 'No, keep it'
-                    }).then((result) => {
-                      if (result.isConfirmed) {
-                        fetch(`/cancelSingleProduct/${orderId}`, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                        })
-                          .then(response => response.json())
-                          .then(data => {
-                            console.log("THE data that come here is",data)
-                            if (data.success) {
-                              Swal.fire(
-                                'Cancelled!',
-                                'Product has been cancelled from the order.',
-                                'success'
-                              ).then(() => {
-                                const orderModal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-                                orderModal.hide();
-                                window.location.href='/userProfile?tab=orders';
-                              });
-                            } else {
-                              Swal.fire(
-                                'Error!',
-                                data.message || 'Failed to cancel product. Please try again.',
-                                'error'
-                              );
-                            }
-                          })
-                          .catch(error => {
-                            console.error('Error cancelling product:', error);
-                            Swal.fire(
-                              'Error!',
-                              'An error occurred while cancelling the product. Please try again.',
-                              'error'
-                            );
-                          });
-                      }
-                    });
-                  }
-                  function requestReturn(orderId) {
-  Swal.fire({
-    title: 'Return Product',
-    text: 'Please select a reason for return:',
-    input: 'select',
-    inputOptions: {
-      'defective': 'Defective Product',
-      'wrong_size': 'Wrong Size',
-      'not_as_described': 'Not as Described',
-      'damaged': 'Damaged During Shipping',
-      'other': 'Other Reason'
-    },
-    inputPlaceholder: 'Select a reason',
-    showCancelButton: true,
-    confirmButtonText: 'Next',
-    showLoaderOnConfirm: true,
-    preConfirm: (selectedReason) => {
-      if (selectedReason === 'other') {
-        return new Promise((resolve) => {
-          Swal.fire({
-            title: 'Provide Return Reason',
-            input: 'textarea',
-            inputPlaceholder: 'Explain your reason for return...',
-            inputAttributes: {
-              autocapitalize: 'off'
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Submit',
-            showLoaderOnConfirm: true,
-            preConfirm: (text) => {
-              if (!text || text.trim() === '') {
-                Swal.showValidationMessage('Please enter a reason');
-                return false;
-              }
-              return text;
-            }
-          }).then(result => {
-            resolve(result.value);
-          });
-        });
-      }
-      return selectedReason;
-    },
-    allowOutsideClick: () => !Swal.isLoading()
-  }).then((result) => {
-    if (result.value) {
-      return fetch(`/requestProductReturn/${orderId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          returnReason: result.value
+function viewOrderDetails(orderId) {
+    fetch(`/orderDetails/${orderId}`)
+        .then(response => response.json())
+        .then(order => {
+            let orderDetailsHTML = `
+                <div class="order-details-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="order-id mb-0">Order ID: #${order.orderId.slice(0, 8)}</h5>
+                        <span class="badge rounded-pill ${getStatusBadgeClass(order.status)}">${order.status}</span>
+                    </div>
+                    <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>
+                    
+                    <div class="ordered-items-list">
+                        ${order.orderedItems.map(item => {
+                            const itemStatus = item.status || order.status;
+                            
+                            return `
+                            <div class="card mb-3" data-product-id="${item.product._id}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3" style="width: 80px; height: 80px; overflow: hidden;">
+                                                ${item.product.productImage && item.product.productImage.length > 0 ?
+                                                    `<img src="/uploads/product-images/${item.product.productImage[0]}" 
+                                                        alt="${item.product.productName}" 
+                                                        class="img-fluid rounded">` :
+                                                    `<div class="no-image rounded bg-light d-flex align-items-center justify-content-center" 
+                                                        style="height: 100%">
+                                                        <i class="fas fa-image text-muted"></i>
+                                                    </div>`
+                                                }
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1">${item.product.productName}</h6>
+                                                <p class="mb-1 text-muted">Size: ${item.size}</p>
+                                                <p class="mb-1">Quantity: ${item.quantity}</p>
+                                                <p class="mb-0">Price: ₹${item.price}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <p class="mb-2"><strong>Status:</strong> 
+                                                <span class="badge ${getStatusBadgeClass(itemStatus)} item-status-badge">
+                                                    ${itemStatus}
+                                                </span>
+                                            </p>
+                                            ${item.returnReason ? `
+                                                <p class="mb-2">
+                                                    <small class="text-muted">
+                                                        <strong>Return Reason:</strong> ${item.returnReason}
+                                                    </small>
+                                                </p>
+                                            ` : ''}
+                                            <div class="action-button-container">
+                                                ${getActionButton(order, item, itemStatus)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                    
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Price Details</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Total MRP</span>
+                                        <span>₹${order.totalPrice}</span>
+                                    </div>
+                                    ${order.discount > 0 ? `
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Discount</span>
+                                            <span class="text-success">-₹${order.discount}</span>
+                                        </div>
+                                    ` : ''}
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total Amount</strong>
+                                        <strong>₹${order.finalAmount}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('orderDetailsContent').innerHTML = orderDetailsHTML;
+
+            setupStatusUpdateListener(orderId);
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          Swal.fire(
-            'Returned!',
-            'Return request submitted successfully.',
-            'success'
-          ).then(() => {
-            const orderModal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-            orderModal.hide();
-            window.location.href = '/userProfile?tab=orders';
-          });
-        } else {
-          throw new Error(data.message || 'Failed to submit return request.');
-        }
-      });
-    }
-  }).catch(error => {
-    console.error('Error requesting product return:', error);
-    Swal.fire(
-      'Error!',
-      error.message || 'An error occurred while requesting product return.',
-      'error'
-    );
-  });
+        .catch(error => {
+            console.error('Error fetching order details:', error);
+            Swal.fire('Error!', 'Failed to load order details', 'error');
+        });
 }
+
+function getStatusBadgeClass(status) {
+    switch (status.toLowerCase()) {
+        case 'pending':
+            return 'bg-warning';
+        case 'processing':
+            return 'bg-info';
+        case 'shipped':
+            return 'bg-primary';
+        case 'delivered':
+            return 'bg-success';
+        case 'cancelled':
+            return 'bg-danger';
+        case 'return request':
+            return 'bg-secondary';
+        case 'returned':
+            return 'bg-dark';
+        default:
+            return 'bg-secondary';
+    }
+}
+
+function getActionButton(order, item, itemStatus) {
+    if (itemStatus === 'Delivered' && !['Returned', 'Return Request'].includes(item.status || order.status)) {
+        return `<button class="btn btn-sm btn-warning return-button" onclick="requestReturn('${order.orderId}', '${item.product._id}')">Return</button>`;
+    } 
+    else if (itemStatus === 'Return Request' && isAdmin) {
+        return `<button class="btn btn-sm btn-primary" onclick="requestReturn('${order.orderId}', '${item.product._id}', true)">Process Return</button>`;
+    }
+    else if (!['Shipped', 'Delivered', 'Returned', 'Return Request', 'Cancelled'].includes(itemStatus)) {
+        return `<button class="btn btn-sm btn-danger cancel-button" onclick="cancelSingleProduct('${order.orderId}', '${item.product._id}', this)">Cancel</button>`;
+    }
+    return '';
+}
+
+function requestReturn(orderId, productId, isAdminAction = false) {
+    if (isAdminAction) {
+        // Admin approval/rejection flow
+        Swal.fire({
+            title: 'Process Return Request',
+            text: 'Would you like to approve or reject this return request?',
+            icon: 'question',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Approve',
+            denyButtonText: 'Reject',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed || result.isDenied) {
+                const adminAction = result.isConfirmed ? 'approve' : 'reject';
+                
+                fetch(`/requestProductReturn/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: productId,
+                        adminAction: adminAction
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let message = adminAction === 'approve' ? 
+                            `Return approved. Refund of ₹${data.refundAmount} processed.` :
+                            'Return request rejected.';
+                            
+                        Swal.fire({
+                            title: 'Success!',
+                            html: `
+                                <div class="text-center">
+                                    <p>${message}</p>
+                                    ${data.currentWalletBalance ? 
+                                        `<div class="alert alert-success">
+                                            <p class="mb-0"><strong>Current Wallet Balance:</strong> ₹${data.currentWalletBalance}</p>
+                                        </div>` : 
+                                        ''}
+                                </div>
+                            `,
+                            icon: 'success'
+                        }).then(() => {
+                            viewOrderDetails(orderId); // Refresh the order details
+                        });
+                    } else {
+                        throw new Error(data.message || 'Failed to process return request.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error processing return:', error);
+                    Swal.fire('Error!', error.message || 'An error occurred while processing the return.', 'error');
+                });
+            }
+        });
+    } else {
+        // User return request flow
+        Swal.fire({
+            title: 'Return Product',
+            text: 'Please select a reason for return:',
+            input: 'select',
+            inputOptions: {
+                'defective': 'Defective Product',
+                'wrong_size': 'Wrong Size',
+                'not_as_described': 'Not as Described',
+                'damaged': 'Damaged During Shipping',
+                'other': 'Other Reason'
+            },
+            inputPlaceholder: 'Select a reason',
+            showCancelButton: true,
+            confirmButtonText: 'Next',
+            showLoaderOnConfirm: true,
+            preConfirm: (selectedReason) => {
+                if (selectedReason === 'other') {
+                    return new Promise((resolve) => {
+                        Swal.fire({
+                            title: 'Provide Return Reason',
+                            input: 'textarea',
+                            inputPlaceholder: 'Explain your reason for return...',
+                            inputAttributes: {
+                                autocapitalize: 'off'
+                            },
+                            showCancelButton: true,
+                            confirmButtonText: 'Submit',
+                            showLoaderOnConfirm: true,
+                            preConfirm: (text) => {
+                                if (!text || text.trim() === '') {
+                                    Swal.showValidationMessage('Please enter a reason');
+                                    return false;
+                                }
+                                return text;
+                            }
+                        }).then(result => {
+                            resolve(result.value);
+                        });
+                    });
+                }
+                return selectedReason;
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.value) {
+                return fetch(`/requestProductReturn/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        returnReason: result.value,
+                        productId: productId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Return Requested!',
+                            text: 'Your return request has been submitted successfully. Please wait for admin approval.',
+                            icon: 'success'
+                        }).then(() => {
+                            const orderModal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+                            if (orderModal) {
+                                orderModal.hide();
+                            }
+                            window.location.href = data.redirectUrl;
+                        });
+                    } else {
+                        throw new Error(data.message || 'Failed to submit return request.');
+                    }
+                });
+            }
+        }).catch(error => {
+            console.error('Error requesting product return:', error);
+            Swal.fire(
+                'Error!',
+                error.message || 'An error occurred while requesting product return.',
+                'error'
+            );
+        });
+    }
+}
+
+function setupStatusUpdateListener(orderId) {
+    const statusCheckInterval = setInterval(() => {
+        fetch(`/orderDetails/${orderId}`)
+            .then(response => response.json())
+            .then(order => {
+                const mainStatusBadge = document.querySelector('.order-details-container .badge');
+                if (mainStatusBadge) {
+                    mainStatusBadge.className = `badge rounded-pill ${getStatusBadgeClass(order.status)}`;
+                    mainStatusBadge.textContent = order.status;
+                }
+
+                order.orderedItems.forEach(item => {
+                    const itemCard = document.querySelector(`[data-product-id="${item.product._id}"]`);
+                    if (itemCard) {
+                        const itemStatus = item.status || order.status;
+                        const statusBadge = itemCard.querySelector('.item-status-badge');
+                        const actionContainer = itemCard.querySelector('.action-button-container');
+                        
+                        if (statusBadge) {
+                            statusBadge.className = `badge ${getStatusBadgeClass(itemStatus)} item-status-badge`;
+                            statusBadge.textContent = itemStatus;
+                        }
+                        
+                        if (actionContainer) {
+                            actionContainer.innerHTML = getActionButton(order, item, itemStatus);
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error updating status:', error));
+    }, 5000);
+
+    const orderModal = document.getElementById('orderModal');
+    orderModal.addEventListener('hidden.bs.modal', () => {
+        clearInterval(statusCheckInterval);
+    });
+  }
+
+
+
+function cancelSingleProduct(orderId, productId, buttonElement) {
+    Swal.fire({
+        title: 'Cancel Product',
+        text: 'Are you sure you want to cancel this product?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, cancel it!',
+        cancelButtonText: 'No, keep it'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (buttonElement) {
+                buttonElement.disabled = true;
+            }
+
+            fetch(`/cancelSingleProduct/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const itemCard = buttonElement.closest('.card');
+                    if (itemCard) {
+                        const statusBadge = itemCard.querySelector('.badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-danger';
+                            statusBadge.textContent = 'Cancelled';
+                        }
+                        buttonElement.remove();
+                    }
+
+                    Swal.fire({
+                        title: 'Cancelled Successfully!',
+                        html: `
+                            <div class="text-center">
+                                <p>Product has been cancelled.</p>
+                                <div class="alert alert-success">
+                                    <p class="mb-1"><strong>Refund Amount:</strong> ₹${data.refundAmount}</p>
+                                    <p class="mb-0"><strong>Wallet Balance:</strong> ₹${data.currentWalletBalance}</p>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'success'
+                    }).then(() => {
+                        window.location.href = data.redirectUrl;
+                    });
+                } else {
+                    if (buttonElement) {
+                        buttonElement.disabled = false;
+                    }
+                    Swal.fire('Error!', data.message || 'Failed to cancel product', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error cancelling product:', error);
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                }
+                Swal.fire('Error!', 'An error occurred while cancelling the product', 'error');
+            });
+        }
+    });
+}
+
+
+
                   function confirmDelete(addressId) {
                     Swal.fire({
                       title: 'Are you sure?',
@@ -914,4 +1143,4 @@
     }
   }
 });
-                </script>
+ </script>

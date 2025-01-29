@@ -26,7 +26,12 @@ const orderSchema = new mongoose.Schema({
         price: {
             type: Number,
             default: 0
-        }
+        },
+        status: {
+            type: String,
+            enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned'],
+            default: 'Pending'
+        },
     }],
     totalPrice: {
         type: Number,
@@ -42,7 +47,7 @@ const orderSchema = new mongoose.Schema({
     },
     address: {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Address",
         required: true
     },
     invoiceDate: {
@@ -61,6 +66,11 @@ const orderSchema = new mongoose.Schema({
         type:String,
         enum:['','Pending','Approved', 'Rejected'],
         default: ''
+    },
+    paymentMethod: {
+        type: String,
+        required: true,
+        enum: ['COD', 'Online Payment', 'Card']
     },
     createdOn: {
         type: Date,

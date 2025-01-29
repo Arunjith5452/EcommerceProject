@@ -26,8 +26,10 @@ router.get(
   authController.googleCallback
 );
 
-router.get('/login', userController.loadLogin)
-router.post('/login', userController.login)
+router.get('/login', userController.loadLogin);
+router.post('/login', userController.login);
+router.get('/logout', userController.logout);
+
 
 router.get("/forgot-password", profileController.getForgotPassPage);
 router.post("/forgot-email-valid", profileController.forgotEmailValid);
@@ -73,10 +75,10 @@ router.delete("/removeFromCart/:cartItemId", userAuth, cartController.removeFrom
 
 router.get("/checkout", userAuth, checkoutController.getCheckoutPage);
 router.post("/addAddress-checkout",userAuth,checkoutController.addAddressCheckout);
+router.post("/applyCoupon",userAuth,checkoutController.applyCoupon);
 router.post("/placeOrder", userAuth, checkoutController.placeOrder);
 router.get('/orderSuccess/:orderId', userAuth, checkoutController.getOrderSuccess);
 
-router.get('/logout', userController.logout);
 
 
 module.exports = router;

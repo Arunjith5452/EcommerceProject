@@ -1,10 +1,9 @@
 const Coupon = require("../../models/couponSchema")
 const mongoose = require("mongoose")
 
-
 const loadCoupon = async (req,res) => {
     try {
-
+                
         const findCoupons = await Coupon.find({})
         return res.render("coupon",{coupons:findCoupons})
     } catch (error) {
@@ -80,7 +79,7 @@ const updateCoupon = async (req,res) => {
                 },{new:true}
             );
 
-            if(updateCoupon!=null){
+            if(updateCoupon!==null){
                 return res.send("Coupon updated successfully")
             }else{
                 res.status(500).send("Coupon update failed")
@@ -96,9 +95,23 @@ const updateCoupon = async (req,res) => {
     }
 }
 
+const deleteCoupon = async (req,res) => {
+    try {
+        
+        const id = req.query.id;
+        await Coupon.deleteOne({_id:id});
+        return res.status(200).send({success:true,message:"Coupon deleted successfully"});
+
+    } catch (error) {
+        console.error("Error deleting coupon:",error);
+        return res.status(500).send({success:false,message:"Failed to delete coupon"})
+    }
+}
+
 module.exports = {
     loadCoupon,
     createCoupon,
     editCoupon,
-    updateCoupon
+    updateCoupon,
+    deleteCoupon,
 }

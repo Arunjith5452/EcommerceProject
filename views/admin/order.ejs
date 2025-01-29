@@ -9,7 +9,7 @@
                     <div class="col-lg-4 col-md-6 me-auto">
                         <form action="" method="GET">
                             <!-- <input type="text" name="search" value="<%= search %>" placeholder="Search..." -->
-                                <!-- class="form-control" /> -->
+                            <!-- class="form-control" /> -->
                         </form>
                     </div>
                 </div>
@@ -21,7 +21,6 @@
                             <tr>
                                 <th>#ID</th>
                                 <th scope="col">Name</th>
-                                <th scope="col">Email</th>
                                 <th scope="col">Total</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Date</th>
@@ -30,31 +29,34 @@
                         </thead>
                         <tbody>
                             <% orders.forEach((order)=> { %>
+
                                 <tr>
                                     <td>
                                         <%= order.orderId.slice(0,12)%>
                                     </td>
-                                    <td><b>
-                                            <%= order.address.username %>
-                                        </b></td>
                                     <td>
-                                        <%= order.address.email %>
+                                        <%= order.address ? order.address.name : 'N/A' %> </b>
                                     </td>
-                                    <td>₹ <%=order.finalAmount%>
+                                    </td>
+
+                                    <td>
+                                        ₹ <%=order.finalAmount%>
                                     </td>
                                     <td>
-                                        <% if (order.status === 'Return Request') { %>
+                                        <% if (order.status==='Return Request' ) { %>
                                             <span class="badge bg-warning">Return Pending</span>
-                                        <% } else { %>
-                                            <select class="form-select form-select-sm status-select"
-                                                onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
-                                                <% ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'].forEach(status=> { %>
-                                                    <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %>>
-                                                        <%= status %>
-                                                    </option>
-                                                <% }) %>
-                                            </select>
-                                        <% } %>
+                                            <% } else { %>
+                                                <select class="form-select form-select-sm status-select"
+                                                    onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
+                                                    <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled'
+                                                        , 'Returned' ].forEach(status=> { %>
+                                                        <option value="<%= status %>" <%=order.status===status
+                                                            ? 'selected' : '' %>>
+                                                            <%= status %>
+                                                        </option>
+                                                        <% }) %>
+                                                </select>
+                                                <% } %>
                                     </td>
                                     <td>
                                         <%= formatDate(order.createdOn) %>
@@ -62,10 +64,10 @@
                                     <td class="text-end">
                                         <button class="btn btn-md rounded font-sm"
                                             onclick="showOrderDetails('<%= order.orderId %>')">Detail</button>
-                                       
+
                                     </td>
                                 </tr>
-                              
+
                                 <% }); %>
                         </tbody>
                     </table>
@@ -155,42 +157,54 @@
                     }
                 }
                 function showOrderDetails(orderId) {
-                    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
-                    const content = document.getElementById('orderDetailsContent');
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+    const content = document.getElementById('orderDetailsContent');
 
-                    content.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
-                    modal.show();
+    content.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+    modal.show();
 
-                    fetch(`/admin/userOrderDetails/${orderId}`)
-                        .then(response => {
-                            console.log('Fetch Response:', {
-                                status: response.status,
-                                url: response.url,
-                                ok: response.ok
-                            });
-
-                            if (!response.ok) {
-                                return response.text().then(text => {
-                                    console.error('Error Response Text:', text);
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                });
+    fetch(`/admin/userOrderDetails/${orderId}`)
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Error Response Text:', text);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            let returnRequestButtons = '';
+            // Only show return buttons if order status is Return Request and item hasn't been processed yet
+            if (data.order.status === 'Return Request' && 
+                data.order.returnStatus !== 'Approved' && 
+                data.order.returnStatus !== 'Rejected') {
+                returnRequestButtons = `
+                    <div class="mt-3">
+                        <h6>Return Request</h6>
+                        <p>Reason: ${data.order.returnReason || 'Not specified'}</p>
+                        ${data.order.orderedItems.map(item => {
+                            // Only show buttons if item hasn't been returned or cancelled
+                            if (item.status !== 'Returned' && item.status !== 'Cancelled') {
+                                return `
+                                    <div class="mb-2">
+                                        <p>Product: ${item.product.productName}</p>
+                                        <button class="btn btn-success me-2" onclick="handleReturnRequest('${orderId}', 'approve', '${item.product._id}')">
+                                            Approve Return
+                                        </button>
+                                        <button class="btn btn-danger" onclick="handleReturnRequest('${orderId}', 'reject', '${item.product._id}')">
+                                            Reject Return
+                                        </button>
+                                    </div>
+                                `;
                             }
-                            return response.json();
-                        })
-                        .then(data => {
-                            let returnRequestButtons = '';
-        if (data.order.status === 'Return Request') {
-            returnRequestButtons = `
-                <div class="mt-3">
-                    <h6>Return Request</h6>
-                    <p>Reason: ${data.order.returnReason}</p>
-                    <button class="btn btn-success me-2" onclick="handleReturnRequest('${orderId}', 'approve')">Approve Return</button>
-                    <button class="btn btn-danger" onclick="handleReturnRequest('${orderId}', 'reject')">Reject Return</button>
-                </div>
-            `;
-        }
-                            console.log('Received data:', data)
-                            content.innerHTML = `
+                            return '';
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
                 <div class="container-fluid">
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -199,67 +213,63 @@
                             <p>Date: ${new Date(data.order.createdOn).toLocaleString()}</p>
                             <p>Status: <span class="badge alert-${data.order.status.toLowerCase()}">${data.order.status}</span></p>
                             <p>Total: ₹${data.order.finalAmount}</p>
+                            ${data.order.returnStatus ? `<p>Return Status: ${data.order.returnStatus}</p>` : ''}
                         </div>
                         <div class="col-md-6">
-                             <h6>Customer Details</h6>
-                <p>Name: ${data.address.name}</p>
-                <p>Email: ${data.order.address.email}</p>
-                <p>Phone: ${data.address.phone || 'N/A'}</p>
-                <p>Address: ${data.address.landMark || 'N/A'}, ${data.address.city || 'N/A'}, ${data.address.state || 'N/A'} ${data.address.pincode || ''}</p>
+                            <h6>Customer Details</h6>
+                            <p>Name: ${data.order.address ? data.order.address.name : 'N/A'}</p>
+                            <p>Phone: ${data.order.address ? data.order.address.phone : 'N/A'}</p>
+                            <p>Address: ${data.order.address ?
+                                `${data.order.address.landMark || ''}, 
+                                ${data.order.address.city || ''}, 
+                                ${data.order.address.state || ''} 
+                                ${data.order.address.pincode || ''}`.trim() : 'N/A'}</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12">
                             <h6>Items</h6>
-                           <table class="table">
-    <thead>
-        <tr>
-            <th>Product</th>
-            <th>Image</th>                       
-            <th>Quantity</th>
-            <th>Size</th>
-            <th>Price</th>
-            <th>Total</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        ${data.order.orderedItems.map(item => `
-
-            <tr>
-                <td>${item.product.productName}</td>
-                <td><img 
-        src="/uploads/product-images/${item.product.productImage[0]}" 
-        style="width: 50px; height: 50px; object-fit: cover;"
-        onerror="this.src='/path/to/default/image.jpg'"
-    ></td>
-                <td>${item.quantity}</td>
-                <td>${item.size}</td>
-                <td>₹${item.price}</td>
-                <td>₹${item.quantity * item.price}</td>
-                <td>
-                    ${data.status !== 'Cancelled' && data.status !== 'Delivered' ? `
-                        <button class="btn btn-sm btn-danger" onclick="cancelSingleItem('${orderId}', '${item.product._id}')">
-                            Cancel Item
-                        </button>
-                    ` : ''}
-                </td>
-            </tr>
-        `).join('')}
-    </tbody>
-</table>
-                       </div>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Image</th>                       
+                                        <th>Quantity</th>
+                                        <th>Size</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.order.orderedItems.map(item => `
+                                        <tr>
+                                            <td>${item.product.productName}</td>
+                                            <td><img 
+                                                src="/uploads/product-images/${item.product.productImage[0]}" 
+                                                style="width: 50px; height: 50px; object-fit: cover;"
+                                                onerror="this.src='/path/to/default/image.jpg'"
+                                            ></td>
+                                            <td>${item.quantity}</td>
+                                            <td>${item.size}</td>
+                                            <td>₹${item.price}</td>
+                                            <td>₹${item.quantity * item.price}</td>
+                                            <td>${item.status}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                            ${returnRequestButtons}
+                ${returnRequestButtons}
             `;
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            content.innerHTML = `<div class="alert alert-danger">Error loading order details: ${error.message}</div>`;
-                        });
-                }
-
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            content.innerHTML = `<div class="alert alert-danger">Error loading order details: ${error.message}</div>`;
+        });
+}
                 function cancelSingleItem(orderId, productId) {
                     if (confirm('Are you sure you want to cancel this item?')) {
                         fetch(`/admin/userOrderCancel/${orderId}`, {
@@ -281,25 +291,25 @@
                             });
                     }
                 }
-                function handleReturnRequest(orderId, action) {
+                function handleReturnRequest(orderId, action, productId) {
     if (confirm(`Are you sure you want to ${action} this return request?`)) {
         fetch(`/admin/handleReturnRequest/${orderId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action })
+            body: JSON.stringify({ action, productId })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.message || 'Error processing return request');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error processing return request');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error processing return request');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error processing return request');
+            });
     }
 }
             </script>

@@ -61,7 +61,7 @@
       <div class="card-body">
         <div class="row">
           <div class="col-md-3">
-            <form id="coupon-form" method="post" action="/admin/updatecoupon">
+            <form id="coupon-form" method="post" action="/admin/updateCoupon">
 
               <body onload="setDefaultStartDate(),setDefaultendDate()"></body>
               <input type="hidden" id="coupon-id" value="<%= findCoupon._id %>" />
@@ -113,26 +113,23 @@
   </section>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    function setDefaultStartDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      let month = (today.getMonth() + 1).toString().padStart(2, "0");
-      let day = today.getDate().toString().padStart(2, "0");
-      document.getElementById("startingDate").value = `${year}-${month}-${day}`;
-    }
-
+  function setDefaultStartDate() {
+  const couponStartDate = new Date("<%= findCoupon.createdOn %>");
+  
+  const year = couponStartDate.getFullYear();
+  let month = (couponStartDate.getMonth() + 1).toString().padStart(2, "0");
+  let day = couponStartDate.getDate().toString().padStart(2, "0");
+  document.getElementById("startingDate").value = `${year}-${month}-${day}`;
+}
 
     function setDefaultendDate() {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-
-
-      const year = tomorrow.getFullYear();
-      let month = (tomorrow.getMonth() + 1).toString().padStart(2, "0");
-      let day = tomorrow.getDate().toString().padStart(2, "0");
-      document.getElementById("expiringDate").value = `${year}-${month}-${day}`;
-    }
+  const couponEndDate = new Date("<%= findCoupon.expireOn %>");
+  
+  const year = couponEndDate.getFullYear();
+  let month = (couponEndDate.getMonth() + 1).toString().padStart(2, "0");
+  let day = couponEndDate.getDate().toString().padStart(2, "0");
+  document.getElementById("expiringDate").value = `${year}-${month}-${day}`;
+}
 
 
     document.getElementById("coupon-form").addEventListener("submit", function (event) {

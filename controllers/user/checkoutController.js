@@ -2,7 +2,8 @@ const Cart = require('../../models/cartSchema');
 const Address = require('../../models/adressSchema');
 const Order = require('../../models/orderSchema');
 const User = require('../../models/userSchema');
-const Product = require("../../models/productSchema")
+const Product = require("../../models/productSchema");
+const Coupon = require("../../models/couponSchema");
 
 const getCheckoutPage = async (req, res) => {
     try {
@@ -18,6 +19,13 @@ const getCheckoutPage = async (req, res) => {
             path: 'items.productId',
             select: 'productName sizeVariants'
         });
+
+        const validCoupons = await Coupon.find({
+            isList: true,
+            expireOn: { $gt: new Date() },
+            createdOn: { $lt: new Date() }
+        }).select('name offerPrice minimumPrice');
+        
 
         console.log("cart products", cart)
 
@@ -58,12 +66,12 @@ const getCheckoutPage = async (req, res) => {
         const userAddress = await Address.findOne({ userId });
 
 
-
         res.render('checkout', {
             cart,
             address: userAddress ? userAddress.address : [],
             user,
             subtotal,
+            validCoupons
             // walletBalance:user.wallet || 0
         });
 
@@ -100,21 +108,139 @@ const addAddressCheckout = async (req,res) => {
     }
 }
 
+const applyCoupon = async (req,res) => {
+    console.log("the is the copoun ready to work")
+    try {
+        
+        const {couponCode , cartTotal , removeCoupon} = req.body;
+        const userId = req.session.user
+       
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to apply coupons"
+            });
+        }
+
+        let discount = 0;
+        let finalAmount = cartTotal; 
+
+        if(removeCoupon){
+
+           if (req.session.activeCoupon) {
+                await Coupon.updateOne(
+                    { name: req.session.activeCoupon },
+                    { $pull: { userId: userId } }
+                );
+                req.session.activeCoupon = null;
+            }
+
+            return res.status(200).json({
+                success: true,
+                discount: 0,
+                finalAmount: cartTotal,
+                message: "Coupon removed successfully"
+            });
+        }
+
+        if (!couponCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a coupon code"
+            });
+        }
+
+        const coupon = await Coupon.findOne({
+            name: couponCode,
+            isList: true,
+            expireOn: { $gt: new Date() },
+            createdOn: { $lt: new Date() }
+        });
+
+            console.log("Coupon details:", coupon);
+
+            if (!coupon) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid coupon code or coupon has expired"
+                });
+            }
+
+            if (coupon.userId.includes(userId) && !req) {
+                return res.status(400).json({
+                    success: false,
+                    message: "You have already used this coupon"
+                });
+            }
+
+            if (cartTotal < coupon.minimumPrice) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Minimum purchase amount of ₹${coupon.minimumPrice} required`
+                });
+            }
+
+            discount = coupon.offerPrice;
+            finalAmount = cartTotal - discount;
+
+            req.session.activeCoupon = couponCode;
+
+
+            await Coupon.updateOne(
+                { _id: coupon._id },
+                { $push: { userId: userId } }
+            );
+        
+
+        return res.status(200).json({
+            success: true,
+            discount,
+            finalAmount,
+            message:"Coupon applied successfully" 
+        });
+
+    } catch (error) {
+        console.error("Error applying/removing coupon:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
 
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user;
-        const { addressId } = req.body;
+        const { addressId ,discount,finalAmount,paymentMethod } = req.body;
 
         console.log('Received addressId:', addressId);
         console.log('User ID:', userId);
 
+        console.log(addressId)
+
+        const addressDoc = await Address.findOne({
+            userId,
+            'address._id': addressId
+        })
+
+        console.log("The address is in the addressDoc",addressDoc)
+
+        if (!addressDoc) {
+            throw new Error('Invalid address');
+        }
 
         const cart = await Cart.findOne({ userId }).populate('items.productId');
         if (!cart || cart.items.length === 0) {
             throw new Error('Cart is empty');
         }
 
+        const selectedAddress = addressDoc.address.find(addr => 
+            addr._id.toString() === addressId
+        )
+        if (!selectedAddress) {
+            throw new Error('Address not found');
+        }
 
         let isStockSufficient = true;
         const stockCheckDetails = await Promise.all(cart.items.map(async (item) => {
@@ -162,12 +288,20 @@ const placeOrder = async (req, res) => {
                 size: item.size
             })),
             totalPrice: subtotal,
-            finalAmount: subtotal,
-            address: userId,
+            discount: discount || 0, 
+            finalAmount: subtotal-discount,
+            paymentMethod: paymentMethod,
+            address: selectedAddress, 
             status: 'Pending',
             createdOn: new Date(),
-        });
+            couponApplied: discount > 0 
+            
+           
+        })
 
+        console.log("Selected Address:", selectedAddress);
+        console.log("Order Address ID:", order.address)
+        // console.log("The new orders",order)
 
         await order.save();
 
@@ -203,7 +337,6 @@ const getOrderSuccess = async (req, res) => {
                 path: 'orderedItems.product',
                 select: 'productName productImage sizeVariants' 
             })
-            .populate('address')
             .lean();
 
         if (!order) {
@@ -213,13 +346,16 @@ const getOrderSuccess = async (req, res) => {
             });
         }
 
-        console.log('Found order:', order);
-
-        const user = await User.findById(userId)
-
         const userAddress = await Address.findOne({
-            userId: order.address
+            userId: userId,
+            'address._id': order.address
         });
+
+        const selectedAddress = userAddress ? 
+        userAddress.address.find(addr => addr._id.toString() === order.address.toString()) 
+        : null;
+
+        console.log('Found order:', order);
 
 
 
@@ -229,16 +365,18 @@ const getOrderSuccess = async (req, res) => {
             finalAmount: order.finalAmount,
             totalPrice: order.totalPrice,
             discount: order.discount,
+            couponApplied: order.couponApplied,
             orderedItems: order.orderedItems,
-            address: userAddress ? userAddress.address[0] : null,
-            status: order.status
+            address: selectedAddress,
+            status: order.status,
+            paymentMethod: order.paymentMethod
         };
 
         console.log('Formatted order for template:', JSON.stringify(formattedOrder, null, 2));
 
         return res.render('orderSuccess', {
             order: formattedOrder,
-            user: user
+            user: await User.findById(userId)
         });
 
     } catch (error) {
@@ -255,5 +393,6 @@ module.exports = {
     getCheckoutPage,
     addAddressCheckout,
     placeOrder,
-    getOrderSuccess
+    getOrderSuccess,
+    applyCoupon
 }
