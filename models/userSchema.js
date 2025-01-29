@@ -45,6 +45,13 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    walletHistory: [{
+        transactionId: String,
+        date: { type: Date, default: Date.now },
+        type: { type: String, enum: ["credit", "debit", "refund"], required: true }, 
+        amount: { type: Number, required: true },
+        status: { type: String, enum: ["Completed", "Pending"], default: "Completed" }
+    }],
     orderHistory: [{
         type: Schema.Types.ObjectId,
         ref: "Order"

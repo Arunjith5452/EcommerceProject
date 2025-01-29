@@ -170,14 +170,15 @@ const postNewPassword = async (req, res) => {
 const userProfile = async (req, res) => {
     try {
         const userId = req.session.user;
-        const userData = await User.findById(userId);
+        const userData = await User.findById(userId)
+        .populate('walletHistory')
         const addressData = await Address.findOne({ userId: userId });
 
         const orders = await Order.find({
             _id: { $in: userData.orderHistory }
         })
         .sort({createdOn: -1})
-        .populate('orderedItems.product', 'productName');
+        .populate('orderedItems.product', 'productName')
 
         console.log("Found orders for user:", orders.length);
         
@@ -607,10 +608,20 @@ const cancelSingleProduct = async (req, res) => {
                 message: 'User not found'
             });
         }
+        if(order.paymentMethod !== 'COD'){
+            user.wallet += refundAmount;
+            user.walletHistory.push({
+                transactionId: `TXN${Date.now()}`,
+                type: 'credit',
+                amount: refundAmount,
+                date: new Date()
+            })
+           await user.save();
 
-        user.wallet += refundAmount;
+        }
+       
+        await order.save();
 
-        await Promise.all([order.save(), user.save()]);
 
         return res.status(200).json({
             success: true,
@@ -631,8 +642,9 @@ const cancelSingleProduct = async (req, res) => {
 const productReturn = async (req, res) => {
     try {
         const orderId = req.params.orderId;
-        const { returnReason, productId, adminAction } = req.body;
+        const { returnReason, productId, } = req.body; 
         const userId = req.session.user;
+
 
         const order = await Order.findOne({ orderId }).populate('orderedItems.product');
 
@@ -654,75 +666,6 @@ const productReturn = async (req, res) => {
             });
         }
 
-        // Check if admin is processing the return
-        if (adminAction) {
-            if (orderItem.status !== 'Return Request') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid order status for admin action'
-                });
-            }
-
-            const user = await User.findById(order.userId);
-            if (!user) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'User not found'
-                });
-            }
-
-            if (adminAction === 'approve') {
-                // Calculate refund amount
-                const itemTotal = orderItem.price * orderItem.quantity;
-                let refundAmount = itemTotal;
-
-                if (order.discount > 0) {
-                    const discountPerItem = order.discount / order.orderedItems.length;
-                    refundAmount -= discountPerItem;
-                    order.discount -= discountPerItem;
-                }
-
-                // Update order totals
-                order.totalPrice -= itemTotal;
-                order.finalAmount = order.totalPrice - order.discount;
-
-                // Add refund to wallet only after admin approval
-                user.wallet += refundAmount;
-
-                // Update statuses
-                orderItem.status = 'Returned';
-                order.returnStatus = 'Approved';
-
-                await Promise.all([order.save(), user.save()]);
-
-                return res.status(200).json({
-                    success: true,
-                    message: 'Return request approved and refund processed',
-                    currentWalletBalance: user.wallet
-                });
-            } else if (adminAction === 'reject') {
-                orderItem.status = 'Delivered';
-                order.returnStatus = 'Rejected';
-                
-                // Check if this was the only return request
-                const hasOtherReturns = order.orderedItems.some(
-                    item => item.status === 'Return Request' || item.status === 'Returned'
-                );
-                
-                if (!hasOtherReturns) {
-                    order.status = 'Delivered';
-                }
-
-                await order.save();
-
-                return res.status(200).json({
-                    success: true,
-                    message: 'Return request rejected'
-                });
-            }
-        }
-
-        // Regular return request processing
         if (orderItem.status === 'Returned' || orderItem.status === 'Return Request') {
             return res.status(400).json({
                 success: false,
@@ -737,11 +680,9 @@ const productReturn = async (req, res) => {
             });
         }
 
-        // Update order item status
         orderItem.status = 'Return Request';
         orderItem.returnReason = returnReason;
 
-        // Update main order status
         order.status = 'Return Request';
         order.returnStatus = 'Pending';
         order.returnReason = returnReason;
@@ -750,7 +691,7 @@ const productReturn = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Return request submitted successfully. Refund will be processed after approval.',
+            message: 'Return request submitted successfully',
             redirectUrl: '/userProfile?tab=orders'
         });
 
@@ -789,3 +730,4 @@ module.exports = {
     cancelSingleProduct,
     productReturn
 }
+

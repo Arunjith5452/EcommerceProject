@@ -281,6 +281,7 @@ const placeOrder = async (req, res) => {
         const subtotal = cart.items.reduce((total, item) => total + item.totalPrice, 0);
 
         const order = new Order({
+            userId,
             orderedItems: cart.items.map(item => ({
                 product: item.productId._id,
                 quantity: item.quantity,
@@ -386,7 +387,6 @@ const getOrderSuccess = async (req, res) => {
         });
     }
 };
-
 
 
 module.exports = {

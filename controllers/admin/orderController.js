@@ -135,7 +135,6 @@ const updateOrderStatus = async (req, res) => {
         }
 
         if (productId) {
-            // Update status for a specific product
             const orderItem = order.orderedItems.find(
                 item => item.product.toString() === productId
             );
@@ -147,12 +146,10 @@ const updateOrderStatus = async (req, res) => {
                 });
             }
 
-            // Only update if the item isn't already cancelled
             if (orderItem.status !== 'Cancelled') {
                 orderItem.status = status;
             }
 
-            // Check if all non-cancelled items have the same status
             const nonCancelledItems = order.orderedItems.filter(
                 item => item.status !== 'Cancelled'
             );
@@ -162,21 +159,17 @@ const updateOrderStatus = async (req, res) => {
             );
 
             if (allNonCancelledSameStatus) {
-                // If all non-cancelled items have the same status, update order status
                 order.status = status;
             } else {
-                // If items have different statuses, mark as partially processed
                 order.status = 'Partially Processed';
             }
         } else {
-            // Bulk update for all non-cancelled items
             order.orderedItems.forEach(item => {
                 if (item.status !== 'Cancelled') {
                     item.status = status;
                 }
             });
 
-            // Check if there are any non-cancelled items
             const hasNonCancelledItems = order.orderedItems.some(
                 item => item.status !== 'Cancelled'
             );
@@ -184,7 +177,6 @@ const updateOrderStatus = async (req, res) => {
             if (hasNonCancelledItems) {
                 order.status = status;
             } else {
-                // If all items are cancelled, keep order status as Cancelled
                 order.status = 'Cancelled';
             }
         }
@@ -304,16 +296,16 @@ const handleReturnRequest = async (req, res) => {
 
         console.log('Processing return request:', { orderId, action, productId });
 
-        const order = await Order.findOne({ orderId });
+        const order = await Order.findOne({ orderId })
+            .populate('orderedItems.product')
+            .populate('userId'); 
 
         if (!order) {
-            console.log('Order not found:', orderId);
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         const orderItem = order.orderedItems.find(item => 
-            item.product._id.toString() === productId || 
-            item.product.toString() === productId
+            item.product._id.toString() === productId
         );
 
         if (!orderItem) {
@@ -323,12 +315,6 @@ const handleReturnRequest = async (req, res) => {
             });
         }
 
-        console.log('Found order item:', {
-            productId: orderItem.product.toString(),
-            currentStatus: orderItem.status,
-            orderStatus: order.status
-        });
-
         if (order.status !== 'Return Request') {
             return res.status(400).json({
                 success: false,
@@ -336,9 +322,42 @@ const handleReturnRequest = async (req, res) => {
             });
         }
 
+        const user = await User.findById(order.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
         if (action === 'approve') {
+            const itemTotal = orderItem.price * orderItem.quantity;
+            let refundAmount = itemTotal;
+
+            if (order.discount > 0) {
+                const discountPerItem = order.discount / order.orderedItems.length;
+                refundAmount -= discountPerItem;
+                order.discount -= discountPerItem;
+            }
+
+            order.totalPrice -= itemTotal;
+            order.finalAmount = order.totalPrice - order.discount;
+
+            user.wallet += refundAmount;
+
+            const refundTransaction = {
+                transactionId: `REF-${Date.now()}`, 
+                date: new Date(),
+                type: "refund",
+                amount: refundAmount,
+                status: "Completed"
+            };
+           user.walletHistory.push(refundTransaction);
+            await user.save();
+
             orderItem.status = 'Returned';
             order.returnStatus = 'Approved';
+
 
             const allItemsReturned = order.orderedItems.every(
                 item => item.status === 'Returned' || item.status === 'Cancelled'
@@ -348,10 +367,20 @@ const handleReturnRequest = async (req, res) => {
                 order.status = 'Returned';
             } else {
                 const hasOtherReturns = order.orderedItems.some(
-                    item => item.status === 'Return Request' || item.status === 'Delivered'
+                    item => item.status === 'Delivered'
                 );
-                order.status = hasOtherReturns ? 'Partially Returned' : 'Returned';
+                order.status = hasOtherReturns ? 'Delivered' : 'Returned';
             }
+
+            await order.save();
+
+            return res.json({
+                success: true,
+                message: 'Return request approved',
+                refundAmount: refundAmount,
+                currentWalletBalance: user.wallet,
+                order
+            });
 
         } else if (action === 'reject') {
             orderItem.status = 'Delivered';
@@ -364,26 +393,15 @@ const handleReturnRequest = async (req, res) => {
             if (!hasOtherReturns) {
                 order.status = 'Delivered';
             }
-        } else {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid action'
+
+            await order.save();
+
+            return res.json({
+                success: true,
+                message: 'Return request rejected',
+                order
             });
         }
-
-        console.log('Saving order with updated status:', {
-            orderStatus: order.status,
-            itemStatus: orderItem.status,
-            returnStatus: order.returnStatus
-        });
-
-        await order.save();
-
-        res.json({
-            success: true,
-            message: `Return request ${action}d successfully`,
-            order
-        });
 
     } catch (error) {
         console.error("Error handling return request:", error);
@@ -394,7 +412,6 @@ const handleReturnRequest = async (req, res) => {
         });
     }
 };
-
 module.exports = {
     orderList,
     updateOrderStatus,

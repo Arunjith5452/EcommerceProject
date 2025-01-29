@@ -713,7 +713,6 @@
                 <script src="https://kit.fontawesome.com/a-valid-fontawesome-kit-code.js" crossorigin="anonymous"></script>
                 <script>
 
-
 function viewOrderDetails(orderId) {
     fetch(`/orderDetails/${orderId}`)
         .then(response => response.json())
@@ -837,159 +836,92 @@ function getActionButton(order, item, itemStatus) {
     if (itemStatus === 'Delivered' && !['Returned', 'Return Request'].includes(item.status || order.status)) {
         return `<button class="btn btn-sm btn-warning return-button" onclick="requestReturn('${order.orderId}', '${item.product._id}')">Return</button>`;
     } 
-    else if (itemStatus === 'Return Request' && isAdmin) {
-        return `<button class="btn btn-sm btn-primary" onclick="requestReturn('${order.orderId}', '${item.product._id}', true)">Process Return</button>`;
-    }
-    else if (!['Shipped', 'Delivered', 'Returned', 'Return Request', 'Cancelled'].includes(itemStatus)) {
+    else if (['Processing','Pending'].includes(itemStatus)) {
         return `<button class="btn btn-sm btn-danger cancel-button" onclick="cancelSingleProduct('${order.orderId}', '${item.product._id}', this)">Cancel</button>`;
     }
     return '';
 }
 
-function requestReturn(orderId, productId, isAdminAction = false) {
-    if (isAdminAction) {
-        // Admin approval/rejection flow
-        Swal.fire({
-            title: 'Process Return Request',
-            text: 'Would you like to approve or reject this return request?',
-            icon: 'question',
-            showDenyButton: true,
-            showCancelButton: true,
-            confirmButtonText: 'Approve',
-            denyButtonText: 'Reject',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed || result.isDenied) {
-                const adminAction = result.isConfirmed ? 'approve' : 'reject';
-                
-                fetch(`/requestProductReturn/${orderId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        productId: productId,
-                        adminAction: adminAction
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        let message = adminAction === 'approve' ? 
-                            `Return approved. Refund of ₹${data.refundAmount} processed.` :
-                            'Return request rejected.';
-                            
-                        Swal.fire({
-                            title: 'Success!',
-                            html: `
-                                <div class="text-center">
-                                    <p>${message}</p>
-                                    ${data.currentWalletBalance ? 
-                                        `<div class="alert alert-success">
-                                            <p class="mb-0"><strong>Current Wallet Balance:</strong> ₹${data.currentWalletBalance}</p>
-                                        </div>` : 
-                                        ''}
-                                </div>
-                            `,
-                            icon: 'success'
-                        }).then(() => {
-                            viewOrderDetails(orderId); // Refresh the order details
-                        });
-                    } else {
-                        throw new Error(data.message || 'Failed to process return request.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error processing return:', error);
-                    Swal.fire('Error!', error.message || 'An error occurred while processing the return.', 'error');
-                });
-            }
-        });
-    } else {
-        // User return request flow
-        Swal.fire({
-            title: 'Return Product',
-            text: 'Please select a reason for return:',
-            input: 'select',
-            inputOptions: {
-                'defective': 'Defective Product',
-                'wrong_size': 'Wrong Size',
-                'not_as_described': 'Not as Described',
-                'damaged': 'Damaged During Shipping',
-                'other': 'Other Reason'
-            },
-            inputPlaceholder: 'Select a reason',
-            showCancelButton: true,
-            confirmButtonText: 'Next',
-            showLoaderOnConfirm: true,
-            preConfirm: (selectedReason) => {
-                if (selectedReason === 'other') {
-                    return new Promise((resolve) => {
-                        Swal.fire({
-                            title: 'Provide Return Reason',
-                            input: 'textarea',
-                            inputPlaceholder: 'Explain your reason for return...',
-                            inputAttributes: {
-                                autocapitalize: 'off'
-                            },
-                            showCancelButton: true,
-                            confirmButtonText: 'Submit',
-                            showLoaderOnConfirm: true,
-                            preConfirm: (text) => {
-                                if (!text || text.trim() === '') {
-                                    Swal.showValidationMessage('Please enter a reason');
-                                    return false;
-                                }
-                                return text;
+function requestReturn(orderId, productId) {
+    Swal.fire({
+        title: 'Return Product',
+        text: 'Please select a reason for return:',
+        input: 'select',
+        inputOptions: {
+            'defective': 'Defective Product',
+            'wrong_size': 'Wrong Size',
+            'not_as_described': 'Not as Described',
+            'damaged': 'Damaged During Shipping',
+            'other': 'Other Reason'
+        },
+        inputPlaceholder: 'Select a reason',
+        showCancelButton: true,
+        confirmButtonText: 'Submit',
+        showLoaderOnConfirm: true,
+        preConfirm: (selectedReason) => {
+            if (selectedReason === 'other') {
+                return new Promise((resolve) => {
+                    Swal.fire({
+                        title: 'Provide Return Reason',
+                        input: 'textarea',
+                        inputPlaceholder: 'Explain your reason for return...',
+                        inputAttributes: {
+                            autocapitalize: 'off'
+                        },
+                        showCancelButton: true,
+                        confirmButtonText: 'Submit',
+                        showLoaderOnConfirm: true,
+                        preConfirm: (text) => {
+                            if (!text || text.trim() === '') {
+                                Swal.showValidationMessage('Please enter a reason');
+                                return false;
                             }
-                        }).then(result => {
-                            resolve(result.value);
-                        });
+                            return text;
+                        }
+                    }).then(result => {
+                        resolve(result.value);
                     });
-                }
-                return selectedReason;
-            },
-            allowOutsideClick: () => !Swal.isLoading()
-        }).then((result) => {
-            if (result.value) {
-                return fetch(`/requestProductReturn/${orderId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        returnReason: result.value,
-                        productId: productId
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire({
-                            title: 'Return Requested!',
-                            text: 'Your return request has been submitted successfully. Please wait for admin approval.',
-                            icon: 'success'
-                        }).then(() => {
-                            const orderModal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-                            if (orderModal) {
-                                orderModal.hide();
-                            }
-                            window.location.href = data.redirectUrl;
-                        });
-                    } else {
-                        throw new Error(data.message || 'Failed to submit return request.');
-                    }
                 });
             }
-        }).catch(error => {
-            console.error('Error requesting product return:', error);
-            Swal.fire(
-                'Error!',
-                error.message || 'An error occurred while requesting product return.',
-                'error'
-            );
-        });
-    }
+            return selectedReason;
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.value) {
+            fetch(`/requestProductReturn/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    returnReason: result.value,
+                    productId: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Return Requested!',
+                        text: 'Your return request has been submitted successfully.',
+                        icon: 'success'
+                    }).then(() => {
+                        window.location.href = data.redirectUrl;
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to submit return request.');
+                }
+            })
+            .catch(error => {
+                console.error('Error requesting return:', error);
+                Swal.fire(
+                    'Error!',
+                    error.message || 'An error occurred while requesting return.',
+                    'error'
+                );
+            });
+        }
+    });
 }
 
 function setupStatusUpdateListener(orderId) {

@@ -4,6 +4,11 @@ const { v4: uuidv4 } = require('uuid')
 
 const orderSchema = new mongoose.Schema({
 
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: false 
+    },
     orderId: {
         type: String,
         default: () => uuidv4(),
