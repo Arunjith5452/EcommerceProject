@@ -526,7 +526,6 @@ const deleteAddress = async (req, res) => {
 
 
 const viewOrderDetails = async (req,res) => {
-    console.log("The order is ready to show the details")
     try {
         
         const {orderId} = req.params;
@@ -549,6 +548,36 @@ const viewOrderDetails = async (req,res) => {
     }
 }
 
+const calculateItemDiscount = (item, order) => {
+    if (!order.discount) return 0;
+    const totalOrderValue = order.orderedItems.reduce((total, item) => 
+        total + (item.price * item.quantity), 0);
+    const itemValue = item.price * item.quantity;
+    const discountProportion = itemValue / totalOrderValue;
+    return Math.round(order.discount * discountProportion);
+};
+
+const calculateUpdatedOrderTotals = (order, cancelledItem, itemDiscount) => {
+    const activeItems = order.orderedItems.filter(item => 
+        item.status !== 'Cancelled' && 
+        item.product._id.toString() !== cancelledItem.product._id.toString()
+    );
+
+    const updatedTotalMRP = activeItems.reduce((total, item) => 
+        total + (item.price * item.quantity), 0);
+    
+    const totalMRP = order.originalTotalPrice || order.orderedItems.reduce((total, item) => 
+        total + (item.price * item.quantity), 0);
+    
+    const updatedDiscount = Math.round(order.discount * (updatedTotalMRP / totalMRP)) || 0;
+
+    return {
+        updatedTotalMRP,
+        updatedDiscount,
+        updatedTotalAmount: Math.round(updatedTotalMRP - updatedDiscount)
+    };
+};
+
 const cancelSingleProduct = async (req, res) => {
     try {
         const { orderId } = req.params;
@@ -556,89 +585,106 @@ const cancelSingleProduct = async (req, res) => {
         const userId = req.session.user;
 
         const order = await Order.findOne({ orderId }).populate('orderedItems.product');
-
         if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Order not found'
-            });
+            return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        const itemIndex = order.orderedItems.findIndex(
-            item => item.product._id.toString() === productId
-        );
 
-        if (itemIndex === -1) {
-            return res.status(404).json({
-                success: false,
-                message: 'Product not found in order'
-            });
+        if (!order.originalTotalPrice) {
+            order.originalTotalPrice = order.orderedItems.reduce((total, item) => 
+                total + (item.price * item.quantity), 0);
+            order.originalDiscount = order.discount || 0;
         }
 
-        if (order.orderedItems[itemIndex].status === 'Cancelled') {
-            return res.status(400).json({
-                success: false,
-                message: 'This item is already cancelled'
-            });
+        const item = order.orderedItems.find(item => 
+            item.product._id.toString() === productId
+        )
+
+        if (!item) {
+            return res.status(404).json({ success: false, message: 'Product not found in the order' });
         }
 
-        order.orderedItems[itemIndex].status = 'Cancelled';
+        const itemTotal = item.price * item.quantity;
+        const itemDiscount = calculateItemDiscount(item, order);
+        const refundAmount = itemTotal - itemDiscount;
 
-        const itemTotal = order.orderedItems[itemIndex].price * order.orderedItems[itemIndex].quantity;
-        let refundAmount = itemTotal;
+        item.status = 'Cancelled';
 
-        if (order.discount > 0) {
-            const discountPerItem = order.discount / order.orderedItems.length;
-            refundAmount -= discountPerItem;
-            order.discount -= discountPerItem;
-        }
-
-        order.totalPrice -= itemTotal;
-        order.finalAmount = order.totalPrice - order.discount;
-
-        const allItemsCancelled = order.orderedItems.every(item => item.status === 'Cancelled');
+ const allItemsCancelled = order.orderedItems.every(item => item.status === 'Cancelled');
         if (allItemsCancelled) {
+            order.status = 'Cancelled';
+            order.finalAmount = order.originalTotalPrice - order.originalDiscount;
+        }
+
+        const { 
+            updatedTotalMRP, 
+            updatedDiscount, 
+            updatedTotalAmount 
+        } = calculateUpdatedOrderTotals(order, item, itemDiscount);
+
+        const remainingActiveItems = order.orderedItems.filter(item => 
+            item.status !== 'Cancelled'
+        );
+        if (remainingActiveItems.length === 0) {
             order.status = 'Cancelled';
         }
 
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-        if(order.paymentMethod !== 'COD'){
+        order.finalAmount = updatedTotalAmount;
+
+        await Product.updateOne(
+            { 
+                _id: item.product._id,
+                "sizeVariants.size": item.size 
+            },
+            { 
+                $inc: { "sizeVariants.$.quantity": item.quantity }
+            }
+        );
+
+        let currentWalletBalance = 0;
+        if (order.paymentMethod !== 'COD') {
+            const user = await User.findById(userId);
             user.wallet += refundAmount;
             user.walletHistory.push({
                 transactionId: `TXN${Date.now()}`,
                 type: 'credit',
                 amount: refundAmount,
-                date: new Date()
-            })
-           await user.save();
-
+                date: new Date(),
+            });
+            await user.save();
+            currentWalletBalance = user.wallet;
         }
-       
-        await order.save();
 
+        await order.save();
 
         return res.status(200).json({
             success: true,
-            message: 'Product cancelled successfully and amount refunded to wallet',
-            refundAmount,
-            currentWalletBalance: user.wallet,
+            message: 'Product cancelled successfully',
+            refundDetails: {
+                itemPrice: item.price * item.quantity,
+                itemDiscount: itemDiscount,
+                refundAmount: refundAmount
+            },
+            orderTotals: {
+                originalTotalMRP: order.originalTotalPrice,
+                originalDiscount: order.discount,
+                originalTotalAmount: order.originalTotalPrice - order.discount,
+                updatedTotalMRP: updatedTotalMRP,
+                updatedDiscount: updatedDiscount,
+                updatedTotalAmount: updatedTotalAmount
+            },
+            currentWalletBalance,
             redirectUrl: '/userProfile?tab=orders'
         });
-
     } catch (error) {
-        console.error('Error in cancelOrder:', error);
+        console.error('Error in cancelSingleProduct:', error);
         return res.status(500).json({
-            success: false,
-            message: 'An error occurred while canceling the order'
+            success: false, 
+            message: 'An error occurred while canceling the product'
         });
     }
 };
+
 const productReturn = async (req, res) => {
     try {
         const orderId = req.params.orderId;

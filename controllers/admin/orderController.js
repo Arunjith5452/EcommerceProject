@@ -294,11 +294,9 @@ const handleReturnRequest = async (req, res) => {
         const { orderId } = req.params;
         const { action, productId } = req.body;
 
-        console.log('Processing return request:', { orderId, action, productId });
-
         const order = await Order.findOne({ orderId })
             .populate('orderedItems.product')
-            .populate('userId'); 
+            .populate('userId');
 
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
@@ -315,13 +313,6 @@ const handleReturnRequest = async (req, res) => {
             });
         }
 
-        if (order.status !== 'Return Request') {
-            return res.status(400).json({
-                success: false,
-                message: 'No return request to process for this order'
-            });
-        }
-
         const user = await User.findById(order.userId);
         if (!user) {
             return res.status(404).json({
@@ -332,32 +323,24 @@ const handleReturnRequest = async (req, res) => {
 
         if (action === 'approve') {
             const itemTotal = orderItem.price * orderItem.quantity;
-            let refundAmount = itemTotal;
-
-            if (order.discount > 0) {
-                const discountPerItem = order.discount / order.orderedItems.length;
-                refundAmount -= discountPerItem;
-                order.discount -= discountPerItem;
-            }
-
-            order.totalPrice -= itemTotal;
-            order.finalAmount = order.totalPrice - order.discount;
+            const totalOrderValue = order.orderedItems.reduce((total, item) => 
+                total + (item.price * item.quantity), 0);
+            const itemProportion = itemTotal / totalOrderValue;
+            const itemDiscount = Math.round(order.discount * itemProportion);
+            
+            const refundAmount = itemTotal - itemDiscount;
 
             user.wallet += refundAmount;
-
-            const refundTransaction = {
-                transactionId: `REF-${Date.now()}`, 
-                date: new Date(),
-                type: "refund",
+            user.walletHistory.push({
+                transactionId: `REF-${Date.now()}`,
+                type: 'credit',
                 amount: refundAmount,
-                status: "Completed"
-            };
-           user.walletHistory.push(refundTransaction);
+                date: new Date(),
+            });
             await user.save();
 
             orderItem.status = 'Returned';
             order.returnStatus = 'Approved';
-
 
             const allItemsReturned = order.orderedItems.every(
                 item => item.status === 'Returned' || item.status === 'Cancelled'
@@ -367,10 +350,25 @@ const handleReturnRequest = async (req, res) => {
                 order.status = 'Returned';
             } else {
                 const hasOtherReturns = order.orderedItems.some(
-                    item => item.status === 'Delivered'
+                    item => item.status === 'Return Request'
                 );
-                order.status = hasOtherReturns ? 'Delivered' : 'Returned';
+                order.status = hasOtherReturns ? 'Return Request' : 'Delivered';
             }
+
+            const activeItems = order.orderedItems.filter(item => 
+                item.status !== 'Cancelled' && 
+                item.status !== 'Returned'
+            );
+
+            const currentTotalMRP = activeItems.reduce((total, item) => 
+                total + (item.price * item.quantity), 0);
+            
+            if (!order.originalTotalPrice) {
+                order.originalTotalPrice = totalOrderValue;
+                order.originalDiscount = order.discount;
+            }
+
+            order.currentAmount = currentTotalMRP - order.discount * (currentTotalMRP / totalOrderValue);
 
             await order.save();
 
@@ -381,28 +379,7 @@ const handleReturnRequest = async (req, res) => {
                 currentWalletBalance: user.wallet,
                 order
             });
-
-        } else if (action === 'reject') {
-            orderItem.status = 'Delivered';
-            order.returnStatus = 'Rejected';
-
-            const hasOtherReturns = order.orderedItems.some(
-                item => item.status === 'Return Request' && item.product.toString() !== productId
-            );
-
-            if (!hasOtherReturns) {
-                order.status = 'Delivered';
-            }
-
-            await order.save();
-
-            return res.json({
-                success: true,
-                message: 'Return request rejected',
-                order
-            });
         }
-
     } catch (error) {
         console.error("Error handling return request:", error);
         res.status(500).json({ 
@@ -411,7 +388,7 @@ const handleReturnRequest = async (req, res) => {
             error: error.message 
         });
     }
-};
+}
 module.exports = {
     orderList,
     updateOrderStatus,

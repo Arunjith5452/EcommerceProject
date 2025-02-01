@@ -7,7 +7,6 @@ const orderSchema = new mongoose.Schema({
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: false 
     },
     orderId: {
         type: String,
@@ -75,7 +74,7 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: {
         type: String,
         required: true,
-        enum: ['COD', 'Online Payment', 'Card']
+        enum: ['COD', 'RAZORPAY', 'WALLET']
     },
     createdOn: {
         type: Date,

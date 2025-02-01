@@ -437,10 +437,17 @@
                                   <div class="stat-label">Orders</div>
                                   <%}%>
                             </div>
-                            <div class="stat-item">
-                              <div class="stat-value">₹0</div>
-                              <div class="stat-label">Wallet</div>
-                            </div>
+                            <%if(user.wallet > 0){%>
+                              <div class="stat-item">
+                                  <div class="stat-value">₹<%=user.wallet%></div>
+                                  <div class="stat-label">Wallet</div>
+                              </div>
+                          <%}else{%>
+                              <div class="stat-item">
+                                  <div class="stat-value">₹0</div>
+                                  <div class="stat-label">Wallet</div>
+                              </div>
+                          <%}%>
                           </div>
 
                           <div class="d-flex justify-content-center gap-2">
@@ -531,7 +538,7 @@
                       <% } else if(order.status === 'Cancelled') { %>bg-danger
                       <% } else if(order.status === 'Return Request') { %>bg-secondary
                       <% } else if(order.status === 'Returned') { %>bg-dark<% } %>">
-                                          <%= order.status %>
+                                          <%= order.status  %>
                                         </span>
                                       </div>
 
@@ -556,16 +563,36 @@
                                               </div>
                                             </div>
                                             <% }); %>
-                                        </div>
-                                        <div class="col-md-4 text-end">
-                                          <p class="mb-1"><strong>Date:</strong>
-                                            <%=new Date(order.createdOn).toLocaleDateString('en-US', { year: 'numeric' ,
-                                              month: 'short' , day: 'numeric' })%>
-                                          </p>
-                                          <h5 class="mb-3">₹<%= order.finalAmount%>
-                                          </h5>
-
-                                          <div class="d-flex flex-column gap-2">
+                                            <span>Payment method:<%=order.paymentMethod%></span>
+                                          </div>
+                                          <div class="col-md-4 text-end">
+                                            <p class="mb-1"><strong>Date:</strong>
+                                                <%=new Date(order.createdOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })%>
+                                            </p>
+                                            <h5 class="mb-3">
+                                              <% 
+                                              let displayAmount;
+                                              const activeItems = order.orderedItems.filter(item => 
+                                                  item.status !== 'Cancelled' && item.status !== 'Returned'
+                                              );
+                                              
+                                              if (activeItems.length === 0) {
+                                                  const originalTotal = order.originalTotalPrice || 
+                                                      order.orderedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+                                                  const originalDiscount = order.originalDiscount || order.discount || 0;
+                                                  displayAmount = Math.round(originalTotal - originalDiscount);
+                                              } else {
+                                                  const currentTotalMRP = activeItems.reduce((total, item) => 
+                                                      total + (item.price * item.quantity), 0);
+                                                  const totalMRP = order.originalTotalPrice || 
+                                                      order.orderedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+                                                  const currentDiscount = Math.round(order.discount * (currentTotalMRP / totalMRP)) || 0;
+                                                  displayAmount = Math.round(currentTotalMRP - currentDiscount);
+                                              }
+                                              %>
+                                              ₹<%= !isNaN(displayAmount) ? displayAmount : '0' %>
+                                            </h5>
+                                            <div class="d-flex flex-column gap-2">
                                             <button class="btn btn-sm btn-primary"
                                               onclick="viewOrderDetails('<%= order.orderId %>')" data-bs-toggle="modal"
                                               data-bs-target="#orderModal">
@@ -671,40 +698,40 @@
                         </div>
                       </div>
                     </div>
-
-                    <!-- Referrals Tab -->
-                    <div class="tab-pane fade" id="referral">
-                      <div class="card">
-                        <div class="card-header">
-                          <h5 class="mb-0">My Referrals</h5>
-                        </div>
-                        <div class="card-body">
-                          <div class="text-center py-4">
-                            <div class="mb-4">
-                              <i class="fas fa-user-friends fa-3x text-primary"></i>
-                            </div>
-                            <h6 class="mb-3">Your Referral Code</h6>
-                            <div class="d-flex justify-content-center align-items-center gap-2 mb-4">
-                              <input type="text" class="form-control text-center" style="max-width: 200px;"
-                                value="REF123456" readonly>
-                              <button class="btn btn-primary btn-small">Copy</button>
-                            </div>
-                            <div class="row justify-content-center">
-                              <div class="col-md-6">
-                                <div class="stat-item mb-3">
-                                  <div class="stat-value">0</div>
-                                  <div class="stat-label">Total Referrals</div>
-                                </div>
-                              </div>
-                              <div class="col-md-6">
-                                <div class="stat-item">
-                                  <div class="stat-value">₹0</div>
-                                  <div class="stat-label">Total Earnings</div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+  <!-- Referrals Tab -->
+  <div class="tab-pane fade" id="referral">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">My Referrals</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center py-4">
+          <div class="mb-4">
+            <i class="fas fa-user-friends fa-3x text-primary"></i>
+          </div>
+          <h6 class="mb-3">Your Referral Code</h6>
+          <div class="d-flex justify-content-center align-items-center gap-2 mb-4">
+            <input type="text" class="form-control text-center" style="max-width: 200px;"
+              value="REF123456" readonly>
+            <button class="btn btn-primary btn-small">Copy</button>
+          </div>
+          <div class="row justify-content-center">
+            <div class="col-md-6">
+              <div class="stat-item mb-3">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Total Referrals</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="stat-item">
+                <div class="stat-value">₹0</div>
+                <div class="stat-label">Total Earnings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+                 
                       </div>
                     </div>
                   </div>
@@ -712,11 +739,102 @@
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                 <script src="https://kit.fontawesome.com/a-valid-fontawesome-kit-code.js" crossorigin="anonymous"></script>
                 <script>
-
-function viewOrderDetails(orderId) {
+  function viewOrderDetails(orderId) {
     fetch(`/orderDetails/${orderId}`)
         .then(response => response.json())
         .then(order => {
+            const totalMRP = order.originalTotalPrice || order.orderedItems.reduce((total, item) =>
+                total + (item.price * item.quantity), 0);
+            
+            let priceDetailsHTML = '';
+            
+            const hasModifiedItems = order.orderedItems.some(item => 
+                item.status === 'Cancelled' || 
+                item.status === 'Returned'
+            );
+            
+            if (hasModifiedItems) {
+                const activeItems = order.orderedItems.filter(item => 
+                    item.status !== 'Cancelled' && 
+                    item.status !== 'Returned'
+                );
+                
+                if (activeItems.length === 0) {
+                    priceDetailsHTML = `
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <h6>Price Details</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total MRP</span>
+                                    <span>₹${totalMRP}</span>
+                                </div>
+                                ${order.discount > 0 ? `
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Discount</span>
+                                        <span class="text-success">-₹${order.discount}</span>
+                                    </div>
+                                ` : ''}
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Total Amount</strong>
+                                    <strong>₹${totalMRP - order.discount}</strong>
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    const currentTotalMRP = activeItems.reduce((total, item) => 
+                        total + (item.price * item.quantity), 0);
+                    const currentDiscount = order.discount * (currentTotalMRP / totalMRP) || 0;
+                    
+                    priceDetailsHTML = `
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="row">
+                                 <div class="col-md-6">
+    <h6>Current Price Details</h6>
+    <div class="d-flex justify-content-between mb-2">
+        <span>Total MRP</span>
+        <span>₹${currentTotalMRP}</span>
+    </div>
+    ${currentDiscount > 0 ? `
+        <div class="d-flex justify-content-between mb-2">
+            <span>Discount</span>
+            <span class="text-success">-₹${Math.round(currentDiscount)}</span>
+        </div>
+    ` : ''}
+    <hr>
+    <div class="d-flex justify-content-between">
+        <strong>Total Amount</strong>
+        <strong>₹${Math.round(currentTotalMRP - currentDiscount)}</strong>
+    </div>
+</div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            } else {
+                priceDetailsHTML = `
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h6>Price Details</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total MRP</span>
+                                <span>₹${totalMRP}</span>
+                            </div>
+                            ${order.discount > 0 ? `
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Discount</span>
+                                    <span class="text-success">-₹${order.discount}</span>
+                                </div>
+                            ` : ''}
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <strong>Total Amount</strong>
+                                <strong>₹${totalMRP - order.discount}</strong>
+                            </div>
+                        </div>
+                    </div>`;
+            }
             let orderDetailsHTML = `
                 <div class="order-details-container">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -728,88 +846,56 @@ function viewOrderDetails(orderId) {
                     <div class="ordered-items-list">
                         ${order.orderedItems.map(item => {
                             const itemStatus = item.status || order.status;
+                            const itemTotal = item.price * item.quantity;
                             
                             return `
-                            <div class="card mb-3" data-product-id="${item.product._id}">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3" style="width: 80px; height: 80px; overflow: hidden;">
-                                                ${item.product.productImage && item.product.productImage.length > 0 ?
-                                                    `<img src="/uploads/product-images/${item.product.productImage[0]}" 
-                                                        alt="${item.product.productName}" 
-                                                        class="img-fluid rounded">` :
-                                                    `<div class="no-image rounded bg-light d-flex align-items-center justify-content-center" 
-                                                        style="height: 100%">
-                                                        <i class="fas fa-image text-muted"></i>
-                                                    </div>`
-                                                }
+                                <div class="card mb-3" data-product-id="${item.product._id}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 80px; height: 80px; overflow: hidden;">
+                                                    ${item.product.productImage && item.product.productImage.length > 0 ?
+                                                        `<img src="/uploads/product-images/${item.product.productImage[0]}" 
+                                                            alt="${item.product.productName}" 
+                                                            class="img-fluid rounded">` :
+                                                        `<div class="no-image rounded bg-light d-flex align-items-center justify-content-center" 
+                                                            style="height: 100%">
+                                                            <i class="fas fa-image text-muted"></i>
+                                                        </div>`
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">${item.product.productName}</h6>
+                                                    <p class="mb-1 text-muted">Size: ${item.size}</p>
+                                                    <p class="mb-1">Quantity: ${item.quantity}</p>
+                                                     <p class="mb-0">Price: ₹${item.price}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h6 class="mb-1">${item.product.productName}</h6>
-                                                <p class="mb-1 text-muted">Size: ${item.size}</p>
-                                                <p class="mb-1">Quantity: ${item.quantity}</p>
-                                                <p class="mb-0">Price: ₹${item.price}</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-end">
-                                            <p class="mb-2"><strong>Status:</strong> 
-                                                <span class="badge ${getStatusBadgeClass(itemStatus)} item-status-badge">
-                                                    ${itemStatus}
-                                                </span>
-                                            </p>
-                                            ${item.returnReason ? `
-                                                <p class="mb-2">
-                                                    <small class="text-muted">
-                                                        <strong>Return Reason:</strong> ${item.returnReason}
-                                                    </small>
+                                            <div class="text-end">
+                                                <p class="mb-2"><strong>Status:</strong> 
+                                                    <span class="badge ${getStatusBadgeClass(itemStatus)} item-status-badge">
+                                                        ${itemStatus}
+                                                    </span>
                                                 </p>
-                                            ` : ''}
-                                            <div class="action-button-container">
                                                 ${getActionButton(order, item, itemStatus)}
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        `}).join('')}
+                                </div>`;
+                        }).join('')}
                     </div>
                     
-                    <div class="card mt-3">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>Price Details</h6>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Total MRP</span>
-                                        <span>₹${order.totalPrice}</span>
-                                    </div>
-                                    ${order.discount > 0 ? `
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>Discount</span>
-                                            <span class="text-success">-₹${order.discount}</span>
-                                        </div>
-                                    ` : ''}
-                                    <hr>
-                                    <div class="d-flex justify-content-between">
-                                        <strong>Total Amount</strong>
-                                        <strong>₹${order.finalAmount}</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+                    ${priceDetailsHTML}
+                </div>`;
+            
             document.getElementById('orderDetailsContent').innerHTML = orderDetailsHTML;
-
             setupStatusUpdateListener(orderId);
         })
         .catch(error => {
             console.error('Error fetching order details:', error);
             Swal.fire('Error!', 'Failed to load order details', 'error');
         });
-}
+      }
 
 function getStatusBadgeClass(status) {
     switch (status.toLowerCase()) {
@@ -842,87 +928,6 @@ function getActionButton(order, item, itemStatus) {
     return '';
 }
 
-function requestReturn(orderId, productId) {
-    Swal.fire({
-        title: 'Return Product',
-        text: 'Please select a reason for return:',
-        input: 'select',
-        inputOptions: {
-            'defective': 'Defective Product',
-            'wrong_size': 'Wrong Size',
-            'not_as_described': 'Not as Described',
-            'damaged': 'Damaged During Shipping',
-            'other': 'Other Reason'
-        },
-        inputPlaceholder: 'Select a reason',
-        showCancelButton: true,
-        confirmButtonText: 'Submit',
-        showLoaderOnConfirm: true,
-        preConfirm: (selectedReason) => {
-            if (selectedReason === 'other') {
-                return new Promise((resolve) => {
-                    Swal.fire({
-                        title: 'Provide Return Reason',
-                        input: 'textarea',
-                        inputPlaceholder: 'Explain your reason for return...',
-                        inputAttributes: {
-                            autocapitalize: 'off'
-                        },
-                        showCancelButton: true,
-                        confirmButtonText: 'Submit',
-                        showLoaderOnConfirm: true,
-                        preConfirm: (text) => {
-                            if (!text || text.trim() === '') {
-                                Swal.showValidationMessage('Please enter a reason');
-                                return false;
-                            }
-                            return text;
-                        }
-                    }).then(result => {
-                        resolve(result.value);
-                    });
-                });
-            }
-            return selectedReason;
-        },
-        allowOutsideClick: () => !Swal.isLoading()
-    }).then((result) => {
-        if (result.value) {
-            fetch(`/requestProductReturn/${orderId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    returnReason: result.value,
-                    productId: productId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: 'Return Requested!',
-                        text: 'Your return request has been submitted successfully.',
-                        icon: 'success'
-                    }).then(() => {
-                        window.location.href = data.redirectUrl;
-                    });
-                } else {
-                    throw new Error(data.message || 'Failed to submit return request.');
-                }
-            })
-            .catch(error => {
-                console.error('Error requesting return:', error);
-                Swal.fire(
-                    'Error!',
-                    error.message || 'An error occurred while requesting return.',
-                    'error'
-                );
-            });
-        }
-    });
-}
 
 function setupStatusUpdateListener(orderId) {
     const statusCheckInterval = setInterval(() => {
@@ -989,33 +994,43 @@ function cancelSingleProduct(orderId, productId, buttonElement) {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    const itemCard = buttonElement.closest('.card');
-                    if (itemCard) {
-                        const statusBadge = itemCard.querySelector('.badge');
-                        if (statusBadge) {
-                            statusBadge.className = 'badge bg-danger';
-                            statusBadge.textContent = 'Cancelled';
-                        }
-                        buttonElement.remove();
-                    }
+        if (data.success) {
+            const itemCard = buttonElement.closest('.card');
+            if (itemCard) {
+                const statusBadge = itemCard.querySelector('.badge');
+                if (statusBadge) {
+                    statusBadge.className = 'badge bg-danger';
+                    statusBadge.textContent = 'Cancelled';
+                }
+                buttonElement.remove();
 
-                    Swal.fire({
-                        title: 'Cancelled Successfully!',
-                        html: `
-                            <div class="text-center">
-                                <p>Product has been cancelled.</p>
-                                <div class="alert alert-success">
-                                    <p class="mb-1"><strong>Refund Amount:</strong> ₹${data.refundAmount}</p>
-                                    <p class="mb-0"><strong>Wallet Balance:</strong> ₹${data.currentWalletBalance}</p>
-                                </div>
-                            </div>
-                        `,
-                        icon: 'success'
-                    }).then(() => {
-                        window.location.href = data.redirectUrl;
-                    });
-                } else {
+                const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+                if (orderCard) {
+                    const totalElement = orderCard.querySelector('.order-total');
+                    if (totalElement) {
+                        const newTotal = parseFloat(totalElement.textContent.replace('₹', '')) - data.refundAmount;
+                        totalElement.textContent = `₹${newTotal.toFixed(2)}`;
+                    }
+                }
+            }
+
+            Swal.fire({
+                title: 'Cancelled Successfully!',
+                html: `
+                    <div class="text-center">
+                        <p>Product has been cancelled.</p>
+                        <div class="alert alert-success">
+                            <p class="mb-1"><strong>Refund Amount:</strong> ₹${data.refundAmount}</p>
+                             ${console.log(data.amount)}
+                            <p class="mb-0"><strong>Wallet Balance:</strong> ₹${data.currentWalletBalance}</p>
+                        </div>
+                    </div>
+                `,
+                icon: 'success'
+            }).then(() => {
+                window.location.href = data.redirectUrl;
+            });
+        } else {
                     if (buttonElement) {
                         buttonElement.disabled = false;
                     }
@@ -1028,6 +1043,88 @@ function cancelSingleProduct(orderId, productId, buttonElement) {
                     buttonElement.disabled = false;
                 }
                 Swal.fire('Error!', 'An error occurred while cancelling the product', 'error');
+            });
+        }
+    });
+}
+
+function requestReturn(orderId, productId) {
+    Swal.fire({
+        title: 'Return Product',
+        text: 'Please select a reason for return:',
+        input: 'select',
+        inputOptions: {
+            'defective': 'Defective Product',
+            'wrong_size': 'Wrong Size',
+            'not_as_described': 'Not as Described',
+            'damaged': 'Damaged During Shipping',
+            // 'other': 'Other Reason'
+        },
+        inputPlaceholder: 'Select a reason',
+        showCancelButton: true,
+        confirmButtonText: 'Submit',
+        showLoaderOnConfirm: true,
+        preConfirm: (selectedReason) => {
+            if (selectedReason === 'other') {
+                return new Promise((resolve) => {
+                    Swal.fire({
+                        title: 'Provide Return Reason',
+                        input: 'textarea',
+                        inputPlaceholder: 'Explain your reason for return...',
+                        inputAttributes: {
+                            autocapitalize: 'off'
+                        },
+                        showCancelButton: true,
+                        confirmButtonText: 'Submit',
+                        showLoaderOnConfirm: true,
+                        preConfirm: (text) => {
+                            if (!text || text.trim() === '') {
+                                Swal.showValidationMessage('Please enter a reason');
+                                return false;
+                            }
+                            return text;
+                        }
+                    }).then(result => {
+                        resolve(result.value);
+                    });
+                });
+            }
+            return selectedReason;
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.value) {
+            fetch(`/requestProductReturn/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    returnReason: result.value,
+                    productId: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Return Requested!',
+                        text: 'Your return request has been submitted successfully.',
+                        icon: 'success'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to submit return request.');
+                }
+            })
+            .catch(error => {
+                console.error('Error requesting return:', error);
+                Swal.fire(
+                    'Error!',
+                    error.message || 'An error occurred while requesting return.',
+                    'error'
+                );
             });
         }
     });

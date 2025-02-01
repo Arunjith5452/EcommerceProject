@@ -995,34 +995,5 @@ function hideNotification() {
     }, 500);
 }
 
-            // // Wishlist Functionality
-            // window.toggleWishlist = function () {
-            //     const productId = window.location.pathname.split('/').pop();
-
-            //     fetch('/wishlist/toggle', {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json',
-            //         },
-            //         body: JSON.stringify({ productId })
-            //     })
-            //         .then(response => response.json())
-            //         .then(data => {
-            //             const wishlistBtn = document.querySelector('.wishlist-btn i');
-            //             if (data.added) {
-            //                 wishlistBtn.classList.remove('far');
-            //                 wishlistBtn.classList.add('fas');
-            //                 alert('Added to wishlist!');
-            //             } else {
-            //                 wishlistBtn.classList.remove('fas');
-            //                 wishlistBtn.classList.add('far');
-            //                 alert('Removed from wishlist!');
-            //             }
-            //         })
-            //         .catch(error => {
-            //             console.error('Error:', error);
-            //             alert('Error updating wishlist');
-            //         });
-            // }
         });
     </script>

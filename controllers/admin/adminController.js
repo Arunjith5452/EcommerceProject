@@ -12,7 +12,7 @@ const pageerror = async (req, res) => {
 const loadLogin = async (req, res) => {
 
   if (req.session.admin) {
-    return res.redirect("/admin") 
+    return res.redirect("/admin/dashboard") 
   }
   res.render("admin-login", { message: null })
 
@@ -27,7 +27,7 @@ const login = async (req, res) => {
       const passwordMatch = await bcrypt.compare(password, admin.password);
       if (passwordMatch) {
         req.session.admin = true;
-        return res.redirect("/admin")
+        return res.redirect("/admin/dashboard")
       } else {
         return res.render("admin-login", { message: "Invalid password. Please try again" })
       }
