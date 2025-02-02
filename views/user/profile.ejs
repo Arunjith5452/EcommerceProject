@@ -1008,8 +1008,8 @@ function cancelSingleProduct(orderId, productId, buttonElement) {
                 if (orderCard) {
                     const totalElement = orderCard.querySelector('.order-total');
                     if (totalElement) {
-                        const newTotal = parseFloat(totalElement.textContent.replace('₹', '')) - data.refundAmount;
-                        totalElement.textContent = `₹${newTotal.toFixed(2)}`;
+                      const newTotal = parseFloat(totalElement.textContent.replace('₹', '')) - data.refundDetails.refundAmount;
+                      totalElement.textContent = `₹${newTotal.toFixed(2)}`;
                     }
                 }
             }
@@ -1020,8 +1020,7 @@ function cancelSingleProduct(orderId, productId, buttonElement) {
                     <div class="text-center">
                         <p>Product has been cancelled.</p>
                         <div class="alert alert-success">
-                            <p class="mb-1"><strong>Refund Amount:</strong> ₹${data.refundAmount}</p>
-                             ${console.log(data.amount)}
+                            <p class="mb-1"><strong>Refund Amount:</strong> ₹${data.refundDetails.refundAmount}</p>
                             <p class="mb-0"><strong>Wallet Balance:</strong> ₹${data.currentWalletBalance}</p>
                         </div>
                     </div>

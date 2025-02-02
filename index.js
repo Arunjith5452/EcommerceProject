@@ -34,7 +34,11 @@ app.use(express.static(path.join(__dirname, "./public")));
 app.use(nocache());
 
 app.use("/admin", adminRouter);
-app.use("/", userRouter);
+app.use("/", userRouter); 
+
+app.use((req,res,next) => {
+  return res.render("page-404")
+})
 
 db()
 
