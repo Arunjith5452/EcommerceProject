@@ -149,26 +149,13 @@ const updateOrderStatus = async (req, res) => {
             if (orderItem.status !== 'Cancelled') {
                 orderItem.status = status;
             }
-
-            const nonCancelledItems = order.orderedItems.filter(
-                item => item.status !== 'Cancelled'
-            );
-
-            const allNonCancelledSameStatus = nonCancelledItems.every(
-                item => item.status === status
-            );
-
-            if (allNonCancelledSameStatus) {
-                order.status = status;
-            } else {
-                order.status = 'Partially Processed';
+            else {
+                order.orderedItems.forEach(item => {
+                    if (item.status !== 'Cancelled') {
+                        item.status = status;
+                    }
+                });
             }
-        } else {
-            order.orderedItems.forEach(item => {
-                if (item.status !== 'Cancelled') {
-                    item.status = status;
-                }
-            });
 
             const hasNonCancelledItems = order.orderedItems.some(
                 item => item.status !== 'Cancelled'
@@ -378,8 +365,29 @@ const handleReturnRequest = async (req, res) => {
                 refundAmount: refundAmount,
                 currentWalletBalance: user.wallet,
                 order
-            });
+            })
+        }else if(action === 'reject'){
+          orderItem.status = 'Delivered',
+          order.returnStatus = 'Rejected'
+
+          const hasOtherReturns = order.orderedItems.some(
+            item => item.status === 'Return Request'
+          )
+
+          if (hasOtherReturns){
+            order.status = 'Return Request'
+          }else{
+            order.status = 'Delivered'
+          }
+
+          await order.save();
+
+          return res.json({success:true,message:'Return request rejected',order})
+        }else {
+            return res.status(400).json({success:false,message:'Invalid action'})
         }
+
+
     } catch (error) {
         console.error("Error handling return request:", error);
         res.status(500).json({ 

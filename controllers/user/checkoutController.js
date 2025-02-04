@@ -58,7 +58,7 @@ const getCheckoutPage = async (req, res) => {
 
         if (!isStockSufficient) {
             console.log("Insufficient stock for one or more items in your cart.")
-            return res.status(400).send("Insufficient stock for one or more items in your cart.");
+            return res.status(400).json({success:false,message:"Insufficient stock for one or more items in your cart."});
         }
 
         console.log("Stock is sufficient for all items.");
@@ -68,7 +68,7 @@ const getCheckoutPage = async (req, res) => {
         const userAddress = await Address.findOne({ userId });
 
 
-        res.render('checkout', {
+       return res.render('checkout', {
             cart,
             address: userAddress ? userAddress.address : [],
             user,
@@ -160,6 +160,12 @@ const applyCoupon = async (req,res) => {
             expireOn: { $gt: new Date() },
             createdOn: { $lt: new Date() }
         });
+
+        const AvalibleCoupon = coupon.userId.includes(userId)
+          coupon.splice(0,AvalibleCoupon)
+        
+
+
 
             console.log("Coupon details:", coupon);
 

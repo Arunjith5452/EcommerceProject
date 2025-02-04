@@ -262,7 +262,7 @@
                 <span>Subtotal</span>
                 <span>₹<%= order.totalPrice %></span>
             </div>
-            <% if (order.couponApplied && order.discount > 0) { %>
+            <% if ( order.discount > 0) { %>
                 <div class="detail-row discount-row">
                     <span>Coupon Discount</span>
                     <span>-₹<%= order.discount %></span>

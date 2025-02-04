@@ -1,5 +1,7 @@
 <%- include("../../views/partials/user/header") %>
 
+
+
     <style>
         .breadcrumb-wrap {
             background-color: #e9ecef;
@@ -421,14 +423,51 @@
                             <span>Total</span>
                             <span>₹ <%=cart.reduce((acc,items)=>acc+items.totalPrice,0)%></span>
                         </div>
-                        <a class="btn btn-checkout" href="/checkout">Proceed to
-                                Checkout</a>
+                        <button class="btn btn-checkout " id="checkoutButton">Proceed to
+                            Checkout</button>
                     </div>
+
                 </div>
             </div>
         </div>
     </section>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+
+        const checkoutButton = document.querySelector('#checkoutButton');
+        checkoutButton.addEventListener("click", async () => {
+            try {
+                const response = await fetch("/checkout", {
+                    method: "GET",
+                    headers: {
+                        "Accept": "text/html,application/json"
+                    }
+                })
+                const contentType = response.headers.get("Content-Type");
+                if (contentType && contentType.includes("application/json")) {
+                    const result = await response.json();
+                    if (!result.success) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: result.message || 'Error processing COD order',
+                            icon: 'error',
+                            confirmButtonColor: '#3399cc'
+                        });
+                    }
+                } else {
+                    document.open();
+                    document.write(await response.text());
+                    document.close();
+                }
+            } catch (error) {
+                console.error("Checkout error:", error);
+                Swal.fire({
+                    title: "Error",
+                    text: error.message || "An error occurred during checkout"
+                });
+            }
+        });
+
         document.querySelectorAll('.quantity-controls button').forEach(button => {
 
             button.addEventListener('click', async (e) => {
@@ -486,7 +525,7 @@
                     showNotification('Item removed from cart successfully');
                 }
             });
-        }); 
+        });
 
         function updateCartSummary() {
 
@@ -533,5 +572,6 @@
                 notification.style.animation = 'slideIn 0.5s ease-out';
             }, 500);
         }
+
 
     </script>

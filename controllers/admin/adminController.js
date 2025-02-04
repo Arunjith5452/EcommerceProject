@@ -66,8 +66,8 @@ const loadDashboard = async (req, res) => {
     let dateFilter = {};
     const now = new Date();
     const today = new Date(now.setHours(0, 0, 0, 0));
-
-    switch (filter) {
+ 
+    switch (filter) { 
       case 'daily':
         dateFilter = {
           createdOn: {
@@ -119,8 +119,6 @@ const loadDashboard = async (req, res) => {
         }
         break;
     }
-
-    dateFilter.status = 'Delivered';
 
     const [
       totalOrders,

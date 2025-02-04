@@ -181,7 +181,6 @@
                         <h6>Return Request</h6>
                         <p>Reason: ${data.order.returnReason || 'Not specified'}</p>
                         ${data.order.orderedItems.map(item => {
-                            // Only show return request buttons for items that have a return request
                             if (item.returnRequested || item.status == 'Return Request') {
                                 return `
                                     <div class="mb-2">

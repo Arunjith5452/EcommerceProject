@@ -1013,7 +1013,7 @@ async function placeOrder() {
         }
     } catch (error) {
         console.error('Error:', error);
-        showSwalError('Error processing order. Please try again.');
+        showSwalError(error.message,'Error processing order. Please try again.');
     }
 }
 

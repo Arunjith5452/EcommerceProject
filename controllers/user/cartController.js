@@ -16,12 +16,7 @@ const loadCart = async (req, res) => {
                 user: await User.findById(userId),
                 cart: []
             })
-        }
-
-        cart.items = cart.items.filter(item => item.quantity > 0);
-             if (cart.items.length !== cart.items.length) {
-            await cart.save();
-        }    
+        }  
 
         return res.render("cart", {
             user: await User.findById(userId),
@@ -64,7 +59,6 @@ const addToCart = async (req, res) => {
             return res.status(404).json({error:'Please select a size'})
         }
 
-        console.log("expect error is not working so you can see my message in console")
 
         const price = product.salePrice
         if (isNaN(price) || isNaN(quantity)) {

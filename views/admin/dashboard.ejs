@@ -178,10 +178,24 @@
                     </tbody>
                 </table>
             </div>
+            <div class="mt-3">
+                <nav aria-label="Order details navigation">
+                    <ul class="pagination justify-content-center">
+                        <% for (let i = 1; i <= totalPages; i++) { %>
+                            <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
+                                <a class="page-link <%= (i === currentPage) ? 'bg-success text-white border-success' : '' %>" 
+                                   href="javascript:void(0)" 
+                                   onclick="changePage(<%= i %>)">
+                                    <%= i %>
+                                </a>
+                            </li>
+                        <% } %>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
 </section>
-<%-include("../../views/partials/admin/pagination")%>
 <%-include("../../views/partials/admin/footer")%>
 <script>
    document.addEventListener('DOMContentLoaded', function () {
@@ -249,6 +263,15 @@
         document.getElementById('endDateContainer').style.display = 'none';
         applyFilter();
     }
+
+    function changePage(pageNumber) {
+    const quickFilter = document.getElementById('quickFilter').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    const url = `/admin/dashboard?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}&page=${pageNumber}`;
+    window.location.href = url;
+}
 
     document.getElementById('exportPdf').addEventListener('click', function () {
         const quickFilter = document.getElementById('quickFilter').value;

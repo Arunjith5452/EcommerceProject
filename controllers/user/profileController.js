@@ -171,7 +171,13 @@ const userProfile = async (req, res) => {
     try {
         const userId = req.session.user;
         const userData = await User.findById(userId)
+        .sort({date:-1})
         .populate('walletHistory')
+
+        if (userData.walletHistory && userData.walletHistory.length > 0) {
+            userData.walletHistory.sort((a, b) => b.date - a.date)
+        }
+
         const addressData = await Address.findOne({ userId: userId });
 
         const orders = await Order.find({

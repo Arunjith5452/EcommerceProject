@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
     walletHistory: [{
         transactionId: String,
         date: { type: Date, default: Date.now },
-        type: { type: String, enum: ["credit", "debit", "refund"], required: true }, 
+        type: { type: String, enum: ["credit", "debit"], required: true }, 
         amount: { type: Number, required: true },
         status: { type: String, enum: ["Completed", "Pending"], default: "Completed" }
     }],
