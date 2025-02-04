@@ -25,8 +25,11 @@ const getCheckoutPage = async (req, res) => {
         const validCoupons = await Coupon.find({
             isList: true,
             expireOn: { $gt: new Date() },
-            createdOn: { $lt: new Date() }
-        }).select('name offerPrice minimumPrice');
+            createdOn: { $lt: new Date() },
+            userId: { $eq: [] }    
+        })
+        .sort({createdOn:-1})
+        .select('name offerPrice minimumPrice');
         
 
         console.log("cart products", cart)
@@ -158,14 +161,8 @@ const applyCoupon = async (req,res) => {
             name: couponCode,
             isList: true,
             expireOn: { $gt: new Date() },
-            createdOn: { $lt: new Date() }
-        });
-
-        const AvalibleCoupon = coupon.userId.includes(userId)
-          coupon.splice(0,AvalibleCoupon)
-        
-
-
+            createdOn: { $lt: new Date() },
+           })
 
             console.log("Coupon details:", coupon);
 

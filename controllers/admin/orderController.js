@@ -125,15 +125,22 @@ const updateOrderStatus = async (req, res) => {
 
         const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
         if (!validStatuses.includes(status)) {
-            return res.status(400).json({ success: false, message: 'Invalid status' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid status' 
+            });
         }
 
         const order = await Order.findOne({ orderId });
 
         if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Order not found' 
+            });
         }
 
+        // If productId exists, update specific product
         if (productId) {
             const orderItem = order.orderedItems.find(
                 item => item.product.toString() === productId
@@ -146,34 +153,39 @@ const updateOrderStatus = async (req, res) => {
                 });
             }
 
-            if (orderItem.status !== 'Cancelled') {
-                orderItem.status = status;
-            }
-            else {
-                order.orderedItems.forEach(item => {
-                    if (item.status !== 'Cancelled') {
-                        item.status = status;
-                    }
-                });
-            }
-
-            const hasNonCancelledItems = order.orderedItems.some(
-                item => item.status !== 'Cancelled'
+            orderItem.status = status;
+            
+            // Update main order status based on items
+            const allItemsSameStatus = order.orderedItems.every(
+                item => item.status === status
             );
-
-            if (hasNonCancelledItems) {
+            
+            if (allItemsSameStatus) {
                 order.status = status;
-            } else {
-                order.status = 'Cancelled';
             }
+        } else {
+            // Update main order status and all items
+            order.status = status;
+            order.orderedItems.forEach(item => {
+                if (item.status !== 'Cancelled') {
+                    item.status = status;
+                }
+            });
         }
 
         await order.save();
-        res.json({ success: true, order });
+        res.json({ 
+            success: true, 
+            order,
+            message: 'Status updated successfully' 
+        });
 
     } catch (error) {
-        console.error("Error updating order status:", error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+        console.error("Error updating status:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error' 
+        });
     }
 };
 

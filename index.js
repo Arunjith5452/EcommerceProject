@@ -1,17 +1,18 @@
 const express = require('express')
 const app = express();
-const path = require('path')
+const path = require('path');
 const env = require('dotenv').config();
-const session = require('express-session')
-const passport = require('./config/passport')
+const session = require('express-session');
+const passport = require('./config/passport');
 const db = require('./config/db');
-const exp = require('constants');
-const nocache = require("nocache")
-const userRouter = require("./routes/userRouter")
-const adminRouter = require("./routes/adminRouter")
+const nocache = require("nocache");
+const userRouter = require("./routes/userRouter");
+const adminRouter = require("./routes/adminRouter");
+const errorHandler = require("./middlewares/errorHandler");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
+
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -26,7 +27,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-
 app.set("view engine", "ejs");
 app.set("views", [path.join(__dirname, 'views/user'), path.join(__dirname, 'views/admin')])
 app.use(express.static(path.join(__dirname, "./public")));
@@ -34,16 +34,23 @@ app.use(express.static(path.join(__dirname, "./public")));
 app.use(nocache());
 
 app.use("/admin", adminRouter);
-app.use("/", userRouter); 
+app.use("/", userRouter);
 
-app.use((req,res,next) => {
-  return res.render("page-404")
+app.use((req, res, next) => {
+    const isAdminRoute = req.originalUrl.startsWith('/admin');
+    const redirectUrl = isAdminRoute ? '/admin/dashboard' : '/'; 
+    
+    res.status(404).render(isAdminRoute ? "pageerror" : "page-404", { 
+        title: "Page Not Found", 
+        message: "The page you are looking for does not exist.",
+        status: 404,
+    })
 })
 
-db()
+app.use(errorHandler);
 
+db();
 
 app.listen(process.env.PORT, () => {
-    console.log('server running')
+    console.log('Server running on port', process.env.PORT)
 })
-

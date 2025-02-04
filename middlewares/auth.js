@@ -26,24 +26,14 @@ const userAuth = async (req, res, next) => {
   }
   
 
-  const adminAuth = async (req, res, next) => {
-    try {
-      if (req.session.admin) {
-        const adminUser = await User.findById(req.session.admin)
-        
-        if (!adminUser || !adminUser.isAdmin) {
-          return res.redirect('/admin/login')
-        }
-        
-        next();
-      } else {
-        return res.redirect('/admin/login');
-      }
-    } catch (error) {
-      console.error("Admin authentication error:", error)
-      return res.status(500).send("Internal Server Error")
+  const adminAuth = (req, res, next) => {
+    if (req.session && req.session.admin) {
+        return next();
     }
-  }
+    console.log("Admin authentication failed - Redirecting to login")
+    return res.redirect('/admin/login');
+};
+
 
 
 module.exports = {
