@@ -49,9 +49,7 @@ const loadHomepage = async (req, res) => {
         let productData = await Product.find(
             {isBlocked:false,
             category:{$in:categories.map(category=>category._id)}
-        })
-        productData.sort((a,b)=>new Date(b.createdOn)-new Date(a.createdOn));
-        productData = productData.slice(0,4);
+        }).sort({createdAt:-1}).limit(4)
         if (user) {
             const userData = await User.findOne({ _id: user })
 
@@ -117,12 +115,16 @@ async function sendVerificationEmail(email, otp) {
     }
 }
 
+function generateReferralCode() {
+    return 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
 
 
 const signup = async (req, res) => {
     try {
 
-        const { username, mobile, email, password, confirmPassword } = req.body;
+        const { username, mobile, email, password, confirmPassword, referralCode } = req.body
 
         if (password !== confirmPassword) {
             return res.render("signup", { message: "Password do not match" })
@@ -133,6 +135,14 @@ const signup = async (req, res) => {
             return res.render("signup", { message: "User already exists" })
         }
 
+        let referredByUser = null;
+        if (referralCode && referralCode.trim() !== '') {
+            referredByUser = await User.findOne({ referralCode: referralCode });
+            if (!referredByUser) {
+                return res.render("signup", { message: "Invalid referral code" });
+            }
+        }
+
         const otp = generateOtp();
         const emailSent = await sendVerificationEmail(email, otp);
         if (!emailSent) {
@@ -140,8 +150,8 @@ const signup = async (req, res) => {
         }
 
         req.session.userOtp = otp;
-        req.session.userData = { username, mobile, email, password };
-
+        req.session.userData = { username, mobile, email, password ,referredBy: referredByUser ? referredByUser.referralCode : null 
+        }
         res.render("verify-otp");
         console.log("OTP Sent", otp);
 
@@ -175,14 +185,38 @@ const verifyOtp = async (req, res) => {
             const user = req.session.userData
             const passwordHash = await securePassword(user.password)
 
+            const referralCode = generateReferralCode()
+
             const saveUserData = new User({
                 username: user.username,
                 email: user.email,
                 mobile: user.mobile,
-                password: passwordHash
+                password: passwordHash,
+                referralCode: referralCode,
+                referredBy: user.referredBy,
+                wallet: user.referredBy ? 50 : 0 
             })
 
             await saveUserData.save();
+
+            if(user.referredBy){
+                const referrerUser  = await User.findOne({referralCode:user.referredBy})
+                if(referrerUser){
+                    referrerUser.referrals.push(saveUserData._id);
+                    referrerUser.referralEarnings +=100
+                    referrerUser.wallet +=100
+
+                    referrerUser.walletHistory.push({
+                        transactionId: 'REF' + Date.now(),
+                        type: 'credit',
+                        amount: 100,
+                        status: 'Completed'
+                    })
+
+                    await referrerUser.save()
+                }
+
+            }
 
             req.session.user = saveUserData._id;
             res.json({ success: true, redirectUrl: "/" })
@@ -330,8 +364,9 @@ const logout = async (req, res) => {
     }
 }
 
-const getFilteredProducts = async (req) => {
 
+
+const getFilteredProducts = async (req) => {
     const categories = await Category.find({ isListed: true }).lean();
     const categoryIds = categories.map(category => category._id.toString());
 
@@ -344,9 +379,18 @@ const getFilteredProducts = async (req) => {
 
     const query = {
         isBlocked: false,
-        sizeVariants: { $elemMatch: { quantity: { $gt: 0 } } },
-        category: req.query.category ? req.query.category : { $in: categoryIds }
+        sizeVariants: { $elemMatch: { quantity: { $gt: 0 } } }
     };
+
+    if (req.query.category) {
+        req.session.selectedCategory = req.query.category;
+    }
+
+    if (req.session.selectedCategory) {
+        query.category = req.session.selectedCategory;
+    } else {
+        query.category = { $in: categoryIds };
+    }
 
     if (req.body.query) {
         query.productName = { $regex: new RegExp(req.body.query, "i") };
@@ -354,8 +398,8 @@ const getFilteredProducts = async (req) => {
 
     if (req.session.priceFilter) {
         query.salePrice = {
-            $gt: parseInt(req.session.priceFilter.gt),
-            $lt: parseInt(req.session.priceFilter.lt)
+            $gte: parseInt(req.session.priceFilter.gt),
+            $lte: parseInt(req.session.priceFilter.lt)
         };
     }
 
@@ -400,9 +444,8 @@ const getFilteredProducts = async (req) => {
 
 const loadShoppingPage = async (req, res) => {
     try {
-
         delete req.session.priceFilter;
-        delete req.query.category;
+        delete req.session.selectedCategory;
         delete req.body.query;
 
         req.query.sort = req.query.sort || req.session.sort || 'default';
@@ -445,6 +488,7 @@ const loadShoppingPage = async (req, res) => {
             selectedSort: sort,
             searchQuery: null,
             priceRange: null,
+            selectedCategory: req.session.selectedCategory || null,
         });
     } catch (error) {
         console.error(error);
@@ -483,8 +527,11 @@ const filterProduct = async (req, res) => {
             category: categories,
             totalPages,
             currentPage,
-            selectedCategory: category || null,
-            selectedSort: sort
+            selectedCategory: req.session.selectedCategory || null,
+            selectedSort: sort,
+            priceRange: req.session.priceFilter || null,
+            searchQuery: req.body.query || null  
+
         });
     } catch (error) {
         console.error(error);
@@ -517,6 +564,8 @@ const filterByPrice = async (req, res) => {
             totalPages,
             currentPage,
             selectedSort: sort,
+            selectedCategory: req.session.selectedCategory || null,
+            searchQuery: null,
             priceRange: { 
                 gt: req.query.gt, 
                 lt: req.query.lt 
@@ -530,7 +579,6 @@ const filterByPrice = async (req, res) => {
 
 const searchProducts = async (req, res) => {
     try {
-        
         req.query.sort = req.query.sort || 'default';
 
         const { 
@@ -553,14 +601,15 @@ const searchProducts = async (req, res) => {
             currentPage,
             selectedSort: sort,
             searchQuery: req.body.query || null,
-            count: totalProducts
+            count: totalProducts,
+            selectedCategory: req.session.selectedCategory || null,
+            priceRange: req.session.priceFilter || null
         });
     } catch (error) {
         console.error(error);
         return res.redirect("/pageNotFound");
     }
 }
-
 module.exports = {
     loadHomepage, 
     pageNotFound,
@@ -575,6 +624,6 @@ module.exports = {
     loadShoppingPage,
     filterProduct,
     filterByPrice,
-    searchProducts
+    searchProducts,
 
 }

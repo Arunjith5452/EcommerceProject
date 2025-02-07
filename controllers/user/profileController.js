@@ -173,9 +173,15 @@ const userProfile = async (req, res) => {
         const userData = await User.findById(userId)
         .sort({date:-1})
         .populate('walletHistory')
+        .populate('referrals','username createdAt')
 
         if (userData.walletHistory && userData.walletHistory.length > 0) {
             userData.walletHistory.sort((a, b) => b.date - a.date)
+        }
+
+        if (!userData.referralCode) {
+            userData.referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            await userData.save();
         }
 
         const addressData = await Address.findOne({ userId: userId });
@@ -587,7 +593,8 @@ const calculateUpdatedOrderTotals = (order, cancelledItem, itemDiscount) => {
 const cancelSingleProduct = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { productId } = req.body;
+        const {cancelReason ,productId } = req.body;
+        console.log("From cancelsingleProduct cancel reason:",cancelReason)
         const userId = req.session.user;
 
         const order = await Order.findOne({ orderId }).populate('orderedItems.product');
@@ -615,6 +622,7 @@ const cancelSingleProduct = async (req, res) => {
         const refundAmount = itemTotal - itemDiscount;
 
         item.status = 'Cancelled';
+        item.cancelReason = cancelReason
 
  const allItemsCancelled = order.orderedItems.every(item => item.status === 'Cancelled');
         if (allItemsCancelled) {

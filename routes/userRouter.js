@@ -56,13 +56,13 @@ router.post("/requestProductReturn/:orderId",userAuth ,profileController.product
 router.get("/addAddress", userAuth, profileController.addAddress)
 router.post("/addAddress", userAuth, profileController.postAddAddress);
 
-router.get("/shop", userAuth, userController.loadShoppingPage);
+router.get("/shop", userController.loadShoppingPage);
 router.get("/filter", userAuth, userController.filterProduct);
 router.get("/filterPrice", userAuth, userController.filterByPrice);
 router.get('/search', userAuth, userController.searchProducts);
 router.post('/search', userAuth, userController.searchProducts);
 
-router.get("/productDetails/:id", userAuth, productController.productDetails);
+router.get("/productDetails/:id", productController.productDetails);
 
 router.get("/wishlist", userAuth, wishlistController.loadWishlist);
 router.post("/addToWishlist", userAuth, wishlistController.addToWishlist);
@@ -75,8 +75,11 @@ router.delete("/removeFromCart/:cartItemId", userAuth, cartController.removeFrom
 
 router.get("/checkout", userAuth, checkoutController.getCheckoutPage);
 router.post("/addAddress-checkout",userAuth,checkoutController.addAddressCheckout);
+router.post('/editAddress-checkout/:id',userAuth,checkoutController.editAddressCheckout);
 router.post("/applyCoupon",userAuth,checkoutController.applyCoupon);
 router.post("/placeOrder", userAuth, checkoutController.placeOrder);
+router.post("/initiate-retry-payment",userAuth, checkoutController.retryPayment);
+router.post('/verify-retry-payment',userAuth,checkoutController.verifyRetryPayment);
 router.get('/orderSuccess/:orderId', userAuth, checkoutController.getOrderSuccess);
 
 

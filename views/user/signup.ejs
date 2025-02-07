@@ -200,9 +200,12 @@
       <%if(locals.message && message.length>0){%>
         <div class="error-message">
           <%=message%>
-
         </div>
         <%}%>
+        <div class="form-group">
+          <input type="text" id="referralCode" name="referralCode" placeholder="Referral Code (Optional)">
+          <div id="referralError" class="error-message"></div>
+        </div>        
           <button type="submit" class="create-button">Create an account</button>
     </form>
 
@@ -216,6 +219,20 @@
     </div>
   </div>
   <script>
+
+    function referralCodeValidation() {
+    const referralCode = document.getElementById('referralCode').value;
+    const referralError = document.getElementById('referralError');
+    
+    if (referralCode && !/^REF[A-Z0-9]{6}$/.test(referralCode)) {
+        referralError.style.display = "block";
+        referralError.innerHTML = "Invalid referral code format";
+        return false;
+    }
+    referralError.style.display = "none";
+    referralError.innerHTML = "";
+    return true;
+}
     const togglePassword = document.querySelector('.toggle-password');
     const passwordInput = document.querySelector('#password');
 
@@ -321,6 +338,10 @@
         mobileValidateChecking();
         emailValidateChecking();
         passwordValidateChecking();
+
+        if (!referralCodeValidation()) {
+        e.preventDefault();
+    }
 
         if (!username || !email || !mobile || !password || !confirmPassword || !error1 || !error2 || !error3 || !error4 || !error5 || !signform) {
           console.error("One or more elements not found")

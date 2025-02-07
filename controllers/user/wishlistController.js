@@ -7,40 +7,45 @@ const Wishlist = require("../../models/wishlistSchema");
 
 const loadWishlist = async (req,res) => {
     try {
-        
         const userId = req.session.user;
         
         const wishlist = await Wishlist.findOne({userId:userId})
         .populate({
             path: 'products.productId', 
             model: 'Product',
-            select: 'productName productImage salePrice category',
+            select: 'productName productImage salePrice category sizeVariants',
             populate: {
                 path: 'category',  
                 model: 'Category'  
             } 
         })
-        if(!wishlist){
-            return res.render("wishlist",{
-                user: await User.findById(userId),
-                wishlist:[]
+        
+        const user = await User.findById(userId);
+        
+        if(!wishlist || wishlist.products.length === 0){
+            return res.render("wishlist", {
+                user: user,
+                wishlist: [],
+                products: []
             })
         }
         
-        return res.render("wishlist",{
-            user:await User.findById(userId),
-            wishlist : wishlist.products,
+        // Filter out any products that might be null or undefined
+        const validProducts = wishlist.products
+            .filter(item => item.productId !== null && item.productId !== undefined)
+            .map(item => item.productId);
+        
+        return res.render("wishlist", {
+            user: user,
+            wishlist: wishlist.products,
+            products: validProducts
         })
       
-
     } catch (error) {
-        
-        console.error(error)
+        console.error("Error in loadWishlist:", error)
         return res.redirect("/pageNotFound")               
-
     }
 }
-
 const addToWishlist = async (req,res) => {
     try {
 

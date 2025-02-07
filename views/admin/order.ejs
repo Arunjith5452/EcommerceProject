@@ -1,48 +1,48 @@
 <%- include("../../views/partials/admin/header") %>
-<style>
-    .badge.alert-pending {
-        background-color: #fff3cd;
-        color: #856404;
-    }
+    <style>
+        .badge.alert-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
 
-    .badge.alert-processing {
-        background-color: #cce5ff;
-        color: #004085;
-    }
+        .badge.alert-processing {
+            background-color: #cce5ff;
+            color: #004085;
+        }
 
-    .badge.alert-shipped {
-        background-color: #d4edda;
-        color: #155724;
-    }
+        .badge.alert-shipped {
+            background-color: #d4edda;
+            color: #155724;
+        }
 
-    .badge.alert-delivered {
-        background-color: #28a745;
-        color: #fff;
-    }
+        .badge.alert-delivered {
+            background-color: #28a745;
+            color: #fff;
+        }
 
-    .badge.alert-cancelled {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
+        .badge.alert-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
 
-    .badge.alert-returned {
-        background-color: #e2e3e5;
-        color: #383d41;
-    }
+        .badge.alert-returned {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
 
-    .table td {
-        vertical-align: middle;
-    }
+        .table td {
+            vertical-align: middle;
+        }
 
-    .dropdown-toggle::after {
-        display: none;
-    }
+        .dropdown-toggle::after {
+            display: none;
+        }
 
-    .status-select {
-        min-width: 120px;
-        padding: 0.25rem;
-    }
-</style>
+        .status-select {
+            min-width: 120px;
+            padding: 0.25rem;
+        }
+    </style>
     <section class="content-main">
         <div class="content-header">
             <h2 class="content-title card-title">Order List</h2>
@@ -133,56 +133,86 @@
                 </div>
             </div>
 
-            
+
 
             <script>
-                function updateOrderStatus(orderId, status) {
-                    if (confirm(`Update Order Status to ${status}?`)) {
-                        fetch(`/admin/updateOrderStatus/${orderId}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ status })
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) location.reload();
-                                else alert('Error updating order status');
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('Error updating order status');
-                            });
-                    }
+               function updateOrderStatus(orderId, status) {
+    Swal.fire({
+        title: `Change status to "${status}"?`,
+        text: "This action cannot be undone!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, update it!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/updateOrderStatus/${orderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: "Updated!",
+                        text: "Order status has been changed.",
+                        icon: "success",
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Failed to update order status.",
+                        icon: "error",
+                        confirmButtonColor: "#d33"
+                    });
                 }
-                function showOrderDetails(orderId) {
-    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
-    const content = document.getElementById('orderDetailsContent');
-
-    content.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
-    modal.show();
-
-    fetch(`/admin/userOrderDetails/${orderId}`)
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('Error Response Text:', text);
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                Swal.fire({
+                    title: "Oops!",
+                    text: "Something went wrong. Try again later.",
+                    icon: "error",
+                    confirmButtonColor: "#d33"
                 });
-            }
-            return response.json();
-        })
-        .then(data => {
-            let returnRequestButtons = '';
-            if (data.order.status === 'Return Request' &&
-                data.order.returnStatus !== 'Approved' &&
-                data.order.returnStatus !== 'Rejected') {
-                returnRequestButtons = `
+            });
+        }
+    });
+}
+
+                function showOrderDetails(orderId) {
+                    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                    const content = document.getElementById('orderDetailsContent');
+
+                    content.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+                    modal.show();
+
+                    fetch(`/admin/userOrderDetails/${orderId}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.text().then(text => {
+                                    console.error('Error Response Text:', text);
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            let returnRequestButtons = '';
+                            if (data.order.status === 'Return Request' &&
+                                data.order.returnStatus !== 'Approved' &&
+                                data.order.returnStatus !== 'Rejected') {
+                                returnRequestButtons = `
                     <div class="mt-3">
                         <h6>Return Request</h6>
                         <p>Reason: ${data.order.returnReason || 'Not specified'}</p>
                         ${data.order.orderedItems.map(item => {
-                            if (item.returnRequested || item.status == 'Return Request') {
-                                return `
+                                    if (item.returnRequested || item.status == 'Return Request') {
+                                        return `
                                     <div class="mb-2">
                                         <p>Product: ${item.product.productName}</p>
                                         <button class="btn btn-success me-2" onclick="handleReturnRequest('${orderId}', 'approve', '${item.product._id}')">
@@ -193,14 +223,14 @@
                                         </button>
                                     </div>
                                 `;
-                            }
-                            return '';
-                        }).join('')}
+                                    }
+                                    return '';
+                                }).join('')}
                     </div>
                 `;
-            }
+                            }
 
-            content.innerHTML = `
+                            content.innerHTML = `
                 <div class="container-fluid">
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -238,26 +268,29 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${data.order.orderedItems.map(item => `
-                                        <tr>
-                                            <td>${item.product.productName}</td>
-                                            <td><img 
-                                                src="/uploads/product-images/${item.product.productImage[0]}" 
-                                                style="width: 50px; height: 50px; object-fit: cover;"
-                                                onerror="this.src='/path/to/default/image.jpg'"
-                                            ></td>
-                                            <td>${item.quantity}</td>
-                                            <td>${item.size}</td>
-                                            <td>₹${item.price}</td>
-                                            <td>₹${item.quantity * item.price}</td>
-                                            <td>${item.status}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
+${data.order.orderedItems.map(item => `
+    <tr>
+        <td>${item.product.productName}</td>
+        <td><img 
+            src="/uploads/product-images/${item.product.productImage[0]}" 
+            style="width: 50px; height: 50px; object-fit: cover;"
+            onerror="this.src='/path/to/default/image.jpg'"
+        ></td>
+        <td>${item.quantity}</td>
+        <td>${item.size}</td>
+        <td>₹${item.price}</td>
+        <td>₹${item.quantity * item.price}</td>
+        <td>
+            ${item.status}
+            ${item.status === 'Cancelled' ? `<p class="text-danger">Cancel Reason: ${item.cancelReason || 'No reason provided'}</p>` : ''}
+        </td>
+    </tr>
+`).join('')}                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+
                 ${returnRequestButtons}
             `;
                         })
@@ -289,7 +322,7 @@
                 }
                 function handleReturnRequest(orderId, action, productId) {
 
-                    
+
                     if (confirm(`Are you sure you want to ${action} this return request?`)) {
                         fetch(`/admin/handleReturnRequest/${orderId}`, {
                             method: 'PATCH',

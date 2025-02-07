@@ -1,4 +1,114 @@
 <%-include("../../views/partials/admin/header")%>
+<style>
+    .status-column {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;  
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        min-height: 24px;  
+    }
+
+    .badge {
+        padding: 6px 12px; 
+        font-size: 0.85rem;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .order-products {
+        display: flex;
+        flex-direction: column;
+        gap: 8px; 
+    }
+
+    .product-item {
+        display: flex;
+        align-items: center;
+        min-height: 24px;  
+        padding: 2px 0;
+    }
+
+    .product-item {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table td {
+        padding: 1rem 0.75rem;
+        vertical-align: top;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+
+    .table th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .card-title {
+        color: #333;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .revenue-cell {
+        color: #28a745;
+        font-weight: 500;
+    }
+
+    .units-cell {
+        color: #6c757d;
+    }
+    .card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem 1.25rem;
+}
+
+.card-body {
+    padding: 1.25rem;
+    position: relative;
+}
+
+.chart-container {
+    position: relative;
+    margin: auto;
+}
+
+@media (max-width: 768px) {
+    .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    canvas {
+        height: 250px !important;
+    }
+}
+</style>
+
 <section class="content-main">
     <div class="content-header">
         <div>
@@ -158,6 +268,7 @@
                         <tr>
                             <th>Order ID</th>
                             <th>Date</th>
+                            <th>Products</th>
                             <th>Amount</th>
                             <th>Discount</th>
                             <th>Final Amount</th>
@@ -165,16 +276,50 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <%orderDetails.forEach(item=>{%>
+                        <% orderDetails.forEach(order => { %>
                         <tr>
-                            <td><%=item.orderId.slice(0,12)%></td>
-                            <td><%=item.createdOn.toDateString()%></td>
-                            <td>₹<%=item.totalPrice%></td>
-                            <td>₹<%=item.discount%></td>
-                            <td>₹<%=item.finalAmount%></td>
-                            <td><span class="badge badge-soft-success"><%=item.status%></span></td>
+                            <td><%=order.orderId.slice(0,12)%></td>
+                            <td><%=order.createdOn.toDateString()%></td>
+                            <td>
+                                <% if (order.orderedItems && order.orderedItems.length > 0) { %>
+                                    <div class="order-products">
+                                        <% order.orderedItems.forEach(item => { %>
+                                            <div class="product-item">
+                                                <%= item.product ? item.product.productName : 'Unknown Product' %> 
+                                                (Qty: <%= item.quantity %>, 
+                                                Price: ₹<%= item.product && item.price ? 
+                                                    (item.price * item.quantity) : 
+                                                    'Price Unavailable' %>)
+                                            </div>
+                                        <% }); %>
+                                    </div>
+                                <% } else { %>
+                                    <span>No products found</span>
+                                <% } %>
+                            </td>
+                            <td>₹<%=order.totalPrice%></td>
+                            <td>₹<%=order.discount%></td>
+                            <td>₹<%=order.finalAmount%></td>
+                            <td>
+                                <% if (order.orderedItems && order.orderedItems.length > 0) { %>
+                                    <div class="status-column">
+                                        <% order.orderedItems.forEach(item => { %>
+                                            <div class="status-item">
+                                                <span class="badge badge-soft-<%= 
+                                                    item.status === 'Delivered' ? 'success' : 
+                                                    item.status === 'Shipped' ? 'info' : 
+                                                    item.status === 'Processing' ? 'warning' : 
+                                                    item.status === 'Cancelled' ? 'danger' : 'secondary' 
+                                                %>">
+                                                    <%= item.status %>
+                                                </span>
+                                            </div>
+                                        <% }); %>
+                                    </div>
+                                <% } %>
+                            </td>
                         </tr>
-                        <%})%>
+                        <% }); %>
                     </tbody>
                 </table>
             </div>
@@ -195,8 +340,93 @@
             </div>
         </div>
     </div>
+   <div class="row">
+    <!-- Sales Chart -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <header class="card-header">
+                <h4 class="card-title">Sales Analytics Chart</h4>
+            </header>
+            <div class="card-body">
+                <canvas id="salesChart" style="width: 100%; height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pie Charts Row -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <header class="card-header">
+                <h4 class="card-title">Top Products by Revenue</h4>
+            </header>
+            <div class="card-body">
+                <canvas id="productsChart" style="width: 100%; height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <header class="card-header">
+                <h4 class="card-title">Top Categories by Revenue</h4>
+            </header>
+            <div class="card-body">
+                <canvas id="categoriesChart" style="width: 100%; height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- <div class="row"> -->
+        <!-- Best Selling Products -->
+            <div class="card mb-4">
+                <header class="card-header">
+                    <h4 class="card-title">Best Selling Products</h4>
+                </header>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Units Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bestProducts">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Best Categories -->
+            <div class="card mb-4">
+                <header class="card-header">
+                    <h4 class="card-title">Top Categories</h4>
+                </header>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Units Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bestCategories">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>    
 </section>
 <%-include("../../views/partials/admin/footer")%>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
    document.addEventListener('DOMContentLoaded', function () {
   const quickFilter = document.getElementById('quickFilter');
@@ -286,4 +516,346 @@
         const endDate = document.getElementById('endDate').value;
         window.location.href = `/download-sales-report-excel?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`;
     });
+
+ 
+
+function loadTopPerformers() {
+    const quickFilter = document.getElementById('quickFilter').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    ['bestProducts', 'bestCategories'].forEach(tableId => {
+        const tbody = document.getElementById(tableId);
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+        }
+    });
+    fetch(`/admin/api/dashboard/top-performers?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            updateTopPerformersTable('bestProducts', data.products);
+            updateTopPerformersTable('bestCategories', data.categories);
+        })
+        .catch(error => {
+            console.error('Error loading top performers:', error);
+            ['bestProducts', 'bestCategories'].forEach(tableId => {
+                const tbody = document.getElementById(tableId);
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="3">Error loading data</td></tr>';
+                }
+            });
+        });
+}
+
+
+function updateTopPerformersTable(tableId, data) {
+    const tbody = document.getElementById(tableId);
+    if (!tbody) return;
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => `
+        <tr>
+            <td>${item.name || 'N/A'}</td>
+            <td class="units-cell">${(item.unitsSold || 0).toLocaleString()}</td>
+            <td class="revenue-cell">₹${(item.revenue || 0).toLocaleString()}</td>
+        </tr>
+    `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initSalesChart();
+    initPieCharts();
+    loadTopPerformers();
+});
+
+function initPieCharts() {
+    initProductsPieChart();
+    initCategoriesPieChart();
+}
+
+function initProductsPieChart() {
+    const ctx = document.getElementById('productsChart').getContext('2d');
+    window.productsChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)',
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)'
+                ],
+                borderColor: 'white',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `₹${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initCategoriesPieChart() {
+    const ctx = document.getElementById('categoriesChart').getContext('2d');
+    window.categoriesChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)'
+                ],
+                borderColor: 'white',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `₹${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+function initSalesChart() {
+    const canvas = document.getElementById('salesChart');
+    if (!canvas) {
+        console.error('Sales chart canvas not found');
+        return;
+    }
+
+    const parent = canvas.parentNode;
+    if (parent) {
+        parent.removeChild(canvas);
+        const newCanvas = document.createElement('canvas');
+        newCanvas.id = 'salesChart';
+        newCanvas.style.width = '100%';
+        newCanvas.style.height = '400px';
+        parent.appendChild(newCanvas);
+    }
+
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    
+    try {
+        const salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Loading...'],
+                datasets: [{
+                    label: 'Sales Revenue',
+                    data: [0],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        window.salesChart = salesChart;
+
+        fetchChartData();
+    } catch (error) {
+        console.error('Error initializing chart:', error);
+        showChartError();
+    }
+}
+
+function fetchChartData() {
+    const quickFilter = document.getElementById('quickFilter').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    fetch(`/admin/api/dashboard/analytics?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (!data.salesData || !Array.isArray(data.salesData)) {
+                throw new Error('Invalid data format received');
+            }
+            updateChartData(data.salesData);
+            updatePieCharts(data.bestSellingProducts, data.bestCategories);
+        })
+        .catch(error => {
+            console.error('Error loading chart data:', error);
+            showChartError();
+        });
+}
+
+
+function updatePieCharts(products, categories) {
+    if (window.productsChart && products && products.length > 0) {
+        window.productsChart.data.labels = products.map(item => item.name);
+        window.productsChart.data.datasets[0].data = products.map(item => item.revenue);
+        window.productsChart.update();
+    }
+
+    if (window.categoriesChart && categories && categories.length > 0) {
+        window.categoriesChart.data.labels = categories.map(item => item.name);
+        window.categoriesChart.data.datasets[0].data = categories.map(item => item.revenue);
+        window.categoriesChart.update();
+    }
+}
+
+function updateChartData(salesData) {
+    try {
+        if (!window.salesChart) {
+            console.error('Chart instance not found');
+            return;
+        }
+
+        const chart = window.salesChart;
+        const formattedData = salesData.map(item => ({
+            date: item.date,
+            revenue: parseFloat(item.revenue) || 0
+        }));
+
+        chart.data.labels = formattedData.map(item => item.date);
+        chart.data.datasets[0].data = formattedData.map(item => item.revenue);
+        chart.update('active');  
+    } catch (error) {
+        console.error('Error updating chart:', error);
+        showChartError();
+    }
+}
+
+function showChartError() {
+    const canvas = document.getElementById('salesChart');
+    if (!canvas) return;
+
+    const parent = canvas.parentNode;
+    if (!parent) return;
+
+    parent.removeChild(canvas);
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.style.margin = '20px';
+    errorDiv.innerHTML = `
+        <strong>Error loading chart</strong><br>
+        Please try refreshing the page. If the problem persists, contact support.
+    `;
+    parent.appendChild(errorDiv);
+}
+
+function updateDashboardData() {
+    try {
+        initSalesChart();
+        initPieCharts(); 
+        loadTopPerformers();
+    } catch (error) {
+        console.error('Error updating dashboard:', error);
+        showChartError();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const quickFilter = document.getElementById('quickFilter');
+    if (quickFilter) {
+        quickFilter.addEventListener('change', updateDashboardData);
+    }
+
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    if (startDate && endDate) {
+        startDate.addEventListener('change', updateDashboardData);
+        endDate.addEventListener('change', updateDashboardData);
+    }
+});
+
+function updateSalesChart(salesData) {
+    const chartInstance = window.salesChart;
+    if (chartInstance) {
+        chartInstance.data.labels = salesData.map(item => item.date);
+        chartInstance.data.datasets[0].data = salesData.map(item => item.revenue);
+        chartInstance.update();
+    }
+}
 </script>

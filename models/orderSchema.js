@@ -3,7 +3,6 @@ const { Schema } = mongoose;
 const { v4: uuidv4 } = require('uuid')
 
 const orderSchema = new mongoose.Schema({
-
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -26,7 +25,7 @@ const orderSchema = new mongoose.Schema({
         size: {
             type: String,  
             required: true
-          },
+        },
         price: {
             type: Number,
             default: 0
@@ -36,6 +35,19 @@ const orderSchema = new mongoose.Schema({
             enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned'],
             default: 'Pending'
         },
+        cancelReason: {
+            type: String,
+            trim: true
+        },
+        returnReason: {
+            type: String,
+            trim: true
+        },
+        returnStatus: {
+            type: String,
+            enum: ['', 'Pending', 'Approved', 'Rejected'],
+            default: ''
+        }
     }],
     totalPrice: {
         type: Number,
@@ -62,19 +74,36 @@ const orderSchema = new mongoose.Schema({
         required: true,
         enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned']
     },
-    returnReason:{
-        type:String,
-        trim:true
+    cancelReason: {
+        type: String,
+        trim: true
     },
-    returnStatus:{
-        type:String,
-        enum:['','Pending','Approved', 'Rejected'],
+    returnReason: {
+        type: String,
+        trim: true
+    },
+    returnStatus: {
+        type: String,
+        enum: ['', 'Pending', 'Approved', 'Rejected'],
         default: ''
     },
     paymentMethod: {
         type: String,
         required: true,
         enum: ['COD', 'RAZORPAY', 'WALLET']
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['PENDING', 'FAILED', 'SUCCESS'],
+        default: 'PENDING'
+    },
+    
+    paymentId: String,
+    paymentFailureReason: String,
+
+    paymentRetryCount: {
+        type: Number,
+        default: 0
     },
     createdOn: {
         type: Date,
@@ -85,9 +114,7 @@ const orderSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-
-})
-
+});
 
 const Order = mongoose.model("Order", orderSchema)
 module.exports = Order;

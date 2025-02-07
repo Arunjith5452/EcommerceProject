@@ -235,9 +235,112 @@
     padding-left: 0;
 } */
 
+.active-category {
+    font-weight: bold;
+    color: #1e918b !important;
+    text-decoration: none;
+}
+ a:hover{
+    color: #1e918b !important;
+}
+.active-category:hover {
+   color:1e918b !important ;
+}
+
     .price-button:hover {
         background: #074c12;
         color: white;
+    }
+    .no-products-container {
+        width: 100%;
+        padding: 40px 20px;
+        text-align: center;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin: 20px auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .no-products-content {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .no-products-icon {
+        font-size: 48px;
+        color: #1e918b;
+        margin-bottom: 20px;
+    }
+
+    .no-products-content h3 {
+        color: #333;
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
+
+    .no-products-content p {
+        color: #666;
+        font-size: 16px;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .no-products-suggestions {
+        text-align: left;
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        margin: 20px 0;
+    }
+
+    .no-products-suggestions ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .no-products-suggestions ul li {
+        color: #666;
+        margin: 10px 0;
+        padding-left: 20px;
+        position: relative;
+    }
+
+    .no-products-suggestions ul li:before {
+        content: "•";
+        color: #1e918b;
+        position: absolute;
+        left: 0;
+    }
+
+    .reset-filters-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #1e918b;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        margin-top: 15px;
+    }
+
+    .reset-filters-btn:hover {
+        background-color: #08847e;
+        transform: translateY(-2px);
+        color: white !important;
+    }
+
+    @media (max-width: 768px) {
+        .no-products-container {
+            padding: 30px 15px;
+        }
+        
+        .no-products-content h3 {
+            font-size: 20px;
+        }
+        
+        .no-products-content p {
+            font-size: 14px;
+        }
     }
     @media (max-width: 992px) {
     .main-container {
@@ -304,12 +407,17 @@
                     <div class="filter-title">Categories</div>
                     <div class="category-brand-container">
                         <ul>
-                            <%for(let i=0;i<category.length;i++){%>
-                                <li class="filter-item">
-                                    <a href="/filter?category=<%=category[i]._id%>"><%=category[i].name%></a>
+                            <% for (let i = 0; i < category.length; i++) { %>
+                                <li>
+                                    <a href="/filter?category=<%= category[i]._id %>"
+                                       class="<%= selectedCategory && selectedCategory.toString() === category[i]._id.toString() ? 'active-category' : '' %>">
+                                        <%= category[i].name %>
+                                    </a>
                                 </li>
-                            <%}%>
+                            <% } %>
                         </ul>
+                        
+                        
                     </div>
                 </div>
 
@@ -327,6 +435,34 @@
             </aside>
 
             <main class="product-grid">
+                <% if (products.length === 0) { %>
+                    <div class="no-products-container">
+                        <div class="no-products-content">
+                            <i class="fas fa-box-open no-products-icon"></i>
+                            <h3>No Products Found</h3>
+                            <p>
+                                <% if (searchQuery) { %>
+                                    We couldn't find any products matching "<%= searchQuery %>".
+                                <% } else if (selectedCategory) { %>
+                                    No products available in this category at the moment.
+                                <% } else if (priceRange) { %>
+                                    No products available in the selected price range.
+                                <% } else { %>
+                                    No products available at the moment.
+                                <% } %>
+                            </p>
+                            <div class="no-products-suggestions">
+                                <p>You might want to:</p>
+                                <ul>
+                                    <li>Try different search terms</li>
+                                    <li>Check out other categories</li>
+                                    <li>Remove price filters</li>
+                                </ul>
+                            </div>
+                            <a href="/shop" class="reset-filters-btn">Clear All Filters</a>
+                        </div>
+                    </div>
+                <% } %>            
                 <%for(let i=0;i<products.length;i++){%>
                     <div class="product-card">
                         <button class="wishlist-btn" onclick="addToWishlist('<%=products[i]._id%>')">

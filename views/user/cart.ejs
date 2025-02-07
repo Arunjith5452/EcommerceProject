@@ -243,53 +243,11 @@
             margin-top: 20px;
         }
 
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            max-width: 350px;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        .notification-content {
-            background-color: #fff;
-            color: #333;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .notification.success .notification-content {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .notification.error .notification-content {
-            background-color: #f44336;
-            color: white;
-        }
-
-        .close-notification {
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-
         @keyframes slideIn {
             from {
                 transform: translateX(100%);
                 opacity: 0;
             }
-
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -301,11 +259,55 @@
                 transform: translateX(0);
                 opacity: 1;
             }
-
             to {
                 transform: translateX(100%);
                 opacity: 0;
             }
+        }
+
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .notification-content {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .notification.success .notification-content {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .notification.error .notification-content {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .close-notification {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .close-notification:hover {
+            opacity: 1;
         }
 
         @media (max-width: 768px) {
@@ -396,12 +398,14 @@
                             </tbody>
                         </table>
                     </div>
-                    <div id="notification" class="notification" style="display: none;">
-                        <div class="notification-content">
-                            <span id="notification-message"></span>
-                            <button class="close-notification">×</button>
-                        </div>
-                    </div>
+                  
+    <div id="notification" class="notification" style="display: none;" role="alert">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+            <button class="close-notification" aria-label="Close notification">×</button>
+        </div>
+    </div>
+
 
                     <div class="cart-actions">
                         <button class="btn btn-continue"><a href="/shop" rel="nofollow">Continue Shopping</a></button>

@@ -144,7 +144,7 @@
                                 <h6>Summer Collection</h6>
                                 <h2>Fall - Winter Collections 2030</h2>
                                 <p>A specialist label creating luxury essentials.</p>
-                                <a href="#" class="primary-btn">Shop now <span class="arrow_right"></span></a>
+                                <a href="/shop" class="primary-btn">Shop now <span class="arrow_right"></span></a>
                             </div>
                         </div>
                     </div>
@@ -162,29 +162,29 @@
                         </div>
                         <div class="banner__item__text">
                             <h2>Clothing Collections 2030</h2>
-                            <a href="#">Shop now</a>
+                            <a href="/shop">Shop now</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-5">
                     <div class="banner__item banner__item--middle">
                         <div class="banner__item__pic">
-                            <img src="img/banner/banner-2.jpg" alt="Accessories">
+                            <img src="/uploads/product-images/product imagebrand.jpg" alt="Brand">
                         </div>
                         <div class="banner__item__text">
-                            <h2>Accessories</h2>
-                            <a href="#">Shop now</a>
+                            <h2>Branded Clothing</h2>
+                            <a href="/shop">Shop now</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-7">
                     <div class="banner__item banner__item--last">
                         <div class="banner__item__pic">
-                            <img src="img/banner/banner-3.jpg" alt="Shoes Spring 2030">
+                            <img src="/uploads/product-images/1736536482732-image-1736536482707-1.jpg" alt="Clothes Spring 2030">
                         </div>
                         <div class="banner__item__text">
-                            <h2>Shoes Spring 2030</h2>
-                            <a href="#">Shop now</a>
+                            <h2>Clothes Spring 2030</h2>
+                            <a href="/shop">Shop now</a>
                         </div>
                     </div>
                 </div>
@@ -204,14 +204,13 @@
                 <%for(let i=0;i<products.length;i++){%>
                 <div class="col-lg-3 col-md-4 col-12 col-sm-6 mb-4">
                     <div class="product-card">
-                        <!-- <div class="discount-badge">-20%</div> -->
                         
-                        <button class="wishlist-btn">
+                        <button class="wishlist-btn" onclick="addToWishlist('<%=products[i]._id%>')">
                             <i class="fas fa-heart"></i>
                         </button>
                         
                         <div class="product-img-wrap">
-                            <a href="/productDetails?id=<%=products[i]._id%>">
+                            <a href="/productDetails/<%=products[i]._id%>">
                                 <img class="product-img" 
                                      src="/uploads/product-images/<%=products[i].productImage[0]%>" 
                                      alt="<%=products[i].productName%>"
@@ -227,9 +226,9 @@
                                     ₹<%=products[i].regularPrice.toLocaleString('en-IN')%>
                                 </span>
                             </div>
-                            <button onclick="window.location.href='/addToCart?id=<%=products[i]._id%>'" class="add-to-cart">
-                                Add to Cart
-                            </button>
+                            <div class="product-delivery" style="color: rgb(82, 82, 82); font-size: 12px;">
+                                Free Delivery
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -237,5 +236,44 @@
             </div>
         </div>
     </section>
+    <script>
+     
+     function addToWishlist(productId){
+        fetch("/addToWishlist",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({productId:productId})
+        })
+        .then((response)=>response.json())
+        .then((data)=>{
+            if(data.status){
+                Swal.fire({
+                    title:'Added to wishlist',
+                    text:'The product has been added to your wishlist',
+                    icon:'success',
+                    timer:2000
+                })
+            }else{
+                Swal.fire({
+                    title:'Already in wishlist',
+                    text:data.message,
+                    icon:'info',
+                    timer:2000
+                })
+            }
+        })
+        .catch((error)=>{
+            Swal.fire({
+                title:'Error',
+                text:'There was an error adding the product to your wishlist',
+                icon:'error',
+                timer:2000
+            })
+        })
+     }
+
+    </script>
 
     <%-include("../../views/partials/user/footer")%>

@@ -17,6 +17,8 @@ router.get("/pageerror", adminController.pageerror);
 
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
+router.get('/api/dashboard/analytics', adminController.getAnalyticsData);
+router.get('/api/dashboard/top-performers', adminController.getTopPerformers);
 router.get('/download/excel',adminController.generateExcelReport);
 router.get('/download/pdf',adminController.generatePDFReport);
 router.get("/dashboard", adminAuth, adminController.loadDashboard);             

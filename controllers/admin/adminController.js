@@ -51,6 +51,121 @@ const login = async (req, res) => {
   }
 }
 
+const getBestSellingProducts = async (dateFilter) => {
+  try {
+    return await Order.aggregate([
+      { $match: dateFilter },
+      { $unwind: "$orderedItems" },
+      {
+        $group: {
+          _id: "$orderedItems.product",
+          unitsSold: { $sum: "$orderedItems.quantity" },
+          revenue: { 
+            $sum: { 
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+            } 
+          }
+        }
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      {
+        $project: {
+          name: { $arrayElemAt: ["$productInfo.productName", 0] },
+          unitsSold: 1,
+          revenue: 1
+        }
+      }
+    ]);
+  } catch (error) {
+    console.error("Error getting best selling products:", error);
+    throw error;
+  }
+};
+
+const getBestCategories = async (dateFilter) => {
+  try {
+    return await Order.aggregate([
+      { $match: dateFilter },
+      { $unwind: "$orderedItems" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderedItems.product",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "productInfo.category",
+          foreignField: "_id",
+          as: "categoryInfo"
+        }
+      },
+      {
+        $group: {
+          _id: { $arrayElemAt: ["$categoryInfo._id", 0] },
+          name: { $first: { $arrayElemAt: ["$categoryInfo.name", 0] } },
+          unitsSold: { $sum: "$orderedItems.quantity" },
+          revenue: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
+            }
+          }
+        }
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 10 }
+    ]);
+  } catch (error) {
+    console.error("Error getting best categories:", error);
+    throw error;
+  }
+};
+
+
+
+const getSalesData = async (dateFilter) => {
+  try {
+    return await Order.aggregate([
+      { $match: dateFilter },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdOn" }
+          },
+          revenue: { $sum: "$finalAmount" },
+          orderCount: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } },
+      {
+        $project: {
+          date: "$_id",
+          revenue: 1,
+          orderCount: 1,
+          _id: 0
+        }
+      }
+    ]);
+  } catch (error) {
+    console.error("Error getting sales data:", error);
+    throw error;
+  }
+};
+
+
+
 const loadDashboard = async (req, res) => {
   try {
     const page = req.query.page || 1;
@@ -128,7 +243,10 @@ const loadDashboard = async (req, res) => {
       totalUsers,
       totalProducts,
       totalCategories,
-      totalCoupons
+      totalCoupons,
+      bestSellingProducts,
+      bestCategories,
+      salesData
     ] = await Promise.all([
       Order.countDocuments(dateFilter),
       Order.aggregate([
@@ -151,22 +269,23 @@ const loadDashboard = async (req, res) => {
           }
         }
       ]),
-      Order.find(dateFilter, {
-        orderId: 1,
-        createdOn: 1,
-        totalPrice: 1,
-        discount: 1,
-        finalAmount: 1,
-        status: 1
+      Order.find(dateFilter)
+      .populate({
+      path: 'orderedItems.product',
+      select: 'productName price'
       })
-        .sort({ createdOn: -1 })
-        .limit(limit * 1)
-        .skip((page - 1) * limit)
-        .exec(),
+      .sort({ createdOn: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec(),
       User.countDocuments(),
       Category.countDocuments(),
       Product.countDocuments(),
-      Coupon.countDocuments()
+      Coupon.countDocuments(),
+
+      getBestSellingProducts(dateFilter),
+      getBestCategories(dateFilter),
+      getSalesData(dateFilter)
     ]);
 
     let orderStatusData = {};
@@ -188,7 +307,10 @@ const loadDashboard = async (req, res) => {
       currentPage: parseInt(page),
       selectedFilter: filter, 
       startDate,
-      endDate
+      endDate,
+      bestSellingProducts,
+      bestCategories,
+      salesData
     };
 
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
@@ -201,6 +323,167 @@ const loadDashboard = async (req, res) => {
     return res.redirect("/admin/pageerror")
   }
 }
+
+const getAnalyticsData = async (req, res) => {
+  try {
+    const filter = req.query.filter || 'daily';
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+
+    let dateFilter = {};
+    const now = new Date();
+    const today = new Date(now.setHours(0, 0, 0, 0));
+ 
+    switch (filter) { 
+      case 'daily':
+        dateFilter = {
+          createdOn: {
+            $gte: today,
+            $lte: new Date(now.setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'weekly':
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - 6);
+        dateFilter = {
+          createdOn: {
+            $gte: weekStart,
+            $lte: new Date(now.setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'monthly':
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        dateFilter = {
+          createdOn: {
+            $gte: monthStart,
+            $lte: new Date(now.setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'yearly':
+        const yearStart = new Date(today.getFullYear(), 0, 1);
+        dateFilter = {
+          createdOn: {
+            $gte: yearStart,
+            $lte: new Date(now.setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'custom':
+        if (startDate && endDate) {
+          dateFilter = {
+            createdOn: {
+              $gte: new Date(startDate),
+              $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+            }
+          };
+        }
+        break;
+    }
+
+    const [bestSellingProducts, bestCategories, salesData] = 
+      await Promise.all([
+        getBestSellingProducts(dateFilter),
+        getBestCategories(dateFilter),
+        getSalesData(dateFilter)
+      ]);
+
+    res.json({
+      bestSellingProducts,
+      bestCategories,
+      salesData
+    });
+  } catch (error) {
+    console.error("Error fetching analytics data:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getTopPerformers = async (req, res) => {
+  try {
+      const filter = req.query.filter || 'daily';
+      const startDate = req.query.startDate;
+      const endDate = req.query.endDate;
+      
+      let dateFilter = {};
+      const now = new Date();
+      const today = new Date(now.setHours(0, 0, 0, 0));
+      
+      switch (filter) {
+          case 'daily':
+              dateFilter = {
+                  createdOn: {
+                      $gte: today,
+                      $lte: new Date(now.setHours(23, 59, 59, 999))
+                  }
+              };
+              break;
+              case 'weekly':
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - 6);
+                dateFilter = {
+                  createdOn: {
+                    $gte: weekStart,
+                    $lte: new Date(now.setHours(23, 59, 59, 999))
+                  }
+                };
+                break;
+        
+              case 'monthly':
+                const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                dateFilter = {
+                  createdOn: {
+                    $gte: monthStart,
+                    $lte: new Date(now.setHours(23, 59, 59, 999))
+                  }
+                };
+                break;
+        
+              case 'yearly':
+                const yearStart = new Date(today.getFullYear(), 0, 1);
+                dateFilter = {
+                  createdOn: {
+                    $gte: yearStart,
+                    $lte: new Date(now.setHours(23, 59, 59, 999))
+                  }
+                };
+                break;
+        
+              case 'custom':
+                if (startDate && endDate) {
+                  dateFilter = {
+                    createdOn: {
+                      $gte: new Date(startDate),
+                      $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+                    }
+                  };
+                }
+                break;
+            }
+        
+              const [bestProducts, bestCategories] = await Promise.all([
+                getBestSellingProducts(dateFilter),
+                getBestCategories(dateFilter)
+            ]);
+    
+            res.json({
+                products: bestProducts,
+                categories: bestCategories
+            });
+        } catch (error) {
+            console.error("Error getting top performers:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                details: error.message 
+            });
+        }
+    };
 
 const generateExcelReport = async (req, res) => {
   try {
@@ -321,5 +604,7 @@ module.exports = {
   loadDashboard,
   generateExcelReport,
   generatePDFReport,
+  getAnalyticsData,
+  getTopPerformers,
   logout
 }

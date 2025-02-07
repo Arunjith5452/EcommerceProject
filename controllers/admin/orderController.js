@@ -140,7 +140,6 @@ const updateOrderStatus = async (req, res) => {
             });
         }
 
-        // If productId exists, update specific product
         if (productId) {
             const orderItem = order.orderedItems.find(
                 item => item.product.toString() === productId
@@ -155,7 +154,6 @@ const updateOrderStatus = async (req, res) => {
 
             orderItem.status = status;
             
-            // Update main order status based on items
             const allItemsSameStatus = order.orderedItems.every(
                 item => item.status === status
             );
@@ -164,7 +162,6 @@ const updateOrderStatus = async (req, res) => {
                 order.status = status;
             }
         } else {
-            // Update main order status and all items
             order.status = status;
             order.orderedItems.forEach(item => {
                 if (item.status !== 'Cancelled') {

@@ -269,6 +269,7 @@ const editProduct = async (req, res) => {
 
 
         const id = req.params.id;
+        console.log("id",id)
         const product = await Product.findOne({ _id: id });
         const data = req.body;
 
