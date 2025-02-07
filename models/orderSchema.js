@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema({
             required: true
         },
         size: {
-            type: String,  
+            type: String,
             required: true
         },
         price: {
@@ -87,6 +87,8 @@ const orderSchema = new mongoose.Schema({
         enum: ['', 'Pending', 'Approved', 'Rejected'],
         default: ''
     },
+    paymentRetryCount: { type: Number, default: 0 },
+    paymentFailureReason: String,
     paymentMethod: {
         type: String,
         required: true,
@@ -94,10 +96,10 @@ const orderSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['PENDING', 'FAILED', 'SUCCESS'],
-        default: 'PENDING'
+        enum: ['Pending', 'Failed', 'Success'],
+        default: 'Pending'
     },
-    
+
     paymentId: String,
     paymentFailureReason: String,
 

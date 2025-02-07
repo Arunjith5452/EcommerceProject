@@ -313,9 +313,8 @@ const placeOrder = async (req, res) => {
                 message: `Insufficient stock for ${invalidStock.product} (${invalidStock.size})`
             });
         }
-
-        if (paymentMethod === "RAZORPAY") {
-            if (!req.body.paymentConfirmed) {
+         
+        if (paymentMethod === "RAZORPAY" && !req.body.paymentConfirmed) {
                 const options = {
                     amount: finalAmount * 100,
                     currency: "INR",
@@ -324,38 +323,26 @@ const placeOrder = async (req, res) => {
                 };
                 const razorpayOrder = await razorpay.orders.create(options);
                 return res.json({ success: true, order: razorpayOrder });
-            } else {
-                if (req.body.razorpay_payment_id) {
-                    try {
-                        const isValid = await verifyPaymentAndCreateOrder(
-                            {
-                                razorpay_order_id: req.body.razorpay_order_id,
-                                razorpay_payment_id: req.body.razorpay_payment_id
-                            },
-                            req.body.razorpay_signature,
-                            process.env.RAZORPAY_KEY_SECRET
-                        );
-
-                        if (!isValid) {
-                            const order = await createOrderWithStatus('FAILED', req.body.paymentFailureReason || 'Payment verification failed');
-                            return res.status(400).json({
-                                success: false,
-                                message: "Payment verification failed",
-                                orderId: order._id
-                            });
-                        }
-                    } catch (error) {
-                        const order = await createOrderWithStatus('FAILED', req.body.paymentFailureReason || error.message);
-                        return res.status(400).json({
-                            success: false,
-                            message: "Payment processing failed",
-                            orderId: order._id
-                        });
-                    }
+            }else if (paymentMethod === "RAZORPAY" && req.body.paymentConfirmed) {
+                const isValid = await verifyPaymentAndCreateOrder(
+                    {
+                        razorpay_order_id: req.body.razorpay_order_id,
+                        razorpay_payment_id: req.body.razorpay_payment_id
+                    },
+                    req.body.razorpay_signature,
+                    process.env.RAZORPAY_KEY_SECRET
+                );
+            
+                if (!isValid) {
+                    order.paymentStatus = 'Failed';
+                    order.paymentFailureReason = 'Payment verification failed';
+                    await order.save();
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: 'Payment verification failed' 
+                    });
                 }
             }
-        }
-
 
     if (paymentMethod === 'COD' && finalAmount > 1000){
         return res.status(400).json({status:false,message:"Cash on Delivery is available only for orders up to ₹1000."})  
@@ -382,23 +369,27 @@ const placeOrder = async (req, res) => {
             paymentMethod,
             address: selectedAddress,
             status: 'Pending',
-            paymentId: req.body.razorpay_payment_id,
-            paymentStatus: paymentMethod === 'RAZORPAY' ? 'SUCCESS' : 'PENDING',
+            paymentId: req.body.razorpay_payment_id || null,
+            paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Failed',
+            paymentFailureReason: req.body.paymentFailureReason || null,
             paymentId: req.body.razorpay_payment_id || null,
             createdOn: new Date()
         });
 
-        await Promise.all([
-            cart.updateOne({ items: [] }),
-            User.findByIdAndUpdate(userId, { $push: { orderHistory: order._id } })
-        ]);
+        if (paymentMethod === 'COD' || (paymentMethod === 'RAZORPAY' && req.body.paymentConfirmed)) {
+            await Promise.all([
+                cart.updateOne({ items: [], bill: 0 }),
+                User.findByIdAndUpdate(userId, { $push: { orderHistory: order._id } })
+            ]);
+        }
 
         delete req.session.activeCoupon;
         delete req.session.couponDiscount;
 
         return res.status(200).json({
             success: true,
-            orderId: order._id
+            orderId: order._id,
+            redirectUrl: paymentMethod === 'COD' ? `/orderSuccess/${order._id}` : '/orders'
         });
 
     } catch (error) {
@@ -409,6 +400,80 @@ const placeOrder = async (req, res) => {
         });
     }
 }
+
+const initiateRetryPayment = async (req,res) => {
+    try {
+        
+        const {orderId} = req.body;
+        const userId = req.session.user;
+
+        console.log('Initiating retry payment for order:', orderId);
+
+
+        const order = await Order.findOne({_id:orderId,userId}).populate('userId').lean();
+
+        if(!order){
+            return res.status(404).json({success:false , message:'Order not found'})
+        }
+
+        if(order.paymentStatus === 'Success'){
+            return res.status(400).json({success:false,message:'Payment already completed'})
+        }
+
+        if(order.paymentRetryCount >=3){
+            return res.status(400).json({
+                success:false,
+                message:'Mazimum payment retry attempts exceeded'
+            })
+        }
+
+        const options = {
+            amount :order.finalAmount * 100,
+            currency:"INR",
+            receipt:`retry_${orderId}_${Date.now()}`,
+            payment_capture:1,
+            notes: {
+                order_id: orderId 
+            }
+        }
+        console.log('Creating Razorpay order with options:', options);
+
+        const razorpayOrder = await razorpay.orders.create(options)
+
+        console.log('Razorpay order created:', razorpayOrder);
+
+
+        await Order.updateOne(
+            { _id: orderId }, 
+            { 
+                $inc: { paymentRetryCount: 1 },
+                $set: { 
+                    paymentStatus: 'Pending',
+                    status: 'Payment Pending',
+                    razorpay_order_id: razorpayOrder.id 
+                }
+            }
+        )
+        
+        return res.json({
+            success:true,
+            razorpayKeyId:process.env.RAZORPAY_KEY_ID,
+            orderId:razorpayOrder.id,
+            amount:options.amount,
+            customerName:order.userId.username,
+            customerEmail:order.userId.email,
+            originalOrderId: orderId
+        })
+
+    } catch (error) {
+        console.error('Error initiating retry payment:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate payment retry'
+        });
+    }
+    }
+
 const verifyRetryPayment = async (req, res) => {
     try {
         const { 
@@ -418,7 +483,15 @@ const verifyRetryPayment = async (req, res) => {
             razorpay_signature 
         } = req.body;
 
+        console.log('Verifying retry payment:', {
+            orderId,
+            razorpay_payment_id,
+            razorpay_order_id
+        });
+
         const order = await Order.findById(orderId);
+        console.log('Order not found:', orderId);
+
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
@@ -433,9 +506,11 @@ const verifyRetryPayment = async (req, res) => {
         );
 
         if (!isValid) {
+            console.log('Payment signature verification failed');
             await Order.findByIdAndUpdate(orderId, { 
-                paymentStatus: 'FAILED',
-                paymentFailureReason: 'Invalid payment signature'
+                paymentStatus: 'Failed',
+                paymentFailureReason: 'Payment verification failed',
+                $inc: { paymentRetryCount: 1 }  // Increment retry count even on failure
             });
             return res.status(400).json({
                 success: false,
@@ -443,78 +518,58 @@ const verifyRetryPayment = async (req, res) => {
             });
         }
 
-        await Order.findByIdAndUpdate(orderId, {
-            paymentStatus: 'SUCCESS',
-            paymentId: razorpay_payment_id,
-            status: 'Processing',
-            paymentFailureReason: null
-        });
-
-        return res.json({ success: true });
-
-    } catch (error) {
-        console.error('Retry payment verification error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Payment processing failed'
-        });
-    }
-};
-const retryPayment = async (req,res) => {
-    try {
+        // Update order with success status
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
         
-        const { orderId } = req.body;
-        const order = await Order.findOne({ orderId }).populate('userId');
-        
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-
-        if (order.paymentRetryCount >= 3) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Maximum payment retry attempts exceeded' 
+        if (payment.status !== 'captured') {
+            console.log('Payment not captured:', payment.status);
+            await Order.findByIdAndUpdate(orderId, {
+                paymentStatus: 'Failed',
+                paymentFailureReason: `Payment ${payment.status}`
+            });
+            return res.status(400).json({
+                success: false,
+                message: `Payment ${payment.status}`
             });
         }
 
-        await Order.findByIdAndUpdate(orderId, { 
-            paymentStatus: 'PAYMENT_PENDING',
-            status: 'Payment Pending'
+        // Update order status
+        await Order.findByIdAndUpdate(orderId, {
+            paymentStatus: 'Success',
+            status: 'Processing',
+            paymentId: razorpay_payment_id,
+            paymentFailureReason: null
         });
 
-        const options = {
-            amount: order.finalAmount * 100,
-            currency: "INR",
-            receipt: `retry_${orderId}_${Date.now()}`,
-            payment_capture: 1
-        };
-
-        const razorpayOrder = await razorpay.orders.create(options);
-        
-        await Order.updateOne(
-            { orderId }, 
-            { $inc: { paymentRetryCount: 1 } }
-        );
-
-        return res.json({
+        console.log('Payment verification successful');
+        return res.json({ 
             success: true,
-            razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-            orderId: razorpayOrder.id,
-            amount: options.amount,
-            customerName: order.userId.username,
-            customerEmail: order.userId.email
+            message: 'Payment successful'
         });
- 
 
     } catch (error) {
-        console.error('Error initiating retry payment:', error);
+        console.error('Retry payment verification error:', error);
+        if (req.body.orderId) {
+            await Order.findByIdAndUpdate(req.body.orderId, {
+                paymentStatus: 'Failed',
+                paymentFailureReason: error.message || 'Payment processing failed'
+            });
+        }
         return res.status(500).json({
             success: false,
-            message: 'Failed to initiate payment retry'
+            message: error.message || 'Payment processing failed'
         });
     }
-    }
+};
 
+//     } catch (error) {
+//         console.error('Retry payment verification error:', error);
+//         return res.status(500).json({
+//             success: false,
+//             message: 'Payment processing failed'
+//         });
+//     }
+// };
 
 const getOrderSuccess = async (req, res) => {
     try {
@@ -583,7 +638,7 @@ module.exports = {
     addAddressCheckout,
     editAddressCheckout,
     placeOrder,
-    retryPayment,
+    initiateRetryPayment,
     verifyRetryPayment,
     getOrderSuccess,
     applyCoupon

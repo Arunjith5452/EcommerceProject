@@ -172,12 +172,13 @@
                             </span>
                             <div class="text">
                                 <h6 class="mb-1 card-title">Total Sales</h6>
-                                <span id="totalSales">₹<%=totalRevenue%></span>
-                                <span class="text-sm">12.5% vs last period</span>
+                                <span id="totalSales">₹<%= totalRevenue %></span>
+                                <span class="text-sm"><%= revenueChange %>% vs last period</span>
                             </div>
                         </article>
                     </div>
                 </div>
+                
                 <div class="col-md-3">
                     <div class="card card-body mb-4">
                         <article class="icontext">
@@ -186,12 +187,13 @@
                             </span>
                             <div class="text">
                                 <h6 class="mb-1 card-title">Orders Count</h6>
-                                <span id="ordersCount"><%=totalOrders%></span>
-                                <span class="text-sm">8.2% vs last period</span>
+                                <span id="ordersCount"><%= totalOrders %></span>
+                                <span class="text-sm"><%= ordersChange %>% vs last period</span>
                             </div>
                         </article>
                     </div>
                 </div>
+                
                 <div class="col-md-3">
                     <div class="card card-body mb-4">
                         <article class="icontext">
@@ -200,12 +202,13 @@
                             </span>
                             <div class="text">
                                 <h6 class="mb-1 card-title">Total Discount</h6>
-                                <span id="totalDiscount">₹<%=totalDiscount%></span>
-                                <span class="text-sm">12.5% vs last period</span>
+                                <span id="totalDiscount">₹<%= totalDiscount %></span>
+                                <span class="text-sm"><%= discountChange %>% vs last period</span>
                             </div>
                         </article>
                     </div>
                 </div>
+                
                 <div class="col-md-3">
                     <div class="card card-body mb-4">
                         <article class="icontext">
@@ -214,13 +217,13 @@
                             </span>
                             <div class="text">
                                 <h6 class="mb-1 card-title">Total Users</h6>
-                                <span id="totalUsers"><%=totalUsers%></span>
-                                <span class="text-sm">4.3% vs last period</span>
+                                <span id="totalUsers"><%= totalUsers %></span>
+                                <span class="text-sm"><%= usersChange %>% vs last period</span>
                             </div>
                         </article>
                     </div>
                 </div>
-            </div>
+                
 
             <!-- Additional Boxes -->
             <div class="row">
@@ -751,23 +754,59 @@ function fetchChartData() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
+    console.log('Fetching chart data with params:', {
+        quickFilter,
+        startDate,
+        endDate
+    });
+
     fetch(`/admin/api/dashboard/analytics?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
         .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.text().then(errorText => {
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                });
+            }
             return response.json();
         })
         .then(data => {
+            console.log('Received data:', data);
+            
             if (!data.salesData || !Array.isArray(data.salesData)) {
-                throw new Error('Invalid data format received');
+                console.error('Invalid data format:', data);
+                showNoDataMessage();
+                return;
             }
+
+            if (data.salesData.length === 0) {
+                console.warn('Empty sales data');
+                showNoDataMessage();
+                return;
+            }
+
             updateChartData(data.salesData);
             updatePieCharts(data.bestSellingProducts, data.bestCategories);
         })
         .catch(error => {
-            console.error('Error loading chart data:', error);
+            console.error('Detailed error loading chart data:', error);
             showChartError();
         });
 }
+
+function showNoDataMessage() {
+    const canvas = document.getElementById('salesChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#666';
+    ctx.font = '14px Arial';
+    ctx.fillText('No data available for selected date range', canvas.width / 2, canvas.height / 2);
+}
+
 
 
 function updatePieCharts(products, categories) {
@@ -793,19 +832,116 @@ function updateChartData(salesData) {
 
         const chart = window.salesChart;
         const formattedData = salesData.map(item => ({
-            date: item.date,
+            date: formatDateLabel(item.date, getCurrentFilter()),
             revenue: parseFloat(item.revenue) || 0
         }));
 
+        const filterType = getCurrentFilter();
+        updateChartOptions(chart, filterType);
+
         chart.data.labels = formattedData.map(item => item.date);
         chart.data.datasets[0].data = formattedData.map(item => item.revenue);
-        chart.update('active');  
+        chart.update('active');
     } catch (error) {
         console.error('Error updating chart:', error);
         showChartError();
     }
 }
 
+function getCurrentFilter() {
+    return document.getElementById('quickFilter').value;
+}
+
+function formatDateLabel(date, filterType) {
+    const dateObj = new Date(date);
+    
+    switch(filterType) {
+        case 'daily':
+            return date.includes(':') ? 
+                   `${dateObj.getHours()}:00` : 
+                   date;
+        case 'weekly':
+            return new Date(date).toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        case 'monthly':
+            return new Date(date).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        case 'yearly':
+            return new Date(date).toLocaleDateString('en-US', { 
+                month: 'short', 
+                year: 'numeric' 
+            });
+        case 'custom':
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const diffDays = Math.ceil(
+                (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)
+            );
+            
+            if (diffDays <= 7) {
+                return new Date(date).toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            } else if (diffDays <= 31) {
+                return new Date(date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            } else {
+                return new Date(date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    year: 'numeric' 
+                });
+            }
+        default:
+            return date;
+    }
+}
+function updateChartOptions(chart, filterType) {
+    chart.options.scales.x = {
+        ...chart.options.scales.x,
+        ticks: {
+            maxRotation: filterType === 'daily' ? 0 : 45,
+            autoSkip: true,
+            maxTicksLimit: getMaxTicksLimit(filterType)
+        }
+    };
+
+    chart.options.plugins.tooltip = {
+        ...chart.options.plugins.tooltip,
+        callbacks: {
+            title: function(tooltipItems) {
+                const item = tooltipItems[0];
+                return `Date: ${item.label}`;
+            },
+            label: function(context) {
+                return `Revenue: ₹${context.raw.toLocaleString()}`;
+            }
+        }
+    };
+}
+
+function getMaxTicksLimit(filterType) {
+    switch(filterType) {
+        case 'daily':
+            return 24; // Show up to 24 hours
+        case 'weekly':
+            return 7;  // Show up to 7 days
+        case 'monthly':
+            return 31; // Show up to 31 days
+        case 'yearly':
+            return 12; // Show up to 12 months
+        default:
+            return 10;
+    }
+}
 function showChartError() {
     const canvas = document.getElementById('salesChart');
     if (!canvas) return;
@@ -847,6 +983,28 @@ document.addEventListener('DOMContentLoaded', function() {
     if (startDate && endDate) {
         startDate.addEventListener('change', updateDashboardData);
         endDate.addEventListener('change', updateDashboardData);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const quickFilter = document.getElementById('quickFilter');
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+
+    if (quickFilter) {
+        quickFilter.addEventListener('change', function() {
+            if (this.value !== 'custom') {
+            }
+        });
+    }
+
+    if (startDate && endDate) {
+        [startDate, endDate].forEach(input => {
+            input.addEventListener('change', function() {
+                if (quickFilter.value === 'custom' && startDate.value && endDate.value) {
+                }
+            });
+        });
     }
 });
 

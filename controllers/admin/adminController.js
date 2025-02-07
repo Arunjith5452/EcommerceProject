@@ -56,14 +56,15 @@ const getBestSellingProducts = async (dateFilter) => {
     return await Order.aggregate([
       { $match: dateFilter },
       { $unwind: "$orderedItems" },
+      { $match: { "orderedItems.status": "Delivered" } },
       {
         $group: {
           _id: "$orderedItems.product",
           unitsSold: { $sum: "$orderedItems.quantity" },
-          revenue: { 
-            $sum: { 
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
-            } 
+          revenue: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
+            }
           }
         }
       },
@@ -96,6 +97,7 @@ const getBestCategories = async (dateFilter) => {
     return await Order.aggregate([
       { $match: dateFilter },
       { $unwind: "$orderedItems" },
+      { $match: { "orderedItems.status": "Delivered" } },
       {
         $lookup: {
           from: "products",
@@ -137,14 +139,32 @@ const getBestCategories = async (dateFilter) => {
 
 const getSalesData = async (dateFilter) => {
   try {
+
+    console.log('Date filter for sales data:', dateFilter);
+
+    if (!dateFilter.createdOn || !dateFilter.createdOn.$gte || !dateFilter.createdOn.$lte) {
+      console.error('Invalid date filter:', dateFilter);
+      return [];
+    }
+
+    const format = getDateFormat(dateFilter.createdOn.$gte, dateFilter.createdOn.$lte);
     return await Order.aggregate([
       { $match: dateFilter },
+      { $unwind: "$orderedItems" },
+      { $match: { "orderedItems.status": "Delivered" } },
       {
         $group: {
           _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdOn" }
+            $dateToString: {
+              format: format,
+              date: "$createdOn"
+            }
           },
-          revenue: { $sum: "$finalAmount" },
+          revenue: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
+            }
+          },
           orderCount: { $sum: 1 }
         }
       },
@@ -158,13 +178,27 @@ const getSalesData = async (dateFilter) => {
         }
       }
     ]);
+
   } catch (error) {
     console.error("Error getting sales data:", error);
     throw error;
   }
+}
+const getDateFormat = (startDate, endDate) => {
+  const diffDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 1) {
+    return "%Y-%m-%d %H:00";  // Hourly format
+  } else if (diffDays <= 7) {
+    return "%Y-%m-%d";        // Daily format
+  } else if (diffDays <= 31) {
+    return "%Y-%m-%d";        // Daily format
+  } else if (diffDays <= 365) {
+    return "%Y-%m";           // Monthly format
+  } else {
+    return "%Y-%m";           // Monthly format for longer ranges
+  }
 };
-
-
 
 const loadDashboard = async (req, res) => {
   try {
@@ -180,14 +214,15 @@ const loadDashboard = async (req, res) => {
 
     let dateFilter = {};
     const now = new Date();
-    const today = new Date(now.setHours(0, 0, 0, 0));
- 
-    switch (filter) { 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    switch (filter) {
       case 'daily':
         dateFilter = {
           createdOn: {
             $gte: today,
-            $lte: new Date(now.setHours(23, 59, 59, 999))
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
           }
         };
         break;
@@ -198,7 +233,7 @@ const loadDashboard = async (req, res) => {
         dateFilter = {
           createdOn: {
             $gte: weekStart,
-            $lte: new Date(now.setHours(23, 59, 59, 999))
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
           }
         };
         break;
@@ -208,7 +243,7 @@ const loadDashboard = async (req, res) => {
         dateFilter = {
           createdOn: {
             $gte: monthStart,
-            $lte: new Date(now.setHours(23, 59, 59, 999))
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
           }
         };
         break;
@@ -218,7 +253,7 @@ const loadDashboard = async (req, res) => {
         dateFilter = {
           createdOn: {
             $gte: yearStart,
-            $lte: new Date(now.setHours(23, 59, 59, 999))
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
           }
         };
         break;
@@ -234,23 +269,29 @@ const loadDashboard = async (req, res) => {
         }
         break;
     }
-
     const [
       totalOrders,
       totalRevenue,
       orderStatusCounts,
       orderDetails,
       totalUsers,
-      totalProducts,
       totalCategories,
+      totalProducts,
       totalCoupons,
       bestSellingProducts,
       bestCategories,
       salesData
     ] = await Promise.all([
-      Order.countDocuments(dateFilter),
+      Order.countDocuments({ ...dateFilter, "orderedItems.status": "Delivered" }),
+
       Order.aggregate([
-        { $match: dateFilter },
+        {
+          $match: {
+            ...dateFilter,
+            "orderedItems.status": "Delivered"
+          }
+        },
+        { $unwind: "$orderedItems" },
         {
           $group: {
             _id: null,
@@ -259,6 +300,7 @@ const loadDashboard = async (req, res) => {
           }
         }
       ]),
+
       Order.aggregate([
         { $match: dateFilter },
         { $unwind: "$orderedItems" },
@@ -269,15 +311,17 @@ const loadDashboard = async (req, res) => {
           }
         }
       ]),
+
       Order.find(dateFilter)
-      .populate({
-      path: 'orderedItems.product',
-      select: 'productName price'
-      })
-      .sort({ createdOn: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec(),
+        .populate({
+          path: 'orderedItems.product',
+          select: 'productName price'
+        })
+        .sort({ createdOn: -1 })
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .exec(),
+
       User.countDocuments(),
       Category.countDocuments(),
       Product.countDocuments(),
@@ -305,7 +349,7 @@ const loadDashboard = async (req, res) => {
       orderDetails,
       totalPages: Math.ceil(totalOrders / limit),
       currentPage: parseInt(page),
-      selectedFilter: filter, 
+      selectedFilter: filter,
       startDate,
       endDate,
       bestSellingProducts,
@@ -317,14 +361,137 @@ const loadDashboard = async (req, res) => {
       return res.json(responseData);
     }
 
-    return res.render("dashboard", responseData)
+    return res.render("dashboard", responseData);
   } catch (error) {
-    console.log("Error loading dashboard", error)
-    return res.redirect("/admin/pageerror")
+    console.log("Error loading dashboard", error);
+    return res.redirect("/admin/pageerror");
+  }
+};
+
+const getAnalyticsData = async (req, res) => {
+  try {
+    const filter = req.query.filter || 'daily';
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+    console.log('Received analytics request:', { filter, startDate, endDate });
+
+    let dateFilter = {};
+    const now = new Date();
+    const today = new Date(now.setHours(0, 0, 0, 0));
+
+    switch (filter) {
+      case 'daily':
+        dateFilter = {
+          createdOn: {
+            $gte: today,
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'weekly':
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - 6);
+        dateFilter = {
+          createdOn: {
+            $gte: weekStart,
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'monthly':
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        dateFilter = {
+          createdOn: {
+            $gte: monthStart,
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'yearly':
+        const yearStart = new Date(today.getFullYear(), 0, 1);
+        dateFilter = {
+          createdOn: {
+            $gte: yearStart,
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        };
+        break;
+
+      case 'custom':
+        if (startDate && endDate) {
+          const customStart = new Date(startDate);
+          const customEnd = new Date(endDate);
+
+          if (isNaN(customStart.getTime()) || isNaN(customEnd.getTime())) {
+            throw new Error('Invalid date format provided');
+          }
+
+          dateFilter = {
+            createdOn: {
+              $gte: customStart,
+              $lte: new Date(customEnd.setHours(23, 59, 59, 999))
+            }
+          };
+        } else {
+          dateFilter = {
+            createdOn: {
+              $gte: today,
+              $lte: new Date(new Date().setHours(23, 59, 59, 999))
+            }
+          };
+        }
+        break;
+
+      default:
+        dateFilter = {
+          createdOn: {
+            $gte: today,
+            $lte: new Date(new Date().setHours(23, 59, 59, 999))
+          }
+        };
+    }
+
+    if (!dateFilter.createdOn || !dateFilter.createdOn.$gte || !dateFilter.createdOn.$lte) {
+      dateFilter = {
+        createdOn: {
+          $gte: today,
+          $lte: new Date(new Date().setHours(23, 59, 59, 999))
+        }
+      };
+    }
+
+    const [bestSellingProducts, bestCategories, salesData] =
+      await Promise.all([
+        getBestSellingProducts(dateFilter),
+        getBestCategories(dateFilter),
+        getSalesData(dateFilter)
+      ]);
+
+    console.log('Analytics data:', {
+      bestSellingProducts: bestSellingProducts.length,
+      bestCategories: bestCategories.length,
+      salesData: salesData.length
+    });
+
+
+    res.json({
+      bestSellingProducts,
+      bestCategories,
+      salesData
+    });
+  } catch (error) {
+    console.error("Error fetching analytics data:", error);
+    res.status(500).json({
+      error: "Error fetching analytics data",
+      details: error.message
+    });
   }
 }
 
-const getAnalyticsData = async (req, res) => {
+const getTopPerformers = async (req, res) => {
   try {
     const filter = req.query.filter || 'daily';
     const startDate = req.query.startDate;
@@ -333,8 +500,8 @@ const getAnalyticsData = async (req, res) => {
     let dateFilter = {};
     const now = new Date();
     const today = new Date(now.setHours(0, 0, 0, 0));
- 
-    switch (filter) { 
+
+    switch (filter) {
       case 'daily':
         dateFilter = {
           createdOn: {
@@ -343,7 +510,6 @@ const getAnalyticsData = async (req, res) => {
           }
         };
         break;
-
       case 'weekly':
         const weekStart = new Date(today);
         weekStart.setDate(today.getDate() - 6);
@@ -387,103 +553,23 @@ const getAnalyticsData = async (req, res) => {
         break;
     }
 
-    const [bestSellingProducts, bestCategories, salesData] = 
-      await Promise.all([
-        getBestSellingProducts(dateFilter),
-        getBestCategories(dateFilter),
-        getSalesData(dateFilter)
-      ]);
+    const [bestProducts, bestCategories] = await Promise.all([
+      getBestSellingProducts(dateFilter),
+      getBestCategories(dateFilter)
+    ]);
 
     res.json({
-      bestSellingProducts,
-      bestCategories,
-      salesData
+      products: bestProducts,
+      categories: bestCategories
     });
   } catch (error) {
-    console.error("Error fetching analytics data:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error getting top performers:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      details: error.message
+    });
   }
 };
-
-const getTopPerformers = async (req, res) => {
-  try {
-      const filter = req.query.filter || 'daily';
-      const startDate = req.query.startDate;
-      const endDate = req.query.endDate;
-      
-      let dateFilter = {};
-      const now = new Date();
-      const today = new Date(now.setHours(0, 0, 0, 0));
-      
-      switch (filter) {
-          case 'daily':
-              dateFilter = {
-                  createdOn: {
-                      $gte: today,
-                      $lte: new Date(now.setHours(23, 59, 59, 999))
-                  }
-              };
-              break;
-              case 'weekly':
-                const weekStart = new Date(today);
-                weekStart.setDate(today.getDate() - 6);
-                dateFilter = {
-                  createdOn: {
-                    $gte: weekStart,
-                    $lte: new Date(now.setHours(23, 59, 59, 999))
-                  }
-                };
-                break;
-        
-              case 'monthly':
-                const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                dateFilter = {
-                  createdOn: {
-                    $gte: monthStart,
-                    $lte: new Date(now.setHours(23, 59, 59, 999))
-                  }
-                };
-                break;
-        
-              case 'yearly':
-                const yearStart = new Date(today.getFullYear(), 0, 1);
-                dateFilter = {
-                  createdOn: {
-                    $gte: yearStart,
-                    $lte: new Date(now.setHours(23, 59, 59, 999))
-                  }
-                };
-                break;
-        
-              case 'custom':
-                if (startDate && endDate) {
-                  dateFilter = {
-                    createdOn: {
-                      $gte: new Date(startDate),
-                      $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
-                    }
-                  };
-                }
-                break;
-            }
-        
-              const [bestProducts, bestCategories] = await Promise.all([
-                getBestSellingProducts(dateFilter),
-                getBestCategories(dateFilter)
-            ]);
-    
-            res.json({
-                products: bestProducts,
-                categories: bestCategories
-            });
-        } catch (error) {
-            console.error("Error getting top performers:", error);
-            res.status(500).json({ 
-                error: "Internal server error",
-                details: error.message 
-            });
-        }
-    };
 
 const generateExcelReport = async (req, res) => {
   try {
@@ -524,7 +610,6 @@ const generateExcelReport = async (req, res) => {
   }
 }
 
-
 const generatePDFReport = async (req, res) => {
   try {
     const orders = await Order.find({ status: "Delivered" }).sort({ createdOn: -1 })
@@ -552,9 +637,9 @@ const generatePDFReport = async (req, res) => {
       datas: orders.map(order => ({
         orderId: order.orderId,
         date: order.createdOn.toDateString(),
-        amount:`₹${order.totalPrice}`,
-        discount:`₹${order.discount}`,
-        finalAmount:`₹${order.finalAmount}`,
+        amount: `₹${order.totalPrice}`,
+        discount: `₹${order.discount}`,
+        finalAmount: `₹${order.finalAmount}`,
         status: order.status
       }))
     };
@@ -595,8 +680,6 @@ const logout = async (req, res) => {
 
   }
 }
-
-
 module.exports = {
   pageerror,
   loadLogin,

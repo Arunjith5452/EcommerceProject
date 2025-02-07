@@ -794,7 +794,6 @@
                       </div>
                     </div>
 
-                    <!-- Add this script at the bottom of your profile page -->
                     <script>
                       function copyReferralCode() {
                         const referralInput = document.getElementById('referralCodeInput');
@@ -909,6 +908,24 @@
                         </div>
                     </div>`;
                     }
+
+                    let paymentRetryHTML = '';
+            if (order.paymentStatus === 'Failed' || order.paymentStatus === 'Pending') {
+                paymentRetryHTML = `
+                    <div class="alert alert-warning mt-3">
+                        <p class="mb-2"><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+                        ${order.paymentFailureReason ? 
+                            `<p class="mb-2"><strong>Reason:</strong> ${order.paymentFailureReason}</p>` : 
+                            ''
+                        }
+                        ${order.paymentRetryCount < 3 ? 
+                            `<button class="btn btn-primary mt-2" onclick="retryPaymentForOrder('${order._id}', ${order.finalAmount})">
+                                Retry Payment
+                            </button>` :
+                            `<p class="text-danger mb-0">Maximum retry attempts exceeded. Please contact support.</p>`
+                        }
+                    </div>`;
+            }
                     let orderDetailsHTML = `
 
                 <div class="order-details-container">
@@ -916,23 +933,13 @@
                     <h5 class="order-id mb-0">Order ID: #${order.orderId.slice(0, 8)}</h5>
                     <span class="badge rounded-pill ${getStatusBadgeClass(order.status)}">${order.status}</span>
                 </div>
-                <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>
-                
-       // Already exists in the code you provided
-${order.paymentStatus === 'FAILED' ? `
-    <div class="alert alert-warning mt-3">
-        <p class="mb-2"><strong>Payment Status:</strong> Failed</p>
-        <p class="mb-2"><strong>Reason:</strong> ${order.paymentFailureReason || 'Payment verification failed'}</p>
-        <button class="btn btn-primary mt-2" onclick="retryPaymentForOrder('${order._id}', ${order.finalAmount})">
-            Retry Payment
-        </button>
-    </div>
-` : ''}
-                
+                <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>        
                 <div class="ordered-items-list">
+                  ${paymentRetryHTML}
                     ${order.orderedItems.map(item => {
                         const itemStatus = item.status || order.status;
                         const itemTotal = item.price * item.quantity;
+                        
 
                       return `
                                 <div class="card mb-3" data-product-id="${item.product._id}">
@@ -1274,51 +1281,100 @@ ${order.paymentStatus === 'FAILED' ? `
                 });
               }
 
-              function retryPayment(orderId, amount) {
-                fetch('/initiate-retry-payment', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    orderId,
-                    amount
-                  })
-                })
-                  .then(response => response.json())
-                  .then(data => {
-                    if (data.success) {
-                      const options = {
-                        key: data.razorpayKeyId,
-                        amount: data.amount,
-                        currency: "INR",
-                        name: "Your Store Name",
-                        description: "Order Payment Retry",
-                        order_id: data.orderId,
-                        handler: function (response) {
-                          verifyRetryPayment(orderId, response);
-                        },
-                        prefill: {
-                          name: data.customerName,
-                          email: data.customerEmail
-                        },
-                        theme: {
-                          color: "#3399cc"
-                        }
-                      };
-                      const rzp = new Razorpay(options);
-                      rzp.open();
-                    } else {
-                      Swal.fire('Error', data.message, 'error');
-                    }
-                  })
-                  .catch(error => {
-                    console.error('Error initiating retry payment:', error);
-                    Swal.fire('Error', 'Failed to initiate payment retry', 'error');
-                  });
-              }
+    function retryPaymentForOrder(orderId, amount) {
+      console.log('Retrying payment for order:', orderId, 'amount:', amount);
+    fetch('/initiate-retry-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, amount })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const options = {
+                key: data.razorpayKeyId,
+                amount: data.amount,
+                currency: "INR",
+                name: "FashionKart",
+                description: "Order Payment Retry",
+                order_id: data.orderId,
+                handler: function(response) {
+                  console.log('Payment successful:', response);
+                    verifyRetryPayment(data.originalOrderId, response);
+                },
+                prefill: {
+                    name: data.customerName,
+                    email: data.customerEmail
+                },
+                theme: {
+                    color: "#3399cc"
+                }
+            };
+            console.log('Opening Razorpay with options:', options);
+            const rzp = new Razorpay(options);
+            rzp.open();
+            rzp.on('payment.failed', function(response) {
+                console.log('Payment failed:', response);
+                Swal.fire('Error', 'Payment failed. Please try again.', 'error')
+                .then(() => {
+                    window.location.reload();
+                });
+            });
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error initiating retry payment:', error);
+        Swal.fire('Error', 'Failed to initiate payment retry', 'error');
+    });
+}
 
 
+function verifyRetryPayment(orderId, response) {
+  console.log('Verifying retry payment for order:', orderId, 'response:', response);
+
+    fetch('/verify-retry-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderId,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Payment Successful',
+                text: 'Your payment has been processed successfully',
+                icon: 'success'
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire({
+                title: 'Payment Failed',
+                text: data.message || 'Payment verification failed',
+                icon: 'error'
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Payment verification error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Failed to verify payment',
+            icon: 'error'
+        }).then(() => {
+            window.location.reload();
+        });
+    });
+}
 
               function confirmDelete(addressId) {
                 Swal.fire({

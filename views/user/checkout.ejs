@@ -1047,11 +1047,17 @@ async function placeOrder() {
                         if (result.success) {
                             window.location.href = `/orderSuccess/${result.orderId}`;
                         } else {
-                            showSwalError(result.message || 'Payment verification failed');
+                            const errorMessage = result.message || 'Payment failed';
+            showSwalError(errorMessage);
+            // Reload the orders page after a short delay
+            setTimeout(() => {
+                window.location.href = '/orders';
+            }, 2000);
                         }
                     } catch (error) {
                         console.error('Payment confirmation error:', error);
                         showSwalError('Error confirming payment');
+                        window.location.href = `/orders`;
                     }
                 },
                 prefill: {
@@ -1064,6 +1070,7 @@ async function placeOrder() {
 
             const rzp = new Razorpay(options);
             rzp.open();
+            
         } else {
             const response = await fetch('/placeOrder', {
                 method: 'POST',
@@ -1087,69 +1094,6 @@ async function placeOrder() {
         console.error('Error:', error);
         showSwalError('Error processing order. Please try again.');
     }
-}
-
-function retryPaymentForOrder(orderId, amount) {
-    fetch('/initiate-retry-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, amount })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const options = {
-                key: data.razorpayKeyId,
-                amount: data.amount,
-                currency: "INR",
-                name: "FashionKart",
-                description: "Order Payment Retry",
-                order_id: data.orderId,
-                handler: function(response) {
-                    verifyRetryPayment(orderId, response);
-                },
-                prefill: {
-                    name: data.customerName,
-                    email: data.customerEmail
-                },
-                theme: { color: "#3399cc" }
-            };
-            const rzp = new Razorpay(options);
-            rzp.open();
-        } else {
-            Swal.fire('Error', data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error initiating retry payment:', error);
-        Swal.fire('Error', 'Failed to initiate payment retry', 'error');
-    });
-}
-
-function verifyRetryPayment(orderId, response) {
-    fetch('/verify-retry-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            orderId,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire('Success', 'Payment successful', 'success')
-                .then(() => location.reload());
-        } else {
-            Swal.fire('Error', data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Payment verification error:', error);
-        Swal.fire('Error', 'Payment verification failed', 'error');
-    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

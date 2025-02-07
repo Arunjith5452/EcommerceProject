@@ -23,7 +23,7 @@ const customerInfo = async (req, res) => {
                 { username: { $regex: ".*" + search + ".*", $options: 'i' } },
                 { email: { $regex: ".*" + search + ".*", $options: 'i' } }
             ],
-        })  
+        })
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .exec();
