@@ -32,7 +32,7 @@ const orderSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned'],
+            enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned', "Failed"],
             default: 'Pending'
         },
         cancelReason: {
@@ -72,7 +72,7 @@ const orderSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned']
+        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned', "Failed"]
     },
     cancelReason: {
         type: String,
@@ -87,6 +87,7 @@ const orderSchema = new mongoose.Schema({
         enum: ['', 'Pending', 'Approved', 'Rejected'],
         default: ''
     },
+    paymentId: String,
     paymentRetryCount: { type: Number, default: 0 },
     paymentFailureReason: String,
     paymentMethod: {
@@ -98,14 +99,6 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['Pending', 'Failed', 'Success'],
         default: 'Pending'
-    },
-
-    paymentId: String,
-    paymentFailureReason: String,
-
-    paymentRetryCount: {
-        type: Number,
-        default: 0
     },
     createdOn: {
         type: Date,

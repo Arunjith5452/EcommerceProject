@@ -988,111 +988,168 @@ async function removeCoupon() {
 }
 
 async function placeOrder() {
+    console.log("🛠️ placeOrder() function triggered...");
     const selectedAddress = document.querySelector('.address-box.selected input[type="radio"]');
     const selectedPayment = document.querySelector('.payment-option.selected input[type="radio"]');
-    
+
     if (!selectedAddress || !selectedPayment) {
         showSwalError(!selectedAddress ? 'Please select a delivery address' : 'Please select a payment method');
         return;
     }
 
-    const discountAmount = document.getElementById('discount-amount')?.textContent || '0';
-    const finalAmount = document.querySelector('.summary-row.total span:last-child')?.textContent.replace('₹', '') || '0';
+    const discountAmount = parseFloat(document.getElementById('discount-amount')?.textContent || '0');
+    const finalAmountText = document.querySelector('.summary-row.total span:last-child')?.textContent.replace('₹', '') || '0';
+    const finalAmount = parseFloat(finalAmountText) || 0;
 
     try {
-        if (selectedPayment.value === "RAZORPAY") {
-            const orderData = {
-                addressId: selectedAddress.value,
-                paymentMethod: selectedPayment.value,
-                discount: parseFloat(discountAmount),
-                finalAmount: parseFloat(finalAmount)
-            };
+        const orderData = {
+            addressId: selectedAddress.value,
+            paymentMethod: selectedPayment.value,
+            discount: discountAmount,
+            finalAmount
+        };
 
-            const orderResponse = await fetch('/placeOrder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
-            });
+        const orderResponse = await fetch('/placeOrder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
 
-            const orderResult = await orderResponse.json();
-            if (!orderResult.success || !orderResult.order) {
-                showSwalError(orderResult.message || 'Failed to create order');
-                return;
-            }
-
-            const options = {
-                key: "rzp_test_YCiYkhBw22AhUw",
-                amount: orderResult.order.amount,
-                currency: "INR",
-                name: "FashionKart",
-                description: "Order Payment",
-                order_id: orderResult.order.id,
-                handler: async function(response) {
-                    try {
-                        const finalOrderData = {
-                            ...orderData,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature,
-                            paymentConfirmed: true
-                        };
-
-                        const confirmResponse = await fetch('/placeOrder', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(finalOrderData)
-                        });
-
-                        const result = await confirmResponse.json();
-                        if (result.success) {
-                            window.location.href = `/orderSuccess/${result.orderId}`;
-                        } else {
-                            const errorMessage = result.message || 'Payment failed';
-            showSwalError(errorMessage);
-            // Reload the orders page after a short delay
-            setTimeout(() => {
-                window.location.href = '/orders';
-            }, 2000);
-                        }
-                    } catch (error) {
-                        console.error('Payment confirmation error:', error);
-                        showSwalError('Error confirming payment');
-                        window.location.href = `/orders`;
-                    }
-                },
-                prefill: {
-                    name: "User",
-                    email: "user@example.com",
-                    contact: "9999999999"
-                },
-                theme: { color: "#3399cc" }
-            };
-
-            const rzp = new Razorpay(options);
-            rzp.open();
-            
-        } else {
-            const response = await fetch('/placeOrder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    addressId: selectedAddress.value,
-                    paymentMethod: selectedPayment.value,
-                    discount: parseFloat(discountAmount),
-                    finalAmount: parseFloat(finalAmount)
-                })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                window.location.href = `/orderSuccess/${data.orderId}`;
-            } else {
-                showSwalError(data.message || 'Error placing order');
-            }
+        if (!orderResponse.ok) {
+            throw new Error(`HTTP error! Status: ${orderResponse.status}`);
         }
+
+        const orderResult = await orderResponse.json();
+        console.log("Order placed successfully:", orderResult);
+
+        if (!orderResult.success || !orderResult.order) {
+            console.error("Invalid response format:", orderResult);
+            showSwalError(orderResult.message || 'Failed to create order');
+            return;
+        }
+        if (selectedPayment.value !== "RAZORPAY") {
+            window.location.href = `/orderSuccess/${orderResult.order._id}`;
+            return;
+        }
+
+        await initiateRazorpayPayment(orderResult.order);
+
     } catch (error) {
         console.error('Error:', error);
         showSwalError('Error processing order. Please try again.');
+    }
+}
+async function initiateRazorpayPayment(order) {
+    console.log("Initiating Razorpay payment with order:", order);
+    
+    const options = {
+        key: "rzp_test_YCiYkhBw22AhUw",
+        amount: order.amount,
+        currency: "INR",
+        name: "FashionKart",
+        description: "Order Payment",
+        order_id: order.razorpay_order_id,
+        handler: async function (response) {
+            console.log("Razorpay Success Response:", response);
+            
+            try {
+                const confirmResponse = await fetch('/placeOrder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: order._id,
+                        paymentMethod: 'RAZORPAY',
+                        paymentConfirmed: true,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id || order.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    })
+                });
+
+                const confirmData = await confirmResponse.json();
+                
+                if (confirmData.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Payment Successful',
+                        text: 'Your order has been placed successfully!',
+                    }).then(() => {
+                        window.location.href = `/orderSuccess/${order._id}`;
+                    });
+                } else {
+                    throw new Error(confirmData.message || 'Payment confirmation failed');
+                }
+            } catch (error) {
+                console.error("Payment confirmation error:", error);
+                await updateOrderStatus(order._id, 'Failed', 'Payment confirmation failed');
+                showSwalError('Payment confirmation failed. Please contact support.');
+            }
+        },
+        prefill: {
+            name: "User",
+            email: "user@example.com",
+            contact: "9999999999"
+        },
+        theme: { color: "#3399cc" }
+    };
+
+    const rzp = new Razorpay(options);
+    
+    rzp.on('payment.failed', async function (response) {
+        console.error("Payment Failed:", response.error);
+        
+        try {
+            const failedResponse = await fetch('/placeOrder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: order._id,
+                    paymentMethod: 'RAZORPAY',
+                    paymentConfirmed: false,
+                    paymentStatus: 'Failed',
+                    failureReason: response.error.description,
+                    addressId: order.addressId  
+                })
+            });
+
+            const failedData = await failedResponse.json();
+            
+            if (failedData.success) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Payment Failed',
+                    text: response.error.description || 'Payment declined. Try another payment method.',
+                }).then(() => {
+                    window.location.href = `/orderSuccess/${order._id}`;
+                });
+            } else {
+                throw new Error(failedData.message);
+            }
+        } catch (error) {
+            console.error("Failed payment update error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Payment failed. Please try again later.'
+            }).then(() => {
+                window.location.href = `/orderSuccess/${order._id}`;
+            });
+        }
+    });
+
+    rzp.open();
+}
+
+async function updateOrderStatus(orderId, status) {
+    try {
+        await fetch('/updateOrderStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, status })
+        });
+        console.log(`Order ${orderId} updated to ${status}`);
+    } catch (error) {
+        console.error('Error updating order status:', error);
     }
 }
 

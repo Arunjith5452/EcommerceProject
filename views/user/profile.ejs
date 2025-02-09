@@ -796,19 +796,28 @@
 
                     <script>
                       function copyReferralCode() {
-                        const referralInput = document.getElementById('referralCodeInput');
-                        referralInput.select();
-                        document.execCommand('copy');
+    const referralInput = document.getElementById('referralCodeInput');
+    referralInput.select();
+    document.execCommand('copy');
 
-                        // Show tooltip or alert
-                        alert('Referral code copied to clipboard!');
-                      }
+    Swal.fire({
+        icon: 'success',
+        title: 'Copied!',
+        text: 'Referral code copied to clipboard.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000
+    });
+}
+
                     </script>
 
                   </div>
                 </div>
               </div>
             </div>
+            <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script src="https://kit.fontawesome.com/a-valid-fontawesome-kit-code.js" crossorigin="anonymous"></script>
             <script>
@@ -910,7 +919,7 @@
                     }
 
                     let paymentRetryHTML = '';
-            if (order.paymentStatus === 'Failed' || order.paymentStatus === 'Pending') {
+            if (order.paymentStatus === 'Failed') {
                 paymentRetryHTML = `
                     <div class="alert alert-warning mt-3">
                         <p class="mb-2"><strong>Payment Status:</strong> ${order.paymentStatus}</p>
@@ -933,9 +942,9 @@
                     <h5 class="order-id mb-0">Order ID: #${order.orderId.slice(0, 8)}</h5>
                     <span class="badge rounded-pill ${getStatusBadgeClass(order.status)}">${order.status}</span>
                 </div>
-                <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>        
+                <p><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>  
+                 ${paymentRetryHTML}      
                 <div class="ordered-items-list">
-                  ${paymentRetryHTML}
                     ${order.orderedItems.map(item => {
                         const itemStatus = item.status || order.status;
                         const itemTotal = item.price * item.quantity;
@@ -985,10 +994,12 @@
                     setupStatusUpdateListener(orderId);
                   })
                   .catch(error => {
-                    console.error('Error fetching order details:', error);
-                    Swal.fire('Error!', 'Failed to load order details', 'error');
-                  });
-              }
+            if (error.name !== 'AbortError' && !document.getElementById('orderDetailsContent').innerHTML) {
+                console.error('Error fetching order details:', error);
+                Swal.fire('Error', 'Failed to load order details', 'error');
+            }
+        });
+      }
 
               function getStatusBadgeClass(status) {
                 switch (status.toLowerCase()) {
@@ -1281,8 +1292,15 @@
                 });
               }
 
-    function retryPaymentForOrder(orderId, amount) {
-      console.log('Retrying payment for order:', orderId, 'amount:', amount);
+
+function retryPaymentForOrder(orderId, amount) {
+    console.log('Retrying payment for order:', orderId, 'amount:', amount);
+    
+    if (typeof Razorpay === 'undefined') {
+        Swal.fire('Error', 'Payment gateway is not loaded. Please refresh the page.', 'error');
+        return;
+    }
+
     fetch('/initiate-retry-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1293,14 +1311,22 @@
         if (data.success) {
             const options = {
                 key: data.razorpayKeyId,
-                amount: data.amount,
+                amount: amount * 100,
                 currency: "INR",
                 name: "FashionKart",
                 description: "Order Payment Retry",
                 order_id: data.orderId,
                 handler: function(response) {
-                  console.log('Payment successful:', response);
-                    verifyRetryPayment(data.originalOrderId, response);
+                    verifyRetryPayment(data.originalOrderId, {
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    });
+                },
+                modal: {
+                    ondismiss: function() {
+                        handlePaymentFailure(orderId);
+                    }
                 },
                 prefill: {
                     name: data.customerName,
@@ -1310,73 +1336,124 @@
                     color: "#3399cc"
                 }
             };
-            console.log('Opening Razorpay with options:', options);
+
             const rzp = new Razorpay(options);
-            rzp.open();
             rzp.on('payment.failed', function(response) {
-                console.log('Payment failed:', response);
-                Swal.fire('Error', 'Payment failed. Please try again.', 'error')
-                .then(() => {
-                    window.location.reload();
-                });
+                handlePaymentFailure(orderId, response.error.description);
             });
+            rzp.open();
         } else {
-            Swal.fire('Error', data.message, 'error');
+            Swal.fire('Error', data.message || 'Failed to initiate payment', 'error');
         }
     })
     .catch(error => {
-        console.error('Error initiating retry payment:', error);
+        console.error('Error:', error);
         Swal.fire('Error', 'Failed to initiate payment retry', 'error');
     });
 }
 
-
-function verifyRetryPayment(orderId, response) {
-  console.log('Verifying retry payment for order:', orderId, 'response:', response);
-
+function verifyRetryPayment(orderId, paymentDetails) {
     fetch('/verify-retry-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            orderId,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature
+            orderId: orderId,
+            ...paymentDetails
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             Swal.fire({
+                icon: 'success',
                 title: 'Payment Successful',
-                text: 'Your payment has been processed successfully',
-                icon: 'success'
+                text: 'Your payment has been processed successfully!',
+                showConfirmButton: true
             }).then(() => {
-                window.location.reload();
+                viewOrderDetails(orderId);
             });
         } else {
-            Swal.fire({
-                title: 'Payment Failed',
-                text: data.message || 'Payment verification failed',
-                icon: 'error'
-            }).then(() => {
-                window.location.reload();
-            });
+            throw new Error(data.message || 'Payment verification failed');
         }
     })
     .catch(error => {
         console.error('Payment verification error:', error);
+        handlePaymentFailure(orderId, 'Payment verification failed');
+    });
+}
+
+function handlePaymentFailure(orderId, reason = 'Payment was cancelled') {
+    fetch('/payment-failed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            orderId: orderId,
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: reason || 'Your payment was not successful. Please try again.',
+                showConfirmButton: true
+            }).then(() => {
+                viewOrderDetails(orderId);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error handling payment failure:', error);
+        Swal.fire('Error', 'Something went wrong. Please check your order status.', 'error');
+    });
+}
+
+function handlePaymentFailure(orderId, reason = 'Payment was declined') {
+    console.log('Handling payment failure for order:', orderId);
+    
+    return fetch('/updateOrderStatus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            orderId: orderId,
+            status: 'Failed',
+            reason: reason
+        })
+    })
+    .then(response => response.json()) 
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: 'Your payment didn\'t go through as it was declined by the bank. Try another payment method or contact your bank.',
+            }).then(() => {
+                viewOrderDetails(orderId);
+            });
+        } else {
+            throw new Error(data.message || 'Failed to update order status');
+        }
+    })
+    .catch(error => {
+        console.error('Error handling payment failure:', error);
         Swal.fire({
+            icon: 'error',
             title: 'Error',
-            text: 'Failed to verify payment',
-            icon: 'error'
-        }).then(() => {
-            window.location.reload();
+            text: 'Something went wrong. Please check your order status.',
+            confirmButtonText: 'View Orders',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/orderSuccess';
+            }
         });
     });
 }
 
-              function confirmDelete(addressId) {
+
+
+          function confirmDelete(addressId) {
                 Swal.fire({
                   title: 'Are you sure?',
                   text: 'Do you want to delete this address?',
@@ -1390,15 +1467,6 @@ function verifyRetryPayment(orderId, response) {
                     window.location.href = `/deleteAddress?id=${addressId}`;
                   }
                 });
-              }
-
-              function copyReferralCode() {
-                const referralInput = document.getElementById('referralCodeInput');
-                referralInput.select();
-                document.execCommand('copy');
-
-                // Show tooltip or alert
-                alert('Referral code copied to clipboard!');
               }
               document.addEventListener('DOMContentLoaded', () => {
                 const urlParams = new URLSearchParams(window.location.search);

@@ -78,6 +78,8 @@ router.post("/addAddress-checkout",userAuth,checkoutController.addAddressCheckou
 router.post('/editAddress-checkout/:id',userAuth,checkoutController.editAddressCheckout);
 router.post("/applyCoupon",userAuth,checkoutController.applyCoupon);
 router.post("/placeOrder", userAuth, checkoutController.placeOrder);
+router.post("/payment-failed",userAuth,checkoutController.paymentFailed);
+router.post("/updateOrderStatus", userAuth, checkoutController.updateOrderStatus);
 router.post("/initiate-retry-payment",userAuth, checkoutController.initiateRetryPayment);
 router.post('/verify-retry-payment',userAuth,checkoutController.verifyRetryPayment);
 router.get('/orderSuccess/:orderId', userAuth, checkoutController.getOrderSuccess);

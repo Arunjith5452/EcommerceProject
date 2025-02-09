@@ -171,7 +171,6 @@ const userProfile = async (req, res) => {
     try {
         const userId = req.session.user;
         const userData = await User.findById(userId)
-        .sort({date:-1})
         .populate('walletHistory')
         .populate('referrals','username createdAt')
 
