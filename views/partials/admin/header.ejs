@@ -131,6 +131,20 @@
             border-radius: 0;
             outline: 1px solid #39f;
         }
+        .menu-item.active .menu-link {
+            background-color: #20cf0c;
+            color: white;
+            border-radius: 4px;
+        }
+        
+        .menu-link {
+            transition: background-color 0.3s ease;
+        }
+        
+        .menu-item.active .menu-link i,
+        .menu-item.active .menu-link span {
+            color: rgb(10, 10, 10);
+        }
     </style>
     
 </head>
@@ -254,5 +268,20 @@
 
                 </form>
             </div>
-
         </header>
+        <script>
+            function setActiveMenuItem() {
+                const currentPath = window.location.pathname;
+                const menuItems = document.querySelectorAll('.menu-aside .menu-item');
+                menuItems.forEach(item => {
+                    item.classList.remove('active'); 
+                    const link = item.querySelector('.menu-link');
+                    const href = link.getAttribute('href');
+                    
+                    if (href && currentPath.includes(href)) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+            document.addEventListener('DOMContentLoaded', setActiveMenuItem);
+        </script>

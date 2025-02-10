@@ -37,7 +37,6 @@ const sendVerificationEmail = async (email, otp) => {
             html: `<b><h4>Your OTP:${otp}</h4><br></b>`
         }
         const info = await transporter.sendMail(mailOptions);
-        // console.log("email sent :",info.messageId);
 
         return true
 
@@ -124,17 +123,13 @@ const getResetPassPage = async (req, res) => {
 
 
 const resendOtp = async (req, res) => {
-    console.log("Resend otp is working, sending the request");
     try {
 
         const otp = generateOtp();
-        console.log("resend otp generate", otp)
         req.session.userOtp = otp;
         const email = req.session.email;
-        console.log("Resending OTP to email", email);
         const emailSent = await sendVerificationEmail(email, otp);
         if (emailSent) {
-            console.log("Resend OTP:", otp);
             return res.status(200).json({ success: true, message: "Resend otp successful" });
         } else {
             return res.status(500).json({ success: false, message: "Failed to resend OTP. Please try again." });
@@ -191,7 +186,6 @@ const userProfile = async (req, res) => {
         .sort({createdOn: -1})
         .populate('orderedItems.product', 'productName')
 
-        console.log("Found orders for user:", orders.length);
         
         res.render('profile', {
             user: userData,
@@ -237,7 +231,6 @@ const changeEmailValid = async (req, res) => {
             console.log("Email sending result:", emailSent);
 
             if (!emailSent) {
-                console.log("Failed to send email");
                 return res.json("email-error");
             }
 
@@ -343,12 +336,10 @@ const changePasswordValid = async (req, res) => {
         const currentUser = await User.findOne({ _id: userId })
 
         if (!currentUser) {
-            console.log("current User exist")
             return res.render("change-password", { message: "User not exist with this email" })
         }
 
         if (currentUser.email !== email) {
-            console.log("Error checking for email")
             return res.render("change-password", { message: "Please enter current email" })
         }
 

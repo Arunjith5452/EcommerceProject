@@ -33,7 +33,6 @@ const login = async (req, res) => {
       const passwordMatch = await bcrypt.compare(password, admin.password);
       if (passwordMatch) {
         req.session.admin = true;
-        console.log("the code reached here")
         return res.redirect("/admin/dashboard")
       } else {
         return res.render("admin-login", { message: "Invalid password. Please try again" })
@@ -53,10 +52,14 @@ const login = async (req, res) => {
 
 const getBestSellingProducts = async (dateFilter) => {
   try {
+    const combinedFilter = {
+      ...dateFilter,
+      "orderedItems.status": "Delivered"
+    };
+
     return await Order.aggregate([
-      { $match: dateFilter },
+      { $match: combinedFilter },
       { $unwind: "$orderedItems" },
-      { $match: { "orderedItems.status": "Delivered" } },
       {
         $group: {
           _id: "$orderedItems.product",
@@ -94,10 +97,14 @@ const getBestSellingProducts = async (dateFilter) => {
 
 const getBestCategories = async (dateFilter) => {
   try {
+    const combinedFilter = {
+      ...dateFilter,
+      "orderedItems.status": "Delivered"
+    };
+
     return await Order.aggregate([
-      { $match: dateFilter },
+      { $match: combinedFilter },
       { $unwind: "$orderedItems" },
-      { $match: { "orderedItems.status": "Delivered" } },
       {
         $lookup: {
           from: "products",
@@ -126,6 +133,7 @@ const getBestCategories = async (dateFilter) => {
           }
         }
       },
+      { $match: { _id: { $ne: null } } }, 
       { $sort: { revenue: -1 } },
       { $limit: 10 }
     ]);
@@ -135,12 +143,9 @@ const getBestCategories = async (dateFilter) => {
   }
 };
 
-
-
 const getSalesData = async (dateFilter) => {
   try {
 
-    console.log('Date filter for sales data:', dateFilter);
 
     if (!dateFilter.createdOn || !dateFilter.createdOn.$gte || !dateFilter.createdOn.$lte) {
       console.error('Invalid date filter:', dateFilter);
@@ -203,7 +208,7 @@ const getDateFormat = (startDate, endDate) => {
 const loadDashboard = async (req, res) => {
   try {
     const page = req.query.page || 1;
-    const limit = 4;
+    const limit = 6;
     const filter = req.query.filter || 'daily';
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
@@ -269,6 +274,12 @@ const loadDashboard = async (req, res) => {
         }
         break;
     }
+
+    const deliveredFilter = {
+      ...dateFilter,
+      "orderedItems.status": "Delivered"
+    };
+
     const [
       totalOrders,
       totalRevenue,
@@ -282,16 +293,12 @@ const loadDashboard = async (req, res) => {
       bestCategories,
       salesData
     ] = await Promise.all([
-      Order.countDocuments({ ...dateFilter, "orderedItems.status": "Delivered" }),
+      Order.countDocuments(dateFilter),
 
       Order.aggregate([
-        {
-          $match: {
-            ...dateFilter,
-            "orderedItems.status": "Delivered"
-          }
-        },
+        { $match: dateFilter }, 
         { $unwind: "$orderedItems" },
+        { $match: { "orderedItems.status": "Delivered" } },  
         {
           $group: {
             _id: null,
@@ -327,9 +334,9 @@ const loadDashboard = async (req, res) => {
       Product.countDocuments(),
       Coupon.countDocuments(),
 
-      getBestSellingProducts(dateFilter),
-      getBestCategories(dateFilter),
-      getSalesData(dateFilter)
+      getBestSellingProducts(deliveredFilter),
+      getBestCategories(deliveredFilter),
+      getSalesData(deliveredFilter)
     ]);
 
     let orderStatusData = {};
@@ -373,8 +380,6 @@ const getAnalyticsData = async (req, res) => {
     const filter = req.query.filter || 'daily';
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
-    console.log('Received analytics request:', { filter, startDate, endDate });
-
     let dateFilter = {};
     const now = new Date();
     const today = new Date(now.setHours(0, 0, 0, 0));
@@ -574,7 +579,7 @@ const getTopPerformers = async (req, res) => {
 const generateExcelReport = async (req, res) => {
   try {
 
-    const orders = await Order.find({ status: "Delivered" })
+    const orders = await Order.find({ status: "Delivered" }).sort({ createdOn: -1 })
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sales Report')

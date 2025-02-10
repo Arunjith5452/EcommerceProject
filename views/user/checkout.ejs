@@ -1028,9 +1028,17 @@ async function placeOrder() {
             return;
         }
         if (selectedPayment.value !== "RAZORPAY") {
-            window.location.href = `/orderSuccess/${orderResult.order._id}`;
-            return;
-        }
+    Swal.fire({
+        title: "Payment Successful!",
+        text: "Your order has been placed successfully.",
+        icon: "success",
+        confirmButtonText: "OK"
+    }).then(() => {
+        window.location.href = `/orderSuccess/${orderResult.order._id}`;
+    });
+    return;
+}
+
 
         await initiateRazorpayPayment(orderResult.order);
 

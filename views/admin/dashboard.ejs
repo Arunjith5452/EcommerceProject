@@ -529,7 +529,7 @@ function loadTopPerformers() {
             tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
         }
     });
-    fetch(`/admin/api/dashboard/top-performers?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
+    fetch(`/admin/dashboard/top-performers?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
@@ -757,7 +757,7 @@ function fetchChartData() {
         endDate
     });
 
-    fetch(`/admin/api/dashboard/analytics?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
+    fetch(`/admin/dashboard/analytics?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
         .then(response => {
             console.log('Response status:', response.status);
             if (!response.ok) {

@@ -83,6 +83,8 @@ router.post("/updateOrderStatus", userAuth, checkoutController.updateOrderStatus
 router.post("/initiate-retry-payment",userAuth, checkoutController.initiateRetryPayment);
 router.post('/verify-retry-payment',userAuth,checkoutController.verifyRetryPayment);
 router.get('/orderSuccess/:orderId', userAuth, checkoutController.getOrderSuccess);
+router.get('/download-invoice/:orderId', userAuth,checkoutController.downloadInvoice);
+
 
 
 

@@ -30,7 +30,6 @@ const loadWishlist = async (req,res) => {
             })
         }
         
-        // Filter out any products that might be null or undefined
         const validProducts = wishlist.products
             .filter(item => item.productId !== null && item.productId !== undefined)
             .map(item => item.productId);

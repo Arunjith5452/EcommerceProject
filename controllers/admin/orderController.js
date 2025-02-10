@@ -31,31 +31,21 @@ const orderList = async (req,res) => {
         const ordersWithDetails = await Promise.all(orders.map(async (order) => {
             try {
                 if (!order.address) {
-                    console.log(`No address ID found for order ${order.orderId}`);
                     return { ...order, address: null };
                 }
 
-                console.log(`Looking up address for order ${order.orderId} with address ID: ${order.address}`);
 
                 const addressDoc = await Address.findOne({
                     'address._id': order.address
                 });
 
                 if (!addressDoc) {
-                    console.log(`No address document found for address ID ${order.address}`);
                     return { ...order, address: null };
                 }
 
                 const addressData = addressDoc.address.find(addr => 
                     addr._id.toString() === order.address.toString()
                 );
-
-                if (!addressData) {
-                    console.log(`No matching address found in document for address ID ${order.address}`);
-                    return { ...order, address: null };
-                }
-
-                console.log(`Found address data:`, JSON.stringify(addressData, null, 2));
 
                 return {
                     ...order,
@@ -95,10 +85,6 @@ const orderList = async (req,res) => {
                 day: 'numeric'
             });
         };
-
-        console.log("formatDate data",formatDate)
-        console.log("getStatusColor data",getStatusColor)
-
         
         res.render("order",{
             orders:ordersWithDetails,
@@ -187,10 +173,8 @@ const updateOrderStatus = async (req, res) => {
 };
 
 const getOrderDetails = async (req, res) => {
-    console.log("searching starts")
     try {
         const { orderId } = req.params;
-        console.log("Received Order ID for Details:", orderId);
 
 
         const order = await Order.findOne({ orderId })
@@ -199,12 +183,10 @@ const getOrderDetails = async (req, res) => {
                 select: 'productName price sizeVariants productImage'
             }).lean()
     
-         console.log("This is the full order")
         console.log('Full Order Object:', JSON.stringify(order, null, 2));
         
             
         if (!order) {
-            console.log(`No order found for ID: ${orderId}`);
             return res.status(404).json({ 
                 success: false, 
                 message: 'Order not found',
@@ -212,7 +194,6 @@ const getOrderDetails = async (req, res) => {
             });
         }
         if (!order.address) {
-            console.log(`No address ID found for order details ${orderId}`);
             return res.json({
                 success: true,
                 order: { ...order, address: null }
@@ -224,7 +205,6 @@ const getOrderDetails = async (req, res) => {
         });
 
         if (!addressDoc) {
-            console.log(`No address document found for order details ${orderId}`);
             return res.json({
                 success: true,
                 order: { ...order, address: null }

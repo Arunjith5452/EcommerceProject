@@ -14,19 +14,81 @@
         padding: 30px;
         text-align: center;
     }
-
     .success-icon {
-        width: 80px;
-        height: 80px;
-        background: #4CAF50;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-    }
+    width: 80px;
+    height: 80px;
+    background: #4CAF50;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    position: relative;
+    overflow: hidden;
+}
 
-    .success-icon i {
+.success-icon i {
+    color: white;
+    font-size: 40px;
+    animation: checkPop 0.5s ease-in-out;
+}
+
+@keyframes checkPop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #FFD700; 
+    opacity: 0;
+    animation: confetti 1.5s ease-out infinite;
+}
+
+.confetti:nth-child(1) {
+    top: 0;
+    left: 20%;
+    animation-delay: 0.2s;
+}
+
+.confetti:nth-child(2) {
+    top: 0;
+    left: 50%;
+    animation-delay: 0.4s;
+}
+
+.confetti:nth-child(3) {
+    top: 0;
+    left: 80%;
+    animation-delay: 0.6s;
+}
+
+.confetti:nth-child(4) {
+    top: 0;
+    left: 40%;
+    animation-delay: 0.8s;
+}
+
+@keyframes confetti {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(200%) rotate(360deg);
+        opacity: 0;
+    }
+}
+.success-icon i {
         color: white;
         font-size: 40px;
     }
@@ -144,13 +206,17 @@
         transition: all 0.3s;
         font-size: 15px;
     }
-
     .btn-primary {
         background: #000;
         color: white;
         border: none;
     }
 
+    .btn-primary:hover {
+        background: #fff;
+        color: #000;
+        border: 2px solid #000;
+}
     .btn-secondary {
         background: #fff;
         color: #000;
@@ -159,7 +225,10 @@
     order-status {
     margin: 20px 0;
 }
-
+.btn-secondary:hover {
+    background-color: #000;
+    color: #fff;
+}
 .discount-row {
     color: #2e7d32; 
     font-weight: 500;
@@ -219,6 +288,10 @@
     <div class="success-card">
         <div class="success-icon">
             <i class="fas fa-check"></i>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
+            <div class="confetti"></div>
         </div>
         
         <h1 class="success-title">Thank You for Your Order!</h1>
@@ -229,8 +302,6 @@
                 <%= order.status %>
             </span>
         </div>
-    
-
         <div class="order-items">
             <h3>Order Items</h3>
             <% order.orderedItems.forEach(item => { %>
@@ -316,8 +387,10 @@
                     <span>Address information not available</span>
                 </div>
             <% } %>
+          
         </div>
-
+        
+        
         <div class="delivery-info">
             <i class="fas fa-truck"></i>
             <div>
@@ -337,8 +410,8 @@
             </div>
         </div>
         <div class="action-buttons">
-            <!-- <a href="/orders/<%= order.orderId %>" class="btn btn-primary">Track Order</a> -->
             <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
+            <a href="/download-invoice/<%= order.orderId %>" class="btn btn-primary">Download Invoice</a>
         </div>
     </div>
 </div>

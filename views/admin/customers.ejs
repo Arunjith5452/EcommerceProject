@@ -1,4 +1,19 @@
 <%- include("../../views/partials/admin/header") %>
+<style>
+    .simple-alert {
+        font-size: 16px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .simple-btn {
+        background: none;
+        border: 1px solid #ccc;
+        padding: 6px 15px;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+</style>
     <section class="content-main">
         <div class="content-header d-flex justify-content-between align-items-center">
             <div>
@@ -41,15 +56,16 @@
                                     </td>
                                     <td>
                                         <% if (!data[i].isBlocked) { %>
-                                            <a href="/admin/blockCustomer?id=<%= data[i]._id %>">
+                                            <a href="#" onclick="confirmBlock('<%= data[i]._id %>')" class="text-decoration-none">
                                                 <span class="badge rounded-pill alert-warning">Block</span>
                                             </a>
-                                            <% } else { %>
-                                                <a href="/admin/UnblockCustomer?id=<%= data[i]._id %>">
-                                                    <span class="badge rounded-pill alert-warning">Unblock</span>
-                                                </a>
-                                                <% } %>
+                                        <% } else { %>
+                                            <a href="#" onclick="confirmUnblock('<%= data[i]._id %>')" class="text-decoration-none">
+                                                <span class="badge rounded-pill alert-success">Unblock</span>
+                                            </a>
+                                        <% } %>
                                     </td>
+                                    
                                 </tr>
                                 <% } %>
                                     <% } else { %>
@@ -63,4 +79,46 @@
         </div>
         <%-include("../../views/partials/admin/pagination")%>
     </section>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmBlock(userId) {
+            Swal.fire({
+                text: "Block this user?",
+                showCancelButton: true,
+                confirmButtonText: "Yes",
+                cancelButtonText: "No",
+                buttonsStyling: false,
+                customClass: {
+                    popup: "simple-alert",
+                    confirmButton: "simple-btn",
+                    cancelButton: "simple-btn"
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/blockCustomer?id=${userId}`;
+                }
+            });
+        }
+    
+        function confirmUnblock(userId) {
+            Swal.fire({
+                text: "Unblock this user?",
+                showCancelButton: true,
+                confirmButtonText: "Yes",
+                cancelButtonText: "No",
+                buttonsStyling: false,
+                customClass: {
+                    popup: "simple-alert",
+                    confirmButton: "simple-btn",
+                    cancelButton: "simple-btn"
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/UnblockCustomer?id=${userId}`;
+                }
+            });
+        }
+    </script>
+    
+
     <%- include("../../views/partials/admin/footer") %>

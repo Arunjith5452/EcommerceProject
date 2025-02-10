@@ -182,48 +182,93 @@ const getAllProducts = async (req, res) => {
 
 const addProductOffer = async (req, res) => {
     try {
-
-        const { productId, percentage } = req.body;
-
-        const findProduct = await Product.findOne({ _id: productId });
-        const findCategory = await Category.findOne({ _id: findProduct.category });
-
-        if (findCategory.categoryOffer > percentage) {
-            return res.json({ status: false, message: "This products category already has a category offer" })
-        }
-
-        findProduct.salePrice = findProduct.salePrice - Math.floor(findProduct.regularPrice * (percentage / 100));
-        findProduct.productOffer = parseInt(percentage);
-        await findProduct.save();
-
-        findCategory.categoryOffer = 0;
-        await findCategory.save()
-
-        return res.json({ status: true, message: "product offer added successfully" });
-
+      const { productId, percentage } = req.body;
+      
+      if (isNaN(percentage) || percentage <= 0 || percentage >= 100) {
+        return res.status(400).json({ 
+          status: false, 
+          message: "Offer percentage must be between 1 and 99" 
+        });
+      }
+  
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ status: false, message: "Product not found" });
+      }
+  
+      const category = await Category.findById(product.category);
+      if (!category) {
+        return res.status(404).json({ status: false, message: "Category not found" });
+      }
+  
+      if (category.categoryOffer >= percentage) {
+        return res.json({
+          status: false,
+          message: "Category offer is already equal or better than the proposed product offer"
+        });
+      }
+  
+      const newSalePrice = Math.floor(product.regularPrice * (1 - percentage / 100));
+      if (newSalePrice < 0) {
+        return res.status(400).json({ 
+          status: false, 
+          message: "Offer would result in negative price" 
+        });
+      }
+  
+      product.salePrice = newSalePrice;
+      product.productOffer = percentage;
+      await product.save();
+  
+      if (category.categoryOffer > 0) {
+        category.categoryOffer = 0;
+        await category.save();
+      }
+  
+      return res.json({ 
+        status: true, 
+        message: "Product offer added successfully" 
+      });
     } catch (error) {
-        res.redirect("/admin/pageerror");
-        res.status(500).json({ status: false, message: "Internal Server Error" })
+      console.error("Error in addProductOffer:", error);
+      return res.status(500).json({ status: false, message: "Internal server error" });
     }
-}
-
-const removeProductOffer = async (req, res) => {
+  };
+  
+  const removeProductOffer = async (req, res) => {
     try {
-
-        const { productId } = req.body;
-        const findProduct = await Product.findOne({ _id: productId })
-        const percentage = findProduct.productOffer;
-        findProduct.salePrice = findProduct.salePrice + Math.floor(findProduct.regularPrice * (percentage / 100))
-        findProduct.productOffer = 0;
-        await findProduct.save();
-        return res.json({ status: true })
-
-
+      const { productId } = req.body;
+      
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ status: false, message: "Product not found" });
+      }
+  
+      const category = await Category.findById(product.category);
+      if (!category) {
+        return res.status(404).json({ status: false, message: "Category not found" });
+      }
+  
+      product.productOffer = 0;
+  
+      if (category.categoryOffer > 0) {
+        const discountAmount = Math.floor((product.regularPrice * category.categoryOffer) / 100);
+        product.salePrice = Math.max(0, product.regularPrice - discountAmount);
+      } else {
+        product.salePrice = product.regularPrice;
+      }
+  
+      await product.save();
+      
+      return res.json({ 
+        status: true, 
+        message: "Product offer removed successfully" 
+      });
     } catch (error) {
-
-        res.redirect("/admin/pagerror")
+      console.error("Error in removeProductOffer:", error);
+      return res.status(500).json({ status: false, message: "Internal server error" });
     }
-}
+  };
 
 const blockProduct = async (req, res) => {
     try {

@@ -162,9 +162,35 @@
     width: 100%; 
     max-width: 120px; 
     margin: 0 auto;
-    display: block; 
+    display: block;
+    position: relative; 
+}
+.select-wrapper {
+    position: relative;
+    display: inline-block;
 }
 
+.size-select option {
+    padding: 8px;
+    background-color: white;
+}
+
+.dropup .size-select {
+    position: relative;
+}
+
+.table-responsive {
+    overflow-y: visible !important;
+    overflow-x: auto;
+}
+
+.shopping-summery {
+    overflow: visible !important;
+}
+
+.shopping-summery tbody tr:last-child td {
+    padding-bottom: 20px;
+}
 .btn-action {
     padding: 8px 12px;
     border: none;
@@ -223,6 +249,21 @@
     font-size: 20px;
     cursor: pointer;
 }
+
+
+@media screen and (min-width: 768px) {
+    tr:nth-last-child(-n+2) .select-wrapper {
+        position: relative;
+    }
+    
+    tr:nth-last-child(-n+2) .size-select {
+        position: relative;
+    }
+    
+    tr:nth-last-child(-n+2) .select-wrapper select {
+        transform-origin: bottom;
+    }
+}
     </style>
 </head>
 <body>
@@ -233,8 +274,15 @@
                 <div class="breadcrumb">
                     <a href="/" rel="nofollow">Home</a>
                     <span><a href="/shop" rel="nofollow">Shop</a></span> 
-                    <span><a href="/" rel="nofollow">My Wishlist</a></span> 
+                    <span><a href="/wishlist" rel="nofollow">My Wishlist</a></span> 
                 </div>
+            </div>
+        </div>
+        
+        <div id="notification" class="notification" role="alert">
+            <div class="notification-content">
+                <span id="notification-message"></span>
+                <button onclick="hideNotification()" class="close-notification" aria-label="Close notification">×</button>
             </div>
         </div>
 
@@ -272,16 +320,18 @@
                                                 </td>
                                                 <td class="price" data-title="Price">₹<span> <%= item.productId.salePrice %> </span></td>
                                                 <td>
-                                                    <select name="size" id="size-<%= item.productId._id %>" class="size-select">
-                                                        <option value="">Select Size</option>
-                                                        <% if (item.productId.sizeVariants && Array.isArray(item.productId.sizeVariants)) { %>
-                                                            <% item.productId.sizeVariants.forEach(variant => { %>
-                                                                <% if (variant && variant.quantity > 0) { %>
-                                                                    <option value="<%= variant.size %>"><%= variant.size %></option>
-                                                                <% } %>
-                                                            <% }); %>
-                                                        <% } %>
-                                                    </select>
+                                                    <div class="select-wrapper">
+                                                        <select name="size" id="size-<%= item.productId._id %>" class="size-select">
+                                                            <option value="">Select Size</option>
+                                                            <% if (item.productId.sizeVariants && Array.isArray(item.productId.sizeVariants)) { %>
+                                                                <% item.productId.sizeVariants.forEach(variant => { %>
+                                                                    <% if (variant && variant.quantity > 0) { %>
+                                                                        <option value="<%= variant.size %>"><%= variant.size %></option>
+                                                                    <% } %>
+                                                                <% }); %>
+                                                            <% } %>
+                                                        </select>
+                                                    </div>
                                                 </td>
                                                 <td class="text-center" data-title="Add to Cart">
                                                     <button onclick="addToCartFromWishlist('<%= item.productId._id %>')" class="btn-action btn-cart">
@@ -310,13 +360,6 @@
                 </div>
             </div>
         </section>
-
-        <div id="notification" class="notification" role="alert">
-            <div class="notification-content">
-                <span id="notification-message"></span>
-                <button onclick="hideNotification()" class="close-notification" aria-label="Close notification">×</button>
-            </div>
-        </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

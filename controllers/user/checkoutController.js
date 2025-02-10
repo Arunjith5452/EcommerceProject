@@ -8,6 +8,8 @@ const razorpay = require("../../config/razorpay");
 require('dotenv').config();
 const crypto = require("crypto");
 const mongoose = require("mongoose")
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
 
 const getCheckoutPage = async (req, res) => {
     try {
@@ -219,7 +221,6 @@ const applyCoupon = async (req, res) => {
             createdOn: { $lt: new Date() },
         })
 
-            ("Coupon details:", coupon);
 
         if (!coupon) {
             return res.status(400).json({
@@ -304,6 +305,10 @@ const placeOrder = async (req, res) => {
                         status: "Pending",
                         paymentFailureReason: failureReason || "Payment failed"
                     }),
+                    Cart.updateOne(
+                        { userId },
+                        { $set: { items: [], bill: 0 } }
+                    ),
 
                     User.findByIdAndUpdate(
                         existingOrder.userId,
@@ -413,8 +418,8 @@ const placeOrder = async (req, res) => {
             finalAmount,
             paymentMethod,
             address: selectedAddress,
-            status: paymentMethod === 'COD' ? 'Processing' : 'Pending',
-            paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Pending',
+            status: paymentMethod === 'COD' ? 'Pending' : 'Pending',
+            paymentStatus: paymentMethod === 'COD' ? 'Success' : 'Pending',
             createdOn: new Date()
         };
 
@@ -540,9 +545,9 @@ const initiateRetryPayment = async (req, res) => {
         const receipt = `r_${shortOrderId}_${timestamp}`;
 
         const options = {
-            amount: amount * 100, 
+            amount: amount * 100,
             currency: "INR",
-            receipt: receipt, 
+            receipt: receipt,
             payment_capture: 1,
             notes: {
                 order_id: orderId
@@ -580,8 +585,8 @@ const initiateRetryPayment = async (req, res) => {
         });
     } catch (error) {
         console.error('Retry payment error:', error);
-        return res.status(500).json({ 
-            success: false, 
+        return res.status(500).json({
+            success: false,
             message: error.error?.description || error.message || 'Error initiating retry payment'
         });
     }
@@ -727,14 +732,13 @@ const verifyRetryPayment = async (req, res) => {
 const getOrderSuccess = async (req, res) => {
     try {
         const orderId = req.params.orderId;
-        const paymentStatus = req.query.status || "success";
         const userId = req.session.user;
 
 
         const order = await Order.findById(orderId)
             .populate({
                 path: 'orderedItems.product',
-                select: 'productName productImage sizeVariants'
+                select: 'productName productImage sizeVariants paymentStatus'
             })
             .lean();
 
@@ -769,7 +773,6 @@ const getOrderSuccess = async (req, res) => {
             address: selectedAddress,
             status: order.status,
             paymentMethod: order.paymentMethod,
-            paymentStatus
         };
 
         ('Formatted order for template:', JSON.stringify(formattedOrder, null, 2));
@@ -786,8 +789,143 @@ const getOrderSuccess = async (req, res) => {
         });
     }
 };
+const downloadInvoice = async (req, res) => {
+    try {
+        const orderId = req.params.orderId;
+        
+        const order = await Order.findOne({ orderId })
+            .populate({
+                path: "orderedItems.product",
+                select: "productName price"
+            })
+            .lean();
 
+        if (!order) return res.status(404).send("Order not found");
 
+        const userAddress = await Address.findOne({ 'address._id': order.address });
+        if (!userAddress) return res.status(404).send("Address not found");
+
+        const selectedAddress = userAddress.address.find(
+            addr => addr._id.toString() === order.address.toString()
+        );
+        if (!selectedAddress) return res.status(404).send("Specific address not found");
+
+        const doc = new PDFDocument({ 
+            margin: 50,
+            size: 'A4',
+            bufferPages: true
+        });
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename=invoice-${orderId}.pdf`);
+        doc.pipe(res);
+
+        doc.fontSize(24)
+            .text('FashionKart', 50, 50, { align: 'left' })
+            .fontSize(10)
+            .text('www.FashionKart.com', 50, 80, { align: 'left' })
+            .text('supportFashionKart.com', 50, 95, { align: 'left' })
+            .text('+1 (123) 456-7890', 50, 110, { align: 'left' });
+
+        doc.fontSize(20)
+        .text('INVOICE', 300, 50, { align: 'right', width: 250 })
+        .fontSize(10)
+        .text(`Invoice No: ${orderId}`, 300, 80, { align: 'right', width: 250 })
+        .text(`Date: ${new Date(order.createdOn).toLocaleDateString()}`, 300, 95, { align: 'right', width: 250 })
+        .text(`Order Date: ${new Date(order.createdOn).toLocaleDateString()}`, 300, 110, { align: 'right', width: 250 });
+
+        doc.moveTo(50, 140)
+           .lineTo(550, 140)
+           .stroke();
+
+        doc.fontSize(14)
+            .text('Bill To:', 50, 170)
+            .fontSize(10)
+            .text(selectedAddress.name, 50, 190)
+            .text(selectedAddress.addressLine1, 50, 205)
+            .text(selectedAddress.addressLine2 || '', 50, 220)
+            .text(`${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`, 50, 235)
+            .text(`Phone: ${selectedAddress.phone || 'N/A'}`, 50, 250);
+
+        const tableTop = 300;
+        const tableHeaders = {
+            item: { x: 50, width: 250 },
+            qty: { x: 300, width: 70 },
+            price: { x: 370, width: 90 },
+            amount: { x: 460, width: 90 }
+        };
+
+        doc.rect(50, tableTop - 10, 500, 25)
+           .fill('#f6f6f6');
+
+        doc.fillColor('black')
+           .fontSize(10)
+           .text('Item Description', tableHeaders.item.x, tableTop)
+           .text('Qty', tableHeaders.qty.x, tableTop, { width: tableHeaders.qty.width, align: 'center' })
+           .text('Unit Price', tableHeaders.price.x, tableTop, { width: tableHeaders.price.width, align: 'right' })
+           .text('Amount', tableHeaders.amount.x, tableTop, { width: tableHeaders.amount.width, align: 'right' });
+
+        let yPosition = tableTop + 30;
+        let subtotal = 0;
+
+        order.orderedItems.forEach((item) => {
+            const amount = item.quantity * item.price;
+            subtotal += amount;
+
+            doc.text(item.product.productName, tableHeaders.item.x, yPosition, { width: tableHeaders.item.width })
+               .text(item.quantity.toString(), tableHeaders.qty.x, yPosition, { width: tableHeaders.qty.width, align: 'center' })
+               .text(`₹${item.price.toFixed(2)}`, tableHeaders.price.x, yPosition, { width: tableHeaders.price.width, align: 'right' })
+               .text(`₹${amount.toFixed(2)}`, tableHeaders.amount.x, yPosition, { width: tableHeaders.amount.width, align: 'right' });
+
+            yPosition += 25;
+        });
+
+        doc.moveTo(50, yPosition)
+           .lineTo(550, yPosition)
+           .stroke();
+
+        yPosition += 20;
+
+        const summaryX = 370;
+        const summaryWidth = 180;
+
+        doc.text('Subtotal:', summaryX, yPosition, { width: 90, align: 'right' })
+           .text(`₹${subtotal.toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
+
+        if (order.discount) {
+            yPosition += 20;
+            doc.text('Discount:', summaryX, yPosition, { width: 90, align: 'right' })
+               .text(`-₹${order.discount.toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
+        }
+
+        yPosition += 25;
+        doc.rect(summaryX - 10, yPosition - 5, summaryWidth, 25)
+           .fill('#f6f6f6');
+        
+        doc.fillColor('black')
+           .fontSize(12)
+           .text('Total:', summaryX, yPosition, { width: 90, align: 'right' })
+           .text(`₹${(order.finalAmount || subtotal).toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
+
+        yPosition += 50;
+        doc.fontSize(10)
+           .text('Payment Information', 50, yPosition)
+           .text(`Method: ${order.paymentMethod}`, 50, yPosition + 15)
+           .text(`Status: ${order.paymentStatus || 'Pending'}`, 50, yPosition + 30);
+
+        doc.fontSize(10)
+           .text('Thank you for your business!', 50, doc.page.height - 100, { align: 'center' });
+
+        doc.fontSize(8)
+           .text('Terms & Conditions:', 50, doc.page.height - 80)
+           .text('1. All prices are in INR and include GST where applicable.', 50, doc.page.height - 70)
+           .text('2. This is a computer-generated invoice and requires no signature.', 50, doc.page.height - 60);
+        doc.end();
+    } catch (error) {
+        console.error("Error generating invoice:", error);
+        res.status(500).send("Error generating invoice");
+    }
+};
 module.exports = {
     getCheckoutPage,
     addAddressCheckout,
@@ -798,5 +936,6 @@ module.exports = {
     updateOrderStatus,
     verifyRetryPayment,
     getOrderSuccess,
+    downloadInvoice,
     applyCoupon
 }
