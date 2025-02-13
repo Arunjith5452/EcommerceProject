@@ -9,7 +9,9 @@ const nocache = require("nocache");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
 const errorHandler = require("./middlewares/errorHandler");
+const helmet = require("helmet")
 
+app.use(helmet)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
 
@@ -31,11 +33,13 @@ app.set("view engine", "ejs");
 app.set("views", [path.join(__dirname, 'views/user'), path.join(__dirname, 'views/admin')])
 app.use(express.static(path.join(__dirname, "./public")));
 
-app.use(nocache());
 
 app.use("/admin", adminRouter);
 app.use("/", userRouter);
 
+app.use(nocache());
+
+app.use(errorHandler);
 app.use((req, res, next) => {
     const isAdminRoute = req.originalUrl.startsWith('/admin');
     const redirectUrl = isAdminRoute ? '/admin/dashboard' : '/'; 
@@ -47,7 +51,6 @@ app.use((req, res, next) => {
     })
 })
 
-app.use(errorHandler);
 
 db();
 
