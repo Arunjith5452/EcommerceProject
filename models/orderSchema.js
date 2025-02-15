@@ -105,6 +105,15 @@ const orderSchema = new mongoose.Schema({
         default: Date.now,
         required: true
     },
+    address: {
+        type: Schema.Types.ObjectId,
+        ref: "Address",
+        required: true
+    },
+    couponMinPrice: { 
+        type: Number, 
+        default: 0 
+    },
     couponApplied: {
         type: Boolean,
         default: false

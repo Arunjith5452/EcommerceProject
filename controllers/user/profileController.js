@@ -1,7 +1,8 @@
 const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema")
 const Address = require("../../models/adressSchema");
-const Order = require("../../models/orderSchema")
+const Order = require("../../models/orderSchema");
+const Coupon = require("../../models/userSchema");
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt")
 const env = require("dotenv").config();
@@ -198,6 +199,42 @@ const userProfile = async (req, res) => {
         return res.redirect("/pageNotFound");
     }
 }
+
+const updateProfile = async (req, res) => {
+    console.log('hello update profile')
+    try {
+        const userId = req.session.user
+        console.log('userId:',userId)
+        const { username, mobile } = req.body
+        
+  
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { username, mobile },
+            { new: true }
+        )
+  
+        
+  
+        if (!updatedUser) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+  
+        res.json({
+            success: true,
+            message: 'Profile updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating profile'
+  });
+  }
+  }
 const changeEmail = async (req, res) => {
     try {
 
@@ -549,91 +586,64 @@ const viewOrderDetails = async (req,res) => {
         res.status(500).json({ message: 'Error fetching order details' });
     }
 }
-
-const calculateItemDiscount = (item, order) => {
-    if (!order.discount) return 0;
-    const totalOrderValue = order.orderedItems.reduce((total, item) => 
-        total + (item.price * item.quantity), 0);
-    const itemValue = item.price * item.quantity;
-    const discountProportion = itemValue / totalOrderValue;
-    return Math.round(order.discount * discountProportion);
-};
-
-const calculateUpdatedOrderTotals = (order, cancelledItem, itemDiscount) => {
-    const activeItems = order.orderedItems.filter(item => 
-        item.status !== 'Cancelled' && 
-        item.product._id.toString() !== cancelledItem.product._id.toString()
-    );
-
-    const updatedTotalMRP = activeItems.reduce((total, item) => 
-        total + (item.price * item.quantity), 0);
-    
-    const totalMRP = order.originalTotalPrice || order.orderedItems.reduce((total, item) => 
-        total + (item.price * item.quantity), 0);
-    
-    const updatedDiscount = Math.round(order.discount * (updatedTotalMRP / totalMRP)) || 0;
-
-    return {
-        updatedTotalMRP,
-        updatedDiscount,
-        updatedTotalAmount: Math.round(updatedTotalMRP - updatedDiscount)
-    };
-};
-
 const cancelSingleProduct = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const {cancelReason ,productId } = req.body;
-        console.log("From cancelsingleProduct cancel reason:",cancelReason)
+        const { cancelReason, productId } = req.body;
         const userId = req.session.user;
 
         const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+        
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-
-        if (!order.originalTotalPrice) {
-            order.originalTotalPrice = order.orderedItems.reduce((total, item) => 
-                total + (item.price * item.quantity), 0);
-            order.originalDiscount = order.discount || 0;
-        }
-
         const item = order.orderedItems.find(item => 
             item.product._id.toString() === productId
-        )
+        );
 
         if (!item) {
             return res.status(404).json({ success: false, message: 'Product not found in the order' });
         }
 
         const itemTotal = item.price * item.quantity;
-        const itemDiscount = calculateItemDiscount(item, order);
-        const refundAmount = itemTotal - itemDiscount;
+        
+        const remainingItems = order.orderedItems.filter(orderItem => 
+            orderItem.product._id.toString() !== productId &&
+            orderItem.status !== 'Cancelled' &&
+            orderItem.status !== 'Returned'
+        );
+        
+        const remainingTotal = remainingItems.reduce((total, orderItem) => 
+            total + (orderItem.price * orderItem.quantity), 0);
+
+
+        console.log("the coupon minimum price is ",order.couponMinPrice)
+
+        const meetsMinimumAmount = remainingTotal >= (order.couponMinPrice|| 0);
+
+
+        let refundAmount;
+        if (!meetsMinimumAmount && order.discount) {
+            refundAmount = itemTotal - order.discount;
+            order.discount = 0; 
+        } else {
+            refundAmount = itemTotal;
+        }
 
         item.status = 'Cancelled';
-        item.cancelReason = cancelReason
+        item.cancelReason = cancelReason;
 
- const allItemsCancelled = order.orderedItems.every(item => item.status === 'Cancelled');
+        const allItemsCancelled = order.orderedItems.every(item => 
+            item.status === 'Cancelled' || item.status === 'Returned'
+        );
+        
         if (allItemsCancelled) {
             order.status = 'Cancelled';
-            order.finalAmount = order.originalTotalPrice - order.originalDiscount;
+            order.finalAmount = 0;
+        } else {
+            order.finalAmount = remainingTotal - (meetsMinimumAmount ? order.discount : 0);
         }
-
-        const { 
-            updatedTotalMRP, 
-            updatedDiscount, 
-            updatedTotalAmount 
-        } = calculateUpdatedOrderTotals(order, item, itemDiscount);
-
-        const remainingActiveItems = order.orderedItems.filter(item => 
-            item.status !== 'Cancelled'
-        );
-        if (remainingActiveItems.length === 0) {
-            order.status = 'Cancelled';
-        }
-
-        order.finalAmount = updatedTotalAmount;
 
         await Product.updateOne(
             { 
@@ -654,6 +664,9 @@ const cancelSingleProduct = async (req, res) => {
                 type: 'credit',
                 amount: refundAmount,
                 date: new Date(),
+                description: !meetsMinimumAmount ? 
+                    'Product refund with adjusted coupon amount' : 
+                    'Product refund'
             });
             await user.save();
             currentWalletBalance = user.wallet;
@@ -665,17 +678,13 @@ const cancelSingleProduct = async (req, res) => {
             success: true,
             message: 'Product cancelled successfully',
             refundDetails: {
-                itemPrice: item.price * item.quantity,
-                itemDiscount: itemDiscount,
-                refundAmount: refundAmount
+                itemPrice: itemTotal,
+                refundAmount: refundAmount,
+                meetsMinimumAmount: meetsMinimumAmount
             },
             orderTotals: {
-                originalTotalMRP: order.originalTotalPrice,
-                originalDiscount: order.discount,
-                originalTotalAmount: order.originalTotalPrice - order.discount,
-                updatedTotalMRP: updatedTotalMRP,
-                updatedDiscount: updatedDiscount,
-                updatedTotalAmount: updatedTotalAmount
+                remainingTotal: remainingTotal,
+                finalAmount: order.finalAmount
             },
             currentWalletBalance,
             redirectUrl: '/userProfile?tab=orders'
@@ -688,6 +697,7 @@ const cancelSingleProduct = async (req, res) => {
         });
     }
 };
+
 
 const productReturn = async (req, res) => {
     try {
@@ -755,6 +765,7 @@ const productReturn = async (req, res) => {
 };
 
 
+
 module.exports = {
     getForgotPassPage,
     forgotEmailValid,
@@ -763,6 +774,7 @@ module.exports = {
     resendOtp,
     postNewPassword,
     userProfile,
+    updateProfile,
     changeEmail,
     changeEmailValid,
     verifyEmailOtp,

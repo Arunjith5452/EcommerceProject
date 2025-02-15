@@ -98,6 +98,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div id="size-quantity-error" class="error-message"></div>
                                         <button type="button" class="btn btn-secondary" id="addMoreSizes">Add More
                                             Sizes</button>
                                     </div>
@@ -123,8 +124,7 @@
                                 <div class="input-upload">
                                     <input class="form-control" type="file" id="input1" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 1)" />
-                                    <div id="images-error1" class="error-message"></div>
-                                </div>
+                                        <div id="images-error1" class="error-message"></div>                                </div>
                                 <div class="image-cropper d-flex align-items-center"
                                     style="display:none; margin-top: 20px;">
                                     <img src="" id="croppedImg1" alt="">
@@ -145,8 +145,8 @@
                                 <div class="input-upload">
                                     <input class="form-control" type="file" id="input2" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 2)" />
-                                    <div id="images-error1" class="error-message"></div>
-                                </div>
+                                        <div id="images-error1" class="error-message"></div>  
+                                    </div>
                                 <div class="image-cropper d-flex align-items-center"
                                     style="display:none; margin-top: 20px;">
                                     <img src="" id="croppedImg2" alt="">
@@ -167,8 +167,8 @@
                                 <div class="input-upload">
                                     <input class="form-control" type="file" id="input3" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 3)" />
-                                    <div id="images-error1" class="error-message"></div>
-                                </div>
+                                        <div id="images-error1" class="error-message"></div>  
+                                    </div>
                                 <div class="image-cropper d-flex align-items-center"
                                     style="display:none; margin-top: 20px;">
                                     <img src="" id="croppedImg3" alt="">
@@ -189,8 +189,8 @@
                                 <div class="input-upload">
                                     <input class="form-control" type="file" id="input4" name="images"
                                         accept="image/png, image/jpeg, image/jpg" onchange="viewImage(event, 4)" />
-                                    <div id="images-error1" class="error-message"></div>
-                                </div>
+                                        <div id="images-error1" class="error-message"></div>
+                                    </div>
                                 <div class="image-cropper d-flex align-items-center"
                                     style="display:none; margin-top: 20px;">
                                     <img src="" id="croppedImg4" alt="">
@@ -375,18 +375,17 @@
             }
 
         }
-
         document.addEventListener('DOMContentLoaded', function () {
-            const sizesContainer = document.getElementById('sizesContainer');
-            const addMoreSizesBtn = document.getElementById('addMoreSizes');
+    const sizesContainer = document.getElementById('sizesContainer');
+    const addMoreSizesBtn = document.getElementById('addMoreSizes');
 
-            function createSizeEntry() {
-                const sizeEntry = document.createElement('div');
-                sizeEntry.className = 'size-entry mb-3';
-                sizeEntry.innerHTML = `
+    function createSizeEntry() {
+        const sizeEntry = document.createElement('div');
+        sizeEntry.className = 'size-entry mb-3';
+        sizeEntry.innerHTML = `
             <div class="row">
                 <div class="col-md-4">
-                    <select name="sizes[]" class="form-control">
+                    <select name="sizes[]" class="form-control" required>
                         <option value="">Select Size</option>
                         <option value="S">Small (S)</option>
                         <option value="M">Medium (M)</option>
@@ -396,30 +395,31 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <input type="number" name="quantities[]" class="form-control" placeholder="Quantity" min="0">
+                    <input type="number" name="quantities[]" class="form-control" 
+                           placeholder="Quantity" min="1" required>
                 </div>
                 <div class="col-md-2">
                     <button type="button" class="btn btn-danger remove-size">Remove</button>
                 </div>
             </div>
         `;
-                return sizeEntry;
+        return sizeEntry;
+    }
+
+    addMoreSizesBtn.addEventListener('click', function () {
+        sizesContainer.appendChild(createSizeEntry());
+    });
+
+    sizesContainer.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-size')) {
+            const sizeEntry = e.target.closest('.size-entry');
+            if (sizesContainer.children.length > 1) {
+                sizeEntry.remove();
+            } else {
+                alert('At least one size entry is required.');
             }
-
-            addMoreSizesBtn.addEventListener('click', function () {
-                sizesContainer.appendChild(createSizeEntry());
-            });
-
-            sizesContainer.addEventListener('click', function (e) {
-                if (e.target.classList.contains('remove-size')) {
-                    const sizeEntry = e.target.closest('.size-entry');
-                    if (sizesContainer.children.length > 1) {
-                        sizeEntry.remove();
-                    } else {
-                        alert('At least one size entry is required.');
-                    }
-                }
-            });
+        }
+    });
 
             document.getElementById('productSubmitForm').addEventListener('submit', function (e) {
                 const sizes = document.getElementsByName('sizes[]');
@@ -460,7 +460,6 @@
             const saleprice = document.getElementsByName('salePrice')[0].value;
             const color = document.getElementsByName('color')[0].value;
             const category = document.getElementsByName('category')[0].value;
-            const images = document.getElementById('input1')
             let isValid = true
 
 
@@ -508,36 +507,52 @@
                 isValid = false;
             }
 
+            const imageCount = selectedImages.filter(img => img !== null).length;
+    if (imageCount < 3) {
+        displayErrorMessage('images-error1', 'Please upload at least 3 images');
+        isValid = false;
+    }
 
-            if (!images.files || images.files.length === 0) {
-                displayErrorMessage("images-error", 'Please select an image.');
-                isValid = false;
-            }
+    const sizes = document.getElementsByName('sizes[]');
+    const quantities = document.getElementsByName('quantities[]');
+    const selectedSizes = new Set();
+    let hasAtLeastOneValidEntry = false;
 
-            const sizes = document.getElementsByName('sizes[]');
-            const quantities = document.getElementsByName('quantities[]');
-            let hasValidSizeEntry = false;
+    for (let i = 0; i < sizes.length; i++) {
+        const size = sizes[i].value;
+        const quantity = quantities[i].value;
 
-            for (let i = 0; i < sizes.length; i++) {
-                if (sizes[i].value && quantities[i].value && quantities[i].value > 0) {
-                    hasValidSizeEntry = true;
-                } else if (sizes[i].value || quantities[i].value) {
-                    displayErrorMessage('size-quantity-error', 'Please complete all size and quantity fields.');
-                    isValid = false;
-                    break;
-                }
-            }
-
-            if (!hasValidSizeEntry) {
-                displayErrorMessage('size-quantity-error', 'Please add at least one size and quantity.');
-                isValid = false;
-            }
-
-            return isValid;
-
-
+        if ((size && !quantity) || (!size && quantity)) {
+            displayErrorMessage('size-quantity-error', 'Both size and quantity must be filled for each entry');
+            isValid = false;
+            break;
         }
 
+        if (size && quantity) {
+            if (selectedSizes.has(size)) {
+                displayErrorMessage('size-quantity-error', 'Duplicate sizes are not allowed');
+                isValid = false;
+                break;
+            }
+            selectedSizes.add(size);
+
+            if (isNaN(quantity) || parseInt(quantity) <= 0) {
+                displayErrorMessage('size-quantity-error', 'Quantity must be a positive number');
+                isValid = false;
+                break;
+            }
+
+            hasAtLeastOneValidEntry = true;
+        }
+    }
+
+    if (!hasAtLeastOneValidEntry) {
+        displayErrorMessage('size-quantity-error', 'Please add at least one size and quantity');
+        isValid = false;
+    }
+
+    return isValid;
+}
         function displayErrorMessage(elementId, message) {
             const errorElement = document.getElementById(elementId);
             if (errorElement) {

@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> 
     <link rel="shortcut icon" type="image/x-icon" href="assets/imgs/theme/favicon.svg" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Template CSS -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
         integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
@@ -206,34 +205,34 @@
                             class="text">Coupon</span> </a>
                 </li>
                 <li class="menu-item has-submenu">
-                    <a class="menu-link" href="/admin/banner">
+                    <a class="menu-link" href="#">
                         <i class="icon material-icons md-monetization_on"></i>
                         <span class="text">Banner</span>
                     </a>
                 </li>
                 <li class="menu-item has-submenu">
-                    <a class="menu-link" href="/admin/addBanner">
+                    <a class="menu-link" href="#">
                         <i class="icon material-icons md-add_box"></i>
                         <span class="text">Add Banner</span>
                     </a>
-                    <div class="submenu">
+                    <!-- <div class="submenu">
                         <a href="page-account-login.html">User login</a>
                         <a href="page-account-register.html">User registration</a>
                         <a href="page-error-404.html">Error 404</a>
-                    </div>
+                    </div> -->
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="page-reviews.html">
+                <!-- <li class="menu-item">
+                    <a class="menu-link" href="#">
                         <i class="icon material-icons md-comment"></i>
                         <span class="text">Reviews</span>
                     </a>
                 </li>
-                <li class="menu-item">
+                <li class="menu-item">  
                     <a class="menu-link" disabled href="#">
                         <i class="icon material-icons md-pie_chart"></i>
                         <span class="text">Statistics</span>
                     </a>
-                </li>
+                </li> -->
             </ul>
             <hr />
             <ul class="menu-aside">
@@ -242,10 +241,10 @@
                         <i class="icon material-icons md-settings"></i>
                         <span class="text">Settings</span>
                     </a>
-                    <div class="submenu">
+                    <!-- <div class="submenu">
                         <a href="page-settings-1.html">Setting sample 1</a>
                         <a href="page-settings-2.html">Setting sample 2</a>
-                    </div>
+                    </div> -->
                 </li>
                 <li class="menu-item">
                     <a class="menu-link" href="/admin/logout">
@@ -269,19 +268,4 @@
                 </form>
             </div>
         </header>
-        <script>
-            function setActiveMenuItem() {
-                const currentPath = window.location.pathname;
-                const menuItems = document.querySelectorAll('.menu-aside .menu-item');
-                menuItems.forEach(item => {
-                    item.classList.remove('active'); 
-                    const link = item.querySelector('.menu-link');
-                    const href = link.getAttribute('href');
-                    
-                    if (href && currentPath.includes(href)) {
-                        item.classList.add('active');
-                    }
-                });
-            }
-            document.addEventListener('DOMContentLoaded', setActiveMenuItem);
-        </script>
+       

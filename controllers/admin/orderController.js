@@ -265,6 +265,127 @@ const cancelSingleItem = async (req,res) => {
     }
 }
 
+
+const cancelSingleProduct = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { cancelReason, productId } = req.body;
+        console.log("From cancelsingleProduct cancel reason:", cancelReason)
+        const userId = req.session.user;
+
+        const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        if (!order.originalTotalPrice) {
+            order.originalTotalPrice = order.orderedItems.reduce((total, item) => 
+                total + (item.price * item.quantity), 0);
+            order.originalDiscount = order.discount || 0;
+        }
+
+        const item = order.orderedItems.find(item => 
+            item.product._id.toString() === productId
+        );
+
+        if (!item) {
+            return res.status(404).json({ success: false, message: 'Product not found in the order' });
+        }
+
+        const itemTotal = item.price * item.quantity;
+        
+        // Calculate remaining order total after removing this item
+        const remainingItems = order.orderedItems.filter(orderItem => 
+            orderItem.product._id.toString() !== productId &&
+            orderItem.status !== 'Cancelled' &&
+            orderItem.status !== 'Returned'
+        );
+        
+        const remainingTotal = remainingItems.reduce((total, orderItem) => 
+            total + (orderItem.price * orderItem.quantity), 0);
+
+        // Check if remaining total meets coupon criteria
+        const meetsMinimumAmount = remainingTotal >= (order.couponMinAmount || 0);
+        
+        let refundAmount;
+
+        if (!meetsMinimumAmount && order.discount) {
+            // If doesn't meet minimum, refund = product price - coupon discount
+            refundAmount = itemTotal - order.discount;
+            order.discount = 0; // Remove coupon from order
+        } else {
+            // If meets minimum, refund full product price, keep coupon
+            refundAmount = itemTotal;
+        }
+
+        item.status = 'Cancelled';
+        item.cancelReason = cancelReason;
+
+        const allItemsCancelled = order.orderedItems.every(item => 
+            item.status === 'Cancelled' || item.status === 'Returned'
+        );
+        
+        if (allItemsCancelled) {
+            order.status = 'Cancelled';
+            order.finalAmount = 0;
+        } else {
+            order.finalAmount = remainingTotal - (meetsMinimumAmount ? order.discount : 0);
+        }
+
+        // Update product inventory
+        await Product.updateOne(
+            { 
+                _id: item.product._id,
+                "sizeVariants.size": item.size 
+            },
+            { 
+                $inc: { "sizeVariants.$.quantity": item.quantity }
+            }
+        );
+
+        let currentWalletBalance = 0;
+        if (order.paymentMethod !== 'COD') {
+            const user = await User.findById(userId);
+            user.wallet += refundAmount;
+            user.walletHistory.push({
+                transactionId: `TXN${Date.now()}`,
+                type: 'credit',
+                amount: refundAmount,
+                date: new Date(),
+                description: !meetsMinimumAmount ? 
+                    'Product refund with adjusted coupon amount' : 
+                    'Product refund'
+            });
+            await user.save();
+            currentWalletBalance = user.wallet;
+        }
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Product cancelled successfully',
+            refundDetails: {
+                itemPrice: itemTotal,
+                refundAmount: refundAmount,
+                meetsMinimumAmount: meetsMinimumAmount
+            },
+            orderTotals: {
+                remainingTotal: remainingTotal,
+                finalAmount: order.finalAmount
+            },
+            currentWalletBalance,
+            redirectUrl: '/userProfile?tab=orders'
+        });
+    } catch (error) {
+        console.error('Error in cancelSingleProduct:', error);
+        return res.status(500).json({
+            success: false, 
+            message: 'An error occurred while canceling the product'
+        });
+    }
+};
+
 const handleReturnRequest = async (req, res) => {
     try {
         const { orderId } = req.params;
@@ -299,12 +420,26 @@ const handleReturnRequest = async (req, res) => {
 
         if (action === 'approve') {
             const itemTotal = orderItem.price * orderItem.quantity;
-            const totalOrderValue = order.orderedItems.reduce((total, item) => 
-                total + (item.price * item.quantity), 0);
-            const itemProportion = itemTotal / totalOrderValue;
-            const itemDiscount = Math.round(order.discount * itemProportion);
             
-            const refundAmount = itemTotal - itemDiscount;
+            const remainingItems = order.orderedItems.filter(item => 
+                item.product._id.toString() !== productId &&
+                item.status !== 'Cancelled' &&
+                item.status !== 'Returned'
+            );
+            
+            const remainingTotal = remainingItems.reduce((total, item) => 
+                total + (item.price * item.quantity), 0);
+
+            const meetsMinimumAmount = remainingTotal >= (order.couponMinPrice || 0);
+            
+            let refundAmount;
+
+            if (!meetsMinimumAmount && order.discount) {
+                refundAmount = itemTotal - order.discount;
+                order.discount = 0; 
+            } else {
+                refundAmount = itemTotal;
+            }
 
             user.wallet += refundAmount;
             user.walletHistory.push({
@@ -312,6 +447,9 @@ const handleReturnRequest = async (req, res) => {
                 type: 'credit',
                 amount: refundAmount,
                 date: new Date(),
+                description: !meetsMinimumAmount ? 
+                    'Return refund with adjusted coupon amount' : 
+                    'Product return refund'
             });
             await user.save();
 
@@ -324,59 +462,58 @@ const handleReturnRequest = async (req, res) => {
 
             if (allItemsReturned) {
                 order.status = 'Returned';
+                order.finalAmount = 0;
             } else {
                 const hasOtherReturns = order.orderedItems.some(
                     item => item.status === 'Return Request'
                 );
                 order.status = hasOtherReturns ? 'Return Request' : 'Delivered';
+                order.finalAmount = remainingTotal - (meetsMinimumAmount ? order.discount : 0);
             }
-
-            const activeItems = order.orderedItems.filter(item => 
-                item.status !== 'Cancelled' && 
-                item.status !== 'Returned'
-            );
-
-            const currentTotalMRP = activeItems.reduce((total, item) => 
-                total + (item.price * item.quantity), 0);
-            
-            if (!order.originalTotalPrice) {
-                order.originalTotalPrice = totalOrderValue;
-                order.originalDiscount = order.discount;
-            }
-
-            order.currentAmount = currentTotalMRP - order.discount * (currentTotalMRP / totalOrderValue);
-
             await order.save();
 
             return res.json({
                 success: true,
                 message: 'Return request approved',
-                refundAmount: refundAmount,
+                refundDetails: {
+                    itemPrice: itemTotal,
+                    refundAmount: refundAmount,
+                    meetsMinimumAmount: meetsMinimumAmount
+                },
+                orderTotals: {
+                    remainingTotal: remainingTotal,
+                    finalAmount: order.finalAmount
+                },
                 currentWalletBalance: user.wallet,
                 order
-            })
-        }else if(action === 'reject'){
-          orderItem.status = 'Delivered',
-          order.returnStatus = 'Rejected'
+            });
+        } else if(action === 'reject') {
+            orderItem.status = 'Delivered';
+            order.returnStatus = 'Rejected';
 
-          const hasOtherReturns = order.orderedItems.some(
-            item => item.status === 'Return Request'
-          )
+            const hasOtherReturns = order.orderedItems.some(
+                item => item.status === 'Return Request'
+            );
 
-          if (hasOtherReturns){
-            order.status = 'Return Request'
-          }else{
-            order.status = 'Delivered'
-          }
+            if (hasOtherReturns) {
+                order.status = 'Return Request';
+            } else {
+                order.status = 'Delivered';
+            }
 
-          await order.save();
+            await order.save();
 
-          return res.json({success:true,message:'Return request rejected',order})
-        }else {
-            return res.status(400).json({success:false,message:'Invalid action'})
+            return res.json({
+                success: true,
+                message: 'Return request rejected',
+                order
+            });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid action'
+            });
         }
-
-
     } catch (error) {
         console.error("Error handling return request:", error);
         res.status(500).json({ 
@@ -385,7 +522,8 @@ const handleReturnRequest = async (req, res) => {
             error: error.message 
         });
     }
-}
+};
+
 module.exports = {
     orderList,
     updateOrderStatus,

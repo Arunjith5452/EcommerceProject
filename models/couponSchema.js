@@ -23,7 +23,7 @@ const couponSchema = new mongoose.Schema({
     },
     minimumPrice: {
         type: Number,
-        required: false
+        required: true
     },
     isList: {
         type: Boolean,

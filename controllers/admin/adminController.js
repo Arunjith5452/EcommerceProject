@@ -32,7 +32,7 @@ const login = async (req, res) => {
     if (admin) {
       const passwordMatch = await bcrypt.compare(password, admin.password);
       if (passwordMatch) {
-        req.session.admin = true;
+        req.session.admin = admin._id;
         return res.redirect("/admin/dashboard")
       } else {
         return res.render("admin-login", { message: "Invalid password. Please try again" })
@@ -193,15 +193,15 @@ const getDateFormat = (startDate, endDate) => {
   const diffDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 1) {
-    return "%Y-%m-%d %H:00";  // Hourly format
+    return "%Y-%m-%d %H:00"; 
   } else if (diffDays <= 7) {
-    return "%Y-%m-%d";        // Daily format
+    return "%Y-%m-%d";       
   } else if (diffDays <= 31) {
-    return "%Y-%m-%d";        // Daily format
+    return "%Y-%m-%d";      
   } else if (diffDays <= 365) {
-    return "%Y-%m";           // Monthly format
+    return "%Y-%m";          
   } else {
-    return "%Y-%m";           // Monthly format for longer ranges
+    return "%Y-%m";          
   }
 };
 
@@ -380,6 +380,9 @@ const getAnalyticsData = async (req, res) => {
     const filter = req.query.filter || 'daily';
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
+
+    console.log('Getting analytics data with filter:', filter); // Debug log
+
     let dateFilter = {};
     const now = new Date();
     const today = new Date(now.setHours(0, 0, 0, 0));
@@ -576,115 +579,391 @@ const getTopPerformers = async (req, res) => {
   }
 };
 
+
+const createDateFilter = (filter, startDate, endDate) => {
+  console.log('createDateFilter called with:', { filter, startDate, endDate });
+
+  filter = filter || 'daily';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let dateFilter = {};
+
+  switch (filter.toLowerCase()) {
+    case 'yearly':
+      const yearStart = new Date(today.getFullYear(), 0, 1);
+      dateFilter = {
+        createdOn: {
+          $gte: yearStart,
+          $lte: new Date(now.setHours(23, 59, 59, 999))
+        }
+      };
+      break;
+
+    case 'monthly':
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      dateFilter = {
+        createdOn: {
+          $gte: monthStart,
+          $lte: new Date(now.setHours(23, 59, 59, 999))
+        }
+      };
+      break;
+
+    case 'weekly':
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - 6);
+      dateFilter = {
+        createdOn: {
+          $gte: weekStart,
+          $lte: new Date(now.setHours(23, 59, 59, 999))
+        }
+      };
+      break;
+
+    case 'custom':
+      if (startDate && endDate) {
+        const customStart = new Date(startDate);
+        const customEnd = new Date(endDate);
+        
+        if (!isNaN(customStart.getTime()) && !isNaN(customEnd.getTime())) {
+          dateFilter = {
+            createdOn: {
+              $gte: customStart,
+              $lte: new Date(customEnd.setHours(23, 59, 59, 999))
+            }
+          };
+        } else {
+          console.warn('Invalid custom date range, falling back to daily');
+          dateFilter = {
+            createdOn: {
+              $gte: today,
+              $lte: new Date(now.setHours(23, 59, 59, 999))
+            }
+          };
+        }
+      } else {
+        console.warn('Missing custom date range parameters, falling back to daily');
+        dateFilter = {
+          createdOn: {
+            $gte: today,
+            $lte: new Date(now.setHours(23, 59, 59, 999))
+          }
+        };
+      }
+      break;
+
+    case 'daily':
+    default:
+      dateFilter = {
+        createdOn: {
+          $gte: today,
+          $lte: new Date(now.setHours(23, 59, 59, 999))
+        }
+      };
+  }
+
+  console.log('Generated date filter:', { 
+    filter, 
+    dateFilter: JSON.stringify(dateFilter),
+    start: new Date(dateFilter.createdOn.$gte).toISOString(),
+    end: new Date(dateFilter.createdOn.$lte).toISOString()
+  });
+
+  return dateFilter;
+};
+
 const generateExcelReport = async (req, res) => {
   try {
+    const filter = req.query.filter || 'daily';
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
 
-    const orders = await Order.find({ status: "Delivered" }).sort({ createdOn: -1 })
+    console.log('Excel Report - Received parameters:', { filter, startDate, endDate });
+
+    const dateFilter = createDateFilter(filter, startDate, endDate);
+    console.log('Excel Report - Generated filter:', JSON.stringify(dateFilter));
+
+    const orders = await Order.aggregate([
+      { 
+        $match: {
+          ...dateFilter,
+          "orderedItems.status": "Delivered" 
+        }
+      },
+      { $unwind: "$orderedItems" },
+      { 
+        $match: { 
+          "orderedItems.status": "Delivered" 
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          orderId: { $first: "$orderId" },
+          createdOn: { $first: "$createdOn" },
+          status: { $first: "$orderedItems.status" },
+          totalPrice: { 
+            $sum: { 
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+            }
+          },
+          discount: { $first: "$discount" },
+          finalAmount: { 
+            $sum: { 
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+            }
+          },
+          items: { 
+            $push: {
+              quantity: "$orderedItems.quantity",
+              price: "$orderedItems.price",
+              total: { 
+                $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+              }
+            }
+          }
+        }
+      },
+      { $sort: { createdOn: -1 } }
+    ]);
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Sales Report')
+    const worksheet = workbook.addWorksheet('Sales Report');
+
+    const titleRow = worksheet.addRow(['Sales Report (Delivered Items Only)']);
+    titleRow.font = { bold: true, size: 16 };
+    worksheet.addRow(['Filter Type:', filter]);
+    worksheet.addRow(['Date Range:', 
+      `${dateFilter.createdOn.$gte.toLocaleDateString()} to ${dateFilter.createdOn.$lte.toLocaleDateString()}`
+    ]);
+    worksheet.addRow([]);
 
     worksheet.columns = [
-      { header: 'Order ID', key: 'orderId' },
-      { header: 'Date', key: 'date' },
-      { header: 'Amount', key: 'amount' },
-      { header: 'Discount', key: 'discount' },
-      { header: 'Final Amount', key: 'finalAmount' },
-      { header: 'Status', key: 'status' }
-    ]
+      { header: 'Order ID', key: 'orderId', width: 15 },
+      { header: 'Date', key: 'date', width: 20 },
+      { header: 'Quantity', key: 'quantity', width: 10 },
+      { header: 'Unit Price', key: 'unitPrice', width: 12 },
+      { header: 'Total Price', key: 'totalPrice', width: 12 },
+      { header: 'Discount', key: 'discount', width: 12 },
+      { header: 'Final Amount', key: 'finalAmount', width: 12 },
+      { header: 'Status', key: 'status', width: 12 }
+    ];
 
-    orders.forEach(order => {
-      worksheet.addRow({
-        orderId: order.orderId,
-        date: order.createdOn.toDateString(),
-        amount: order.totalPrice,
-        discount: order.discount,
-        finalAmount: order.finalAmount,
-        status: order.status
-
-      })
-    })
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader('Content-Disposition', 'attachment; filename=SaleReport.xlsx')
-    await workbook.xlsx.write(res)
-    res.end()
-  } catch (error) {
-    console.log("Error generating Excel report", error)
-    return res.redirect("/admin/pageerror")
-  }
-}
-
-const generatePDFReport = async (req, res) => {
-  try {
-    const orders = await Order.find({ status: "Delivered" }).sort({ createdOn: -1 })
-
-    const doc = new PDFDocument({ margin: 30, size: 'A4' })
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=SalesReport.pdf')
-
-    doc.pipe(res)
-
-    doc.fontSize(20).text('Sales Report', { align: 'center' })
-    doc.moveDown()
-
-    const table = {
-      title: 'Sales Report',
-      headers: [
-        { label: 'Order ID', property: 'orderId', width: 80 },
-        { label: 'Date', property: 'date', width: 80 },
-        { label: 'Amount', property: 'amount', width: 80 },
-        { label: 'Discount', property: 'discount', width: 80 },
-        { label: 'Final Amount', property: 'finalAmount', width: 80 },
-        { label: 'Status', property: 'status', width: 80 }
-      ],
-      datas: orders.map(order => ({
-        orderId: order.orderId,
-        date: order.createdOn.toDateString(),
-        amount: `₹${order.totalPrice}`,
-        discount: `₹${order.discount}`,
-        finalAmount: `₹${order.finalAmount}`,
-        status: order.status
-      }))
+    worksheet.getRow(5).font = { bold: true };
+    worksheet.getRow(5).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
     };
 
-    await doc.table(table, {
-      prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10),
-      prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
-        doc.font('Helvetica').fontSize(8)
-        indexColumn === 0 && doc.addBackground(rectRow, indexRow % 2 ? 'white' : '#f0f0f0')
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const row = worksheet.addRow({
+          orderId: order.orderId,
+          date: order.createdOn.toLocaleString(),
+          quantity: item.quantity,
+          unitPrice: item.price,
+          totalPrice: item.total,
+          discount: order.discount / order.items.length,
+          finalAmount: order.finalAmount / order.items.length,
+          status: order.status
+        });
+
+        const statusCell = row.getCell('status');
+        statusCell.font = { color: { argb: 'FF008000' } };
+        row.getCell('unitPrice').numFmt = '₹#,##0.00';
+        row.getCell('totalPrice').numFmt = '₹#,##0.00';
+        row.getCell('discount').numFmt = '₹#,##0.00';
+        row.getCell('finalAmount').numFmt = '₹#,##0.00';
+      });
+    });
+
+    worksheet.addRow([]);
+    const summaryTitleRow = worksheet.addRow(['Summary']);
+    summaryTitleRow.font = { bold: true, size: 12 };
+    
+    const summaryRows = [
+      ['Total Orders:', orders.length],
+      ['Total Items:', orders.reduce((sum, order) => sum + order.items.length, 0)],
+      ['Total Sales:', orders.reduce((sum, order) => sum + order.totalPrice, 0)],
+      ['Total Discount:', orders.reduce((sum, order) => sum + order.discount, 0)],
+      ['Net Amount:', orders.reduce((sum, order) => sum + order.finalAmount, 0)]
+    ];
+
+    summaryRows.forEach(([label, value]) => {
+      const row = worksheet.addRow([label, value]);
+      if (typeof value === 'number' && label !== 'Total Orders:' && label !== 'Total Items:') {
+        row.getCell(2).numFmt = '₹#,##0.00';
       }
-    })
+      row.font = { bold: true };
+    });
 
-    doc.end()
-
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=DeliveredSalesReport.xlsx');
+    await workbook.xlsx.write(res);
+    res.end();
+    
   } catch (error) {
-    console.log("Error generating PDF report", error);
+    console.error("Error generating Excel report:", error);
     return res.redirect("/admin/pageerror");
   }
 };
 
-const logout = async (req, res) => {
+const generatePDFReport = async (req, res) => {
   try {
+    const filter = req.query.filter || 'daily';
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
 
-    req.session.destroy(err => {
-      if (err) {
-        console.log("Error destroying session", err)
-        return res.redirect("/pageerror")
+    const dateFilter = createDateFilter(filter, startDate, endDate);
+    
+    const orders = await Order.aggregate([
+      { 
+        $match: {
+          ...dateFilter,
+          "orderedItems.status": "Delivered" 
+        }
+      },
+      { $unwind: "$orderedItems" },
+      { 
+        $match: { 
+          "orderedItems.status": "Delivered" 
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          orderId: { $first: "$orderId" },
+          createdOn: { $first: "$createdOn" },
+          status: { $first: "$orderedItems.status" },
+          totalPrice: { 
+            $sum: { 
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+            }
+          },
+          discount: { $first: "$discount" },
+          finalAmount: { 
+            $sum: { 
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+            }
+          },
+          items: { 
+            $push: {
+              quantity: "$orderedItems.quantity",
+              price: "$orderedItems.price",
+              total: { 
+                $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+              }
+            }
+          }
+        }
+      },
+      { $sort: { createdOn: -1 } }
+    ]);
 
-      }
-      res.redirect("/admin/login")
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: "No delivered orders found for the specified period" });
+    }
 
-    })
+    const doc = new PDFDocument({ margin: 30, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=DeliveredSalesReport.pdf');
+    doc.pipe(res);
+
+    doc.fontSize(20)
+       .fillColor('#000080') 
+       .text('Sales Report (Delivered Items Only)', { align: 'center' });
+    doc.moveDown();
+
+    doc.fontSize(12)
+       .fillColor('#404040')  
+       .text(`Filter Type: ${filter}`);
+    doc.text(`Date Range: ${dateFilter.createdOn.$gte.toLocaleDateString()} to ${dateFilter.createdOn.$lte.toLocaleDateString()}`);
+    doc.moveDown();
+
+    const table = {
+      headers: [
+        { label: 'Order ID', property: 'orderId', width: 80 },  
+        { label: 'Date', property: 'date', width: 90 },        
+        { label: 'Qty', property: 'quantity', width: 40 },
+        { label: 'Price', property: 'price', width: 70 },      
+        { label: 'Total', property: 'total', width: 80 },     
+        { label: 'Status', property: 'status', width: 60 }
+      ],
+      datas: orders.flatMap(order => 
+        order.items.map(item => ({
+          orderId: order.orderId,
+          date: order.createdOn.toLocaleDateString(),
+          quantity: item.quantity.toString(),
+          price: `₹${item.price.toFixed(2)}`,
+          total: `₹${(item.quantity * item.price).toFixed(2)}`,
+          status: {
+            label: order.status,
+            color: '#006400'
+          }
+        }))
+      )
+    };
+
+    const createTable = async () => {
+      await doc.table(table, {
+        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10).fillColor('#404040'),
+        prepareRow: (row, indexColumn, indexRow, rectRow) => {
+          doc.font('Helvetica').fontSize(9);
+          doc.addBackground(rectRow, indexRow % 2 ? 'white' : '#f5f5f5');
+          
+          if (indexColumn === 5) {  
+            doc.fillColor(row.status.color);
+          } else {
+            doc.fillColor('#333333'); 
+          }
+        },
+        padding: 8, 
+        columnSpacing: 10  
+      });
+    };
+
+    await createTable();
+
+    doc.moveDown(2);  
+    doc.fillColor('#000080') 
+       .fontSize(12)
+       .text('Summary', { underline: true });
+    doc.moveDown(0.5);
+    
+    const totalItems = orders.reduce((sum, order) => sum + order.items.length, 0);
+    const totalSales = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+    const totalDiscount = orders.reduce((sum, order) => sum + (order.discount || 0), 0);
+    const netAmount = orders.reduce((sum, order) => sum + order.finalAmount, 0);
+    
+    doc.fillColor('#404040')
+       .fontSize(11);
+    doc.text(`Total Orders: ${orders.length}`);
+    doc.text(`Total Items: ${totalItems}`);
+    doc.text(`Total Sales: ₹${totalSales.toFixed(2)}`);
+    doc.text(`Total Discount: ₹${totalDiscount.toFixed(2)}`);
+    doc.text(`Net Amount: ₹${netAmount.toFixed(2)}`);
+
+    doc.end();
 
   } catch (error) {
-
-    console.log("Unexpected error during logout", error)
-    res.redirect("/admin/pageerror")
-
+    console.error("Error generating PDF report:", error);
+    res.status(500).json({ message: "Error generating PDF report", error: error.message });
   }
-}
+};
+
+const adminLogout = async (req, res) => {
+  try {
+      delete req.session.admin 
+      return res.redirect('/admin/login');
+  } catch (error) {
+      console.log("Admin logout error", error);
+      res.redirect("/pageError");
+  }
+};
+
 module.exports = {
   pageerror,
   loadLogin,
@@ -694,5 +973,5 @@ module.exports = {
   generatePDFReport,
   getAnalyticsData,
   getTopPerformers,
-  logout
+  adminLogout
 }

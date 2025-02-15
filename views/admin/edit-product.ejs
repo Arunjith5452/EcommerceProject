@@ -10,8 +10,8 @@
             <div class="col-lg-6">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <form method="post" action="/admin/editProduct/<%=product._id%>" id="productForm" enctype="multipart/form-data"
-                            onsubmit="return validateForm()">
+                        <form method="post" action="/admin/editProduct/<%=product._id%>" id="productForm"
+                            enctype="multipart/form-data" onsubmit="return validateForm()">
                             <div class="mb-4">
                                 <label for="product_name" class="form-label">Product Name</label>
                                 <input type="text" name="productName" value="<%=product.productName%>"
@@ -68,43 +68,47 @@
                             </div>
                         </div>
                     </div>
-                 <!-- Size Variants Section -->
-                 <div class="card mb-4">
-                    <div class="card-header">
-                        <h4>Size Variants</h4>
-                    </div>
-                    <div class="card-body">
-                        <div id="sizeVariantsContainer">
-                            <% if(product.sizeVariants && product.sizeVariants.length > 0) { %>
-                                <% product.sizeVariants.forEach((variant, index) => { %>
-                                    <div class="row mb-3 variant-row">
-                                        <div class="col-md-4">
-                                            <select class="form-select" required>
-                                                <option value="S" <%= variant.size === 'S' ? 'selected' : '' %>>S</option>
-                                                <option value="M" <%= variant.size === 'M' ? 'selected' : '' %>>M</option>
-                                                <option value="L" <%= variant.size === 'L' ? 'selected' : '' %>>L</option>
-                                                <option value="XL" <%= variant.size === 'XL' ? 'selected' : '' %>>XL</option>
-                                                <option value="XXL" <%= variant.size === 'XXL' ? 'selected' : '' %>>XXL</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="number" 
-                                                   class="form-control" 
-                                                   value="<%= variant.quantity %>" 
-                                                   min="0" 
-                                                   required>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="button" class="btn btn-danger" onclick="removeVariant(this)">Remove</button>
-                                        </div>
-                                    </div>
-                                <% }) %>
-                            <% } %>
+                    <!-- Size Variants Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h4>Size Variants</h4>
                         </div>
-                        <div id="variant-error" class="error-message"></div>
-                        <button type="button" class="btn btn-primary mt-3" onclick="addVariant()">Add Size Variant</button>
+                        <div class="card-body">
+                            <div id="sizeVariantsContainer">
+                                <% if(product.sizeVariants && product.sizeVariants.length> 0) { %>
+                                    <% product.sizeVariants.forEach((variant, index)=> { %>
+                                        <div class="row mb-3 variant-row">
+                                            <div class="col-md-4">
+                                                <select class="form-select" required>
+                                                    <option value="S" <%=variant.size==='S' ? 'selected' : '' %>>S
+                                                    </option>
+                                                    <option value="M" <%=variant.size==='M' ? 'selected' : '' %>>M
+                                                    </option>
+                                                    <option value="L" <%=variant.size==='L' ? 'selected' : '' %>>L
+                                                    </option>
+                                                    <option value="XL" <%=variant.size==='XL' ? 'selected' : '' %>>XL
+                                                    </option>
+                                                    <option value="XXL" <%=variant.size==='XXL' ? 'selected' : '' %>>XXL
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="number" class="form-control"
+                                                    value="<%= variant.quantity %>" min="0" required>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-danger"
+                                                    onclick="removeVariant(this)">Remove</button>
+                                            </div>
+                                        </div>
+                                        <% }) %>
+                                            <% } %>
+                            </div>
+                            <div id="variant-error" class="error-message"></div>
+                            <button type="button" class="btn btn-primary mt-3" onclick="addVariant()">Add Size
+                                Variant</button>
+                        </div>
                     </div>
-                </div>
                     <div class="card mb-2">
                         <div class="card-header">
                             <h4>Choose images</h4>
@@ -198,113 +202,111 @@
     </section>
 
     <script>
-   function validateForm() {
-    console.log("Starting form validation");
-    let imageDatas = false;
-    console.log("validate form");
-    clearErrorMessages();
+        function validateForm() {
+            console.log("Starting form validation");
+            let imageDatas = false;
+            console.log("validate form");
+            clearErrorMessages();
 
-    const form = document.getElementById('productForm');
-    const container = document.getElementById('sizeVariantsContainer');
-    const variants = container.getElementsByClassName('variant-row');
+            const form = document.getElementById('productForm');
+            const container = document.getElementById('sizeVariantsContainer');
+            const variants = container.getElementsByClassName('variant-row');
 
-    let isValid = true;
-    // Get form elements
-    const name = document.getElementsByName('productName')[0].value;
-    const description = document.getElementsByName('descriptionData')[0].value;
-    const price = document.getElementsByName('regularPrice')[0].value;
-    const saleprice = document.getElementsByName('salePrice')[0].value;
-    const color = document.getElementsByName('color')[0].value;
-    const images = document.getElementById('input1');
-    imageDatas = document.getElementById("imageDatas")?.value;
+            let isValid = true;
+            const name = document.getElementsByName('productName')[0].value;
+            const description = document.getElementsByName('descriptionData')[0].value;
+            const price = document.getElementsByName('regularPrice')[0].value;
+            const saleprice = document.getElementsByName('salePrice')[0].value;
+            const color = document.getElementsByName('color')[0].value;
+            const images = document.getElementById('input1');
+            imageDatas = document.getElementById("imageDatas")?.value;
 
 
-    // Basic field validations
-    if (name.trim() === "") {
-        displayErrorMessage('productName-error', 'Please enter a product name.');
-        isValid = false;
-    }
+            if (name.trim() === "") {
+                displayErrorMessage('productName-error', 'Please enter a product name.');
+                isValid = false;
+            }
 
-    if (description.trim() === '') {
-        displayErrorMessage('description-error', 'Please enter a product description.');
-        isValid = false;
-    }
+            if (description.trim() === '') {
+                displayErrorMessage('description-error', 'Please enter a product description.');
+                isValid = false;
+            }
 
-    if (!/^\d+(\.\d{1,2})?$/.test(price) || parseFloat(price) < 0) {
-        displayErrorMessage('regularPrice-error', 'Please enter a valid non-negative price.');
-        isValid = false;
-    }
+            if (!/^\d+(\.\d{1,2})?$/.test(price) || parseFloat(price) < 0) {
+                displayErrorMessage('regularPrice-error', 'Please enter a valid non-negative price.');
+                isValid = false;
+            }
 
-    if (!/^\d+(\.\d{1,2})?$/.test(saleprice) || parseFloat(saleprice) < 0) {
-        displayErrorMessage('salePrice-error', 'Please enter a valid non-negative price.');
-        isValid = false;
-    }
+            if (!/^\d+(\.\d{1,2})?$/.test(saleprice) || parseFloat(saleprice) < 0) {
+                displayErrorMessage('salePrice-error', 'Please enter a valid non-negative price.');
+                isValid = false;
+            }
 
-    if (color.trim() === "") {
-        displayErrorMessage('color-error', 'Please enter a color.');
-        isValid = false;
-    }
+            if (color.trim() === "") {
+                displayErrorMessage('color-error', 'Please enter a color.');
+                isValid = false;
+            }
 
-    if (!imageDatas && (!images || images.files.length === 0)) {
-        displayErrorMessage("images-error", 'Please select an image.');
-        isValid = false;
-    }
+            if (!imageDatas && (!images || images.files.length === 0)) {
+                displayErrorMessage("images-error", 'Please select an image.');
+                isValid = false;
+            }
 
-     let formData = new FormData(form);
-    
-    console.log("Initial form data:");
-    for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-    }
-    
-    const sizeVariantsArray = [];
-    
-    Array.from(variants).forEach((row, index) => {
-        const sizeSelect = row.querySelector('select');
-        const quantityInput = row.querySelector('input[type="number"]');
-        
-        if (sizeSelect && quantityInput) {
-            const variantData = {
-                size: sizeSelect.value,
-                quantity: quantityInput.value
-            };
-            sizeVariantsArray.push(variantData);
+            let formData = new FormData(form);
+
+            console.log("Initial form data:");
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            const sizeVariantsArray = [];
+
+            Array.from(variants).forEach((row, index) => {
+                const sizeSelect = row.querySelector('select');
+                const quantityInput = row.querySelector('input[type="number"]');
+
+                if (sizeSelect && quantityInput) {
+                    const variantData = {
+                        size: sizeSelect.value,
+                        quantity: quantityInput.value
+                    };
+                    sizeVariantsArray.push(variantData);
+                }
+            });
+
+            const sizeVariantsJSON = JSON.stringify(sizeVariantsArray);
+
+            let sizeVariantsInput = form.querySelector('input[name="sizeVariantsData"]');
+            if (!sizeVariantsInput) {
+                sizeVariantsInput = document.createElement('input');
+                sizeVariantsInput.type = 'hidden';
+                sizeVariantsInput.name = 'sizeVariantsData';
+                form.appendChild(sizeVariantsInput);
+            }
+            sizeVariantsInput.value = sizeVariantsJSON;
+
+            formData = new FormData(form);
+            console.log("Final form data before submission:");
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            return true;
         }
-    });
-    
-    const sizeVariantsJSON = JSON.stringify(sizeVariantsArray);
-    
-    let sizeVariantsInput = form.querySelector('input[name="sizeVariantsData"]');
-    if (!sizeVariantsInput) {
-        sizeVariantsInput = document.createElement('input');
-        sizeVariantsInput.type = 'hidden';
-        sizeVariantsInput.name = 'sizeVariantsData';
-        form.appendChild(sizeVariantsInput);
-    }
-    sizeVariantsInput.value = sizeVariantsJSON;
-    
-    formData = new FormData(form);
-    console.log("Final form data before submission:");
-    for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-    }
-    
-    return true;
-}
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!validateForm()) {
-                e.preventDefault();
-            } else {
-                console.log('Form is valid, submitting...');
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (!validateForm()) {
+                        e.preventDefault();
+                    } else {
+                        console.log('Form is valid, submitting...');
+                    }
+                });
             }
         });
-    }
-});
         function displayErrorMessage(elementId, message) {
             const errorElement = document.getElementById(elementId);
             if (errorElement) {
@@ -409,14 +411,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         function addVariant() {
-    console.log("Adding new variant");
-    const container = document.getElementById('sizeVariantsContainer');
-    const variantIndex = container.children.length;
-    
-    const variantRow = document.createElement('div');
-    variantRow.className = 'row mb-3 variant-row';
-    
-    variantRow.innerHTML = `
+            console.log("Adding new variant");
+            const container = document.getElementById('sizeVariantsContainer');
+            const variantIndex = container.children.length;
+
+            const variantRow = document.createElement('div');
+            variantRow.className = 'row mb-3 variant-row';
+
+            variantRow.innerHTML = `
         <div class="col-md-4">
             <select class="form-select" required>
                 <option value="">Select Size</option>
@@ -438,28 +440,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-danger" onclick="removeVariant(this)">Remove</button>
         </div>
     `;
-    
-    container.appendChild(variantRow);
-    console.log(`Added variant row. Total variants: ${container.children.length}`);
-}
 
-function removeVariant(button) {
-    button.closest('.variant-row').remove();
-    reindexVariants(); 
-}
+            container.appendChild(variantRow);
+            console.log(`Added variant row. Total variants: ${container.children.length}`);
+        }
 
-function reindexVariants() {
-    const container = document.getElementById('sizeVariantsContainer');
-    const variants = container.getElementsByClassName('variant-row');
-    
-    Array.from(variants).forEach((variant, index) => {
-        const sizeSelect = variant.querySelector('select');
-        const quantityInput = variant.querySelector('input[type="number"]');
-        
-        sizeSelect.name = `size${index}`;
-        quantityInput.name = `quantity${index}`;
-    });
-}
+        function removeVariant(button) {
+            button.closest('.variant-row').remove();
+            reindexVariants();
+        }
+
+        function reindexVariants() {
+            const container = document.getElementById('sizeVariantsContainer');
+            const variants = container.getElementsByClassName('variant-row');
+
+            Array.from(variants).forEach((variant, index) => {
+                const sizeSelect = variant.querySelector('select');
+                const quantityInput = variant.querySelector('input[type="number"]');
+
+                sizeSelect.name = `size${index}`;
+                quantityInput.name = `quantity${index}`;
+            });
+        }
 
         function deleteSingleImage(imageId, productId) {
             fetch('/admin/deleteImage', {

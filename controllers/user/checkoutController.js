@@ -7,7 +7,8 @@ const Coupon = require("../../models/couponSchema");
 const razorpay = require("../../config/razorpay");
 require('dotenv').config();
 const crypto = require("crypto");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Types;
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
@@ -64,9 +65,8 @@ const getCheckoutPage = async (req, res) => {
         ("Stock check details", stockCheckDetails);
 
         if (!isStockSufficient) {
-            ("Insufficient stock for one or more items in your cart.")
-            return res.status(400).json({ success: false, message: "Insufficient stock for one or more items in your cart." });
-        }
+            console.log("Insufficient stock for one or more items in your cart.")
+            return res.redirect('/cart?error=insufficient_stock');        }
 
         ("Stock is sufficient for all items.");
 
@@ -276,19 +276,9 @@ const applyCoupon = async (req, res) => {
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user;
-        const {
-            addressId,
-            finalAmount,
-            paymentMethod,
-            paymentConfirmed,
-            razorpay_payment_id,
-            razorpay_order_id,
-            razorpay_signature,
-            orderId,
-            failureReason,
+        const {addressId, finalAmount, paymentMethod, paymentConfirmed, razorpay_payment_id, razorpay_order_id, razorpay_signature, orderId, failureReason,
         } = req.body;
 
-        console.log("Place Order Request:", req.body);
 
         if (orderId) {
             const existingOrder = await Order.findById(orderId);
@@ -401,9 +391,13 @@ const placeOrder = async (req, res) => {
             addr._id.toString() === addressId
         );
 
-        const actualDiscount = req.session.activeCoupon ?
-            (req.session.couponDiscount || 0) : 0;
+        console.log("Active Coupon ID:", req.session.activeCoupon);
 
+        const actualDiscount = req.session.activeCoupon ? (req.session.couponDiscount || 0) : 0;
+        const coupon = req.session.activeCoupon
+        ? await Coupon.findOne({ name: req.session.activeCoupon })  
+        : null;
+        const couponMinPrice = coupon ? coupon.minimumPrice || 0 : 0;
         const orderData = {
             userId,
             orderId: `ORD${Date.now()}`,
@@ -418,14 +412,17 @@ const placeOrder = async (req, res) => {
             finalAmount,
             paymentMethod,
             address: selectedAddress,
+            couponMinPrice,
             status: paymentMethod === 'COD' ? 'Pending' : 'Pending',
             paymentStatus: paymentMethod === 'COD' ? 'Success' : 'Pending',
-            createdOn: new Date()
+            createdOn: new Date(),
+            couponApplied: req.session.activeCoupon ? true : false 
         };
 
         const order = await Order.create(orderData);
 
         if (paymentMethod === 'COD') {
+        
             await Promise.all([
                 ...cart.items.map(item =>
                     Product.updateOne(
@@ -497,11 +494,9 @@ const placeOrder = async (req, res) => {
 
 const verifyRazorpayPayment = async (orderData, signature) => {
     const secret = process.env.RAZORPAY_KEY_SECRET;
-
     if (!secret) {
         throw new Error('Razorpay secret key is not configured');
     }
-
     try {
         const hmac = crypto.createHmac("sha256", secret.trim());
         const data = orderData.razorpay_order_id + "|" + orderData.razorpay_payment_id;
@@ -591,6 +586,91 @@ const initiateRetryPayment = async (req, res) => {
         });
     }
 };
+
+const verifyRetryPayment = async (req, res) => {
+    try {
+        const {
+            orderId,
+            razorpay_payment_id,
+            razorpay_order_id
+        } = req.body;
+
+        console.log("Verifying retry payment:", {
+            orderId,
+            razorpay_payment_id,
+            razorpay_order_id
+        });
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            console.log("Order not found:", orderId);
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
+        console.log("Payment details fetched:", payment);
+
+        if (payment.status === "captured") {
+            await Promise.all([
+                Order.findByIdAndUpdate(orderId, {
+                    paymentStatus: "Success",
+                    status: "Pending",
+                    paymentId: razorpay_payment_id
+                }),
+                ...order.orderedItems.map(item =>
+                    Product.updateOne(
+                        { _id: item.product, "sizeVariants.size": item.size },
+                        { $inc: { "sizeVariants.$.quantity": -item.quantity } }
+                    )
+                )
+            ]);
+
+            return res.json({
+                success: true,
+                message: "Payment successful"
+            });
+        } else {
+            try {
+                await razorpay.payments.capture(razorpay_payment_id, payment.amount);
+
+                await Promise.all([
+                    Order.findByIdAndUpdate(orderId, {
+                        paymentStatus: "Success",
+                        status: "Pending",
+                        paymentId: razorpay_payment_id
+                    }),
+                    ...order.orderedItems.map(item =>
+                        Product.updateOne(
+                            { _id: item.product, "sizeVariants.size": item.size },
+                            { $inc: { "sizeVariants.$.quantity": -item.quantity } }
+                        )
+                    )
+                ]);
+
+                return res.json({
+                    success: true,
+                    message: "Payment captured successfully"
+                });
+            } catch (captureError) {
+                console.error("Payment capture failed:", captureError);
+                throw new Error("Payment capture failed");
+            }
+        }
+    } catch (error) {
+        console.error("Retry payment verification error:", error);
+        if (req.body.orderId) {
+            await Order.findByIdAndUpdate(req.body.orderId, {
+                paymentStatus: "Failed",
+                paymentFailureReason: error.message || "Payment processing failed"
+            });
+        }
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Payment processing failed"
+        });
+    }
+};
+
 const paymentFailed = async (req, res) => {
     try {
         const { orderId } = req.body;
@@ -660,75 +740,6 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-
-const verifyRetryPayment = async (req, res) => {
-    try {
-        const {
-            orderId,
-            razorpay_payment_id,
-            razorpay_order_id
-        } = req.body;
-
-        console.log("Verifying retry payment:", {
-            orderId,
-            razorpay_payment_id,
-            razorpay_order_id
-        });
-
-        const order = await Order.findById(orderId);
-        if (!order) {
-            console.log("Order not found:", orderId);
-            return res.status(404).json({ success: false, message: "Order not found" });
-        }
-
-        const payment = await razorpay.payments.fetch(razorpay_payment_id);
-        console.log("Payment details fetched:", payment);
-
-        if (payment.status === "captured") {
-            await Order.findByIdAndUpdate(orderId, {
-                paymentStatus: "Success",
-                status: "Pending",
-                paymentId: razorpay_payment_id
-            });
-
-            return res.json({
-                success: true,
-                message: "Payment successful"
-            });
-        } else {
-            try {
-                await razorpay.payments.capture(razorpay_payment_id, payment.amount);
-
-                await Order.findByIdAndUpdate(orderId, {
-                    paymentStatus: "Success",
-                    status: "Pending",
-                    paymentId: razorpay_payment_id
-                });
-
-                return res.json({
-                    success: true,
-                    message: "Payment captured successfully"
-                });
-            } catch (captureError) {
-                console.error("Payment capture failed:", captureError);
-                throw new Error("Payment capture failed");
-            }
-        }
-    } catch (error) {
-        console.error("Retry payment verification error:", error);
-        if (req.body.orderId) {
-            await Order.findByIdAndUpdate(req.body.orderId, {
-                paymentStatus: "Failed",
-                paymentFailureReason: error.message || "Payment processing failed"
-            });
-        }
-        return res.status(500).json({
-            success: false,
-            message: error.message || "Payment processing failed"
-        });
-    }
-};
-
 const getOrderSuccess = async (req, res) => {
     try {
         const orderId = req.params.orderId;
@@ -792,7 +803,7 @@ const getOrderSuccess = async (req, res) => {
 const downloadInvoice = async (req, res) => {
     try {
         const orderId = req.params.orderId;
-        
+
         const order = await Order.findOne({ orderId })
             .populate({
                 path: "orderedItems.product",
@@ -810,7 +821,7 @@ const downloadInvoice = async (req, res) => {
         );
         if (!selectedAddress) return res.status(404).send("Specific address not found");
 
-        const doc = new PDFDocument({ 
+        const doc = new PDFDocument({
             margin: 50,
             size: 'A4',
             bufferPages: true
@@ -828,15 +839,15 @@ const downloadInvoice = async (req, res) => {
             .text('+1 (123) 456-7890', 50, 110, { align: 'left' });
 
         doc.fontSize(20)
-        .text('INVOICE', 300, 50, { align: 'right', width: 250 })
-        .fontSize(10)
-        .text(`Invoice No: ${orderId}`, 300, 80, { align: 'right', width: 250 })
-        .text(`Date: ${new Date(order.createdOn).toLocaleDateString()}`, 300, 95, { align: 'right', width: 250 })
-        .text(`Order Date: ${new Date(order.createdOn).toLocaleDateString()}`, 300, 110, { align: 'right', width: 250 });
+            .text('INVOICE', 300, 50, { align: 'right', width: 250 })
+            .fontSize(10)
+            .text(`Invoice No: ${orderId}`, 300, 80, { align: 'right', width: 250 })
+            .text(`Date: ${new Date(order.createdOn).toLocaleDateString()}`, 300, 95, { align: 'right', width: 250 })
+            .text(`Order Date: ${new Date(order.createdOn).toLocaleDateString()}`, 300, 110, { align: 'right', width: 250 });
 
         doc.moveTo(50, 140)
-           .lineTo(550, 140)
-           .stroke();
+            .lineTo(550, 140)
+            .stroke();
 
         doc.fontSize(14)
             .text('Bill To:', 50, 170)
@@ -856,14 +867,14 @@ const downloadInvoice = async (req, res) => {
         };
 
         doc.rect(50, tableTop - 10, 500, 25)
-           .fill('#f6f6f6');
+            .fill('#f6f6f6');
 
         doc.fillColor('black')
-           .fontSize(10)
-           .text('Item Description', tableHeaders.item.x, tableTop)
-           .text('Qty', tableHeaders.qty.x, tableTop, { width: tableHeaders.qty.width, align: 'center' })
-           .text('Unit Price', tableHeaders.price.x, tableTop, { width: tableHeaders.price.width, align: 'right' })
-           .text('Amount', tableHeaders.amount.x, tableTop, { width: tableHeaders.amount.width, align: 'right' });
+            .fontSize(10)
+            .text('Item Description', tableHeaders.item.x, tableTop)
+            .text('Qty', tableHeaders.qty.x, tableTop, { width: tableHeaders.qty.width, align: 'center' })
+            .text('Unit Price', tableHeaders.price.x, tableTop, { width: tableHeaders.price.width, align: 'right' })
+            .text('Amount', tableHeaders.amount.x, tableTop, { width: tableHeaders.amount.width, align: 'right' });
 
         let yPosition = tableTop + 30;
         let subtotal = 0;
@@ -873,16 +884,16 @@ const downloadInvoice = async (req, res) => {
             subtotal += amount;
 
             doc.text(item.product.productName, tableHeaders.item.x, yPosition, { width: tableHeaders.item.width })
-               .text(item.quantity.toString(), tableHeaders.qty.x, yPosition, { width: tableHeaders.qty.width, align: 'center' })
-               .text(`₹${item.price.toFixed(2)}`, tableHeaders.price.x, yPosition, { width: tableHeaders.price.width, align: 'right' })
-               .text(`₹${amount.toFixed(2)}`, tableHeaders.amount.x, yPosition, { width: tableHeaders.amount.width, align: 'right' });
+                .text(item.quantity.toString(), tableHeaders.qty.x, yPosition, { width: tableHeaders.qty.width, align: 'center' })
+                .text(`₹${item.price.toFixed(2)}`, tableHeaders.price.x, yPosition, { width: tableHeaders.price.width, align: 'right' })
+                .text(`₹${amount.toFixed(2)}`, tableHeaders.amount.x, yPosition, { width: tableHeaders.amount.width, align: 'right' });
 
             yPosition += 25;
         });
 
         doc.moveTo(50, yPosition)
-           .lineTo(550, yPosition)
-           .stroke();
+            .lineTo(550, yPosition)
+            .stroke();
 
         yPosition += 20;
 
@@ -890,36 +901,36 @@ const downloadInvoice = async (req, res) => {
         const summaryWidth = 180;
 
         doc.text('Subtotal:', summaryX, yPosition, { width: 90, align: 'right' })
-           .text(`₹${subtotal.toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
+            .text(`₹${subtotal.toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
 
         if (order.discount) {
             yPosition += 20;
             doc.text('Discount:', summaryX, yPosition, { width: 90, align: 'right' })
-               .text(`-₹${order.discount.toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
+                .text(`-₹${order.discount.toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
         }
 
         yPosition += 25;
         doc.rect(summaryX - 10, yPosition - 5, summaryWidth, 25)
-           .fill('#f6f6f6');
-        
+            .fill('#f6f6f6');
+
         doc.fillColor('black')
-           .fontSize(12)
-           .text('Total:', summaryX, yPosition, { width: 90, align: 'right' })
-           .text(`₹${(order.finalAmount || subtotal).toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
+            .fontSize(12)
+            .text('Total:', summaryX, yPosition, { width: 90, align: 'right' })
+            .text(`₹${(order.finalAmount || subtotal).toFixed(2)}`, summaryX + 90, yPosition, { width: 90, align: 'right' });
 
         yPosition += 50;
         doc.fontSize(10)
-           .text('Payment Information', 50, yPosition)
-           .text(`Method: ${order.paymentMethod}`, 50, yPosition + 15)
-           .text(`Status: ${order.paymentStatus || 'Pending'}`, 50, yPosition + 30);
+            .text('Payment Information', 50, yPosition)
+            .text(`Method: ${order.paymentMethod}`, 50, yPosition + 15)
+            .text(`Status: ${order.paymentStatus || 'Pending'}`, 50, yPosition + 30);
 
         doc.fontSize(10)
-           .text('Thank you for your business!', 50, doc.page.height - 100, { align: 'center' });
+            .text('Thank you for your business!', 50, doc.page.height - 100, { align: 'center' });
 
         doc.fontSize(8)
-           .text('Terms & Conditions:', 50, doc.page.height - 80)
-           .text('1. All prices are in INR and include GST where applicable.', 50, doc.page.height - 70)
-           .text('2. This is a computer-generated invoice and requires no signature.', 50, doc.page.height - 60);
+            .text('Terms & Conditions:', 50, doc.page.height - 80)
+            .text('1. All prices are in INR and include GST where applicable.', 50, doc.page.height - 70)
+            .text('2. This is a computer-generated invoice and requires no signature.', 50, doc.page.height - 60);
         doc.end();
     } catch (error) {
         console.error("Error generating invoice:", error);

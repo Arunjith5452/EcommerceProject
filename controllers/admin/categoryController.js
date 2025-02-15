@@ -39,7 +39,10 @@ const addCategory = async (req, res) => {
     const { name, description } = req.body;
     try {
 
-        const existingCategory = await Category.findOne({ name });
+      const existingCategory = await Category.findOne({ 
+        categoryName: { $regex: new RegExp(`^${name}$`, 'i') }
+      })
+      
         if (existingCategory) {
             return res.status(400).json({ error: "Category already exists" })
         }
@@ -164,33 +167,30 @@ const getEditCategory = async (req, res) => {
 
 
 const editCategory = async (req, res) => {
-    try {
+  try {
+      const id = req.params.id;
+      const { categoryName, description } = req.body;
 
-        const id = req.params.id;
-        const { categoryName, description } = req.body;
-        const existingCategory = await Category.findOne({ name: categoryName })
-        if (existingCategory) {
-            res.locals.error = "Category exists,please choose another name"
-            return res.status(400).json({ error: "Category exists, please choose another name" })
-        }
+      const existingCategory = await Category.findOne({ categoryName });
+      if (existingCategory) {
+        return res.status(400).json({ error: "Category already exists, please choose another name" });
+      }
+     
+      const updateCategory = await Category.findByIdAndUpdate(id, {
+          name: categoryName,
+          description: description
+      }, { new: true });
 
-        const updateCategory = await Category.findByIdAndUpdate(id, {
-            name: categoryName,
-            description: description
-        }, { new: true });
+      if (updateCategory) {
+          return res.json({ success: true, message: "Category updated successfully" });
+      } else {
+          return res.status(404).json({ error: "Category not found" });
+      }
+  } catch (error) {
+      return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
-        if (updateCategory) {
-         return res.redirect("/admin/category");
-        } else {
-          return res.status(404).json({ error: "Category not found" })
-        }
-
-    } catch (error) {
-
-      return res.status(500).json({ error: "Internal Server Error" })
-
-    }
-}
 
 
 module.exports = {

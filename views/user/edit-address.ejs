@@ -52,26 +52,79 @@
        }
    });
 
-
    function validateForm() {
        let isValid = true;
        const requiredFields = ["addressType", "name", "city", "landMark", "state", "pincode", "phone"];
+       
        requiredFields.forEach(function (field) {
            const input = document.getElementById(field);
            if (input.value.trim() === "") {
                Swal.fire({
                    title: 'Error',
-                   text: `Please fill all the field.`,
+                   text: `Please fill in the ${field.replace(/([A-Z])/g, ' $1')}.`,
                    icon: 'error'
                });
                isValid = false;
            }
        });
 
+       const alphabetOnlyFields = ["addressType", "name", "city", "landMark", "state"];
+       alphabetOnlyFields.forEach(function (field) {
+           const input = document.getElementById(field);
+           if (!/^[A-Za-z\s]+$/.test(input.value.trim())) {
+               Swal.fire({
+                   title: 'Error',
+                   text: `${field.replace(/([A-Z])/g, ' $1')} should contain only alphabets.`,
+                   icon: 'error'
+               });
+               isValid = false;
+           }
+       });
+
+       const pincode = document.getElementById('pincode').value.trim();
+       if (!/^\d{6}$/.test(pincode)) {
+           Swal.fire({
+               title: 'Error',
+               text: 'Pincode must be exactly 6 digits.',
+               icon: 'error'
+           });
+           isValid = false;
+       }
+
+       const phone = document.getElementById('phone').value.trim();
+       if (!/^\d{10}$/.test(phone)) {
+           Swal.fire({
+               title: 'Error',
+               text: 'Phone number must be exactly 10 digits.',
+               icon: 'error'
+           });
+           isValid = false;
+       }
+
+       const altPhone = document.getElementById('altPhone').value.trim();
+       if (altPhone !== "") {
+           if (!/^\d{10}$/.test(altPhone)) {
+               Swal.fire({
+                   title: 'Error',
+                   text: 'Alternate phone number must be exactly 10 digits.',
+                   icon: 'error'
+               });
+               isValid = false;
+           } else if (altPhone === phone) {
+               Swal.fire({
+                   title: 'Error',
+                   text: 'Alternate phone number should be different from the primary phone number.',
+                   icon: 'error'
+               });
+               isValid = false;
+           }
+       }
 
        return isValid;
    }
+
 </script>
+
 <%- include("../../views/partials/user/footer") %>
 
 

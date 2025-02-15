@@ -381,9 +381,9 @@
     <section class="shop-page container">
         <div class="shop-topbar">
             <div class="search-bar">
-                <form action="/search" method="POST" class="search-form">
-                    <input type="text" name="query" placeholder="Search items..." class="search-input" />
-                    <input type="hidden" name="sort" value="<%= selectedSort || 'default'%>">
+                <form action="/search" method="POST" class="search-form" id="searchForm">
+                    <input type="text" name="query" placeholder="Search items..." class="search-input" value="<%= searchQuery || '' %>" />
+                    <input type="hidden" name="sort" value="<%= selectedSort || 'default' %>">
                     <button type="submit" class="search-button">Search</button>
                 </form>
             </div>
@@ -559,15 +559,18 @@ function addToWishlist(productId){
 
 function sortProducts(value) {
     let currentUrl = new URL(window.location.href);
-    
-    if (currentUrl.pathname === '/search') {
-        currentUrl.searchParams.set('sort', value);
-        currentUrl.searchParams.set('searchSort', 'true');
+    const searchQuery = '<%= searchQuery %>';
+
+    if (searchQuery) {
+        const form = document.getElementById('searchForm');
+        const sortInput = form.querySelector('input[name="sort"]');
+        sortInput.value = value;
+        form.submit();
     } else {
         currentUrl.searchParams.set('sort', value);
-    }   
-    window.location.href = currentUrl.toString();
-}
+        window.location.href = currentUrl.toString();
+    }
 
+}
 </script>
 <%-include("../../views/partials/user/footer")%>

@@ -312,7 +312,6 @@
       border-bottom: none;
     }
 
-    /* Table Styles */
     .table td {
       vertical-align: middle;
     }
@@ -339,7 +338,6 @@
       font-size: 14px;
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
       .products-cell {
         max-width: 200px;
@@ -350,7 +348,6 @@
       }
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
       .profile-stats {
         grid-template-columns: repeat(2, 1fr);
@@ -429,7 +426,11 @@
                     <div class="tab-pane fade show active" id="dashboard">
                       <div class="card">
                         <div class="card-header">
-                          <h5 class="mb-0">User Profile</h5>
+                          <h5 class="mb-0">My Profile</h5>
+                          <button class="btn btn-outline-secondary position-absolute top-0 end-0 m-3"
+                            onclick="openEditModal()">
+                            <i class="fas fa-edit"></i>
+                          </button>
                         </div>
                         <div class="card-body text-center">
                           <h5 class="mb-4">
@@ -471,6 +472,33 @@
                           <div class="d-flex justify-content-center gap-2">
                             <a href="/change-email" class="btn btn-success">Change Email</a>
                             <a href="/change-password" class="btn btn-success">Change Password</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal fade" id="editProfileModal" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Edit Profile</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                            <form id="editProfileForm">
+                              <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" value="<%=user.username%>"
+                                  required>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Mobile</label>
+                                <input type="text" name="mobile" class="form-control" value="<%=user.mobile%>" required>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                              </div>
+                            </form>
                           </div>
                         </div>
                       </div>
@@ -589,7 +617,8 @@
                                               month: 'short' , day: 'numeric' })%>
                                           </p>
                                           <h5 class="mb-3">
-                                            <% let displayAmount; const activeItems=order.orderedItems.filter(item=>
+                                            <h5 class="mb-3">
+                                              <% let displayAmount; const activeItems=order.orderedItems.filter(item=>
                                               item.status !== 'Cancelled' && item.status !== 'Returned'
                                               );
 
@@ -600,17 +629,18 @@
                                               const originalDiscount = order.originalDiscount || order.discount || 0;
                                               displayAmount = Math.round(originalTotal - originalDiscount);
                                               } else {
-                                              const currentTotalMRP = activeItems.reduce((total, item) =>
-                                              total + (item.price * item.quantity), 0);
-                                              const totalMRP = order.originalTotalPrice ||
-                                              order.orderedItems.reduce((total, item) => total + (item.price *
-                                              item.quantity), 0);
-                                              const currentDiscount = Math.round(order.discount * (currentTotalMRP /
-                                              totalMRP)) || 0;
-                                              displayAmount = Math.round(currentTotalMRP - currentDiscount);
+                                                const currentTotalMRP = activeItems.reduce((total, item) => 
+                                                total + (item.price * item.quantity), 0);
+                                            const meetsMinimumAmount = currentTotalMRP >= (order.couponMinPrice || 0);
+                                            displayAmount = Math.round(
+                                                meetsMinimumAmount ? 
+                                                currentTotalMRP - order.discount : 
+                                                currentTotalMRP
+                                            );
                                               }
                                               %>
                                               ₹<%= !isNaN(displayAmount) ? displayAmount : '0' %>
+                                            </h5>
                                           </h5>
                                           <div class="d-flex flex-column gap-2">
                                             <button class="btn btn-sm btn-primary"
@@ -650,6 +680,7 @@
                         </div>
                       </div>
                     </div>
+
                     <!-- Wallet Status Tab -->
                     <div class="tab-pane fade" id="wallet">
                       <div class="card">
@@ -795,21 +826,52 @@
                     </div>
 
                     <script>
-                      function copyReferralCode() {
-    const referralInput = document.getElementById('referralCodeInput');
-    referralInput.select();
-    document.execCommand('copy');
 
-    Swal.fire({
-        icon: 'success',
-        title: 'Copied!',
-        text: 'Referral code copied to clipboard.',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 2000
-    });
-}
+                      document.addEventListener('DOMContentLoaded', function () {
+                        const editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+
+                        window.openEditModal = function () {
+                          editModal.show();
+                        };
+                        document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+                          e.preventDefault();
+                          const formData = new FormData(e.target);
+                          try {
+                            const response = await fetch('/update-profile', {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify(Object.fromEntries(formData))
+                            });
+
+                            if (response.ok) {
+                              editModal.hide();
+                              location.reload();
+                            } else {
+                              const errorData = await response.json();
+                              console.error('Error:', errorData);
+                            }
+                          } catch (error) {
+                            console.error('Network Error:', error);
+                          }
+                        });
+                      });
+                      function copyReferralCode() {
+                        const referralInput = document.getElementById('referralCodeInput');
+                        referralInput.select();
+                        document.execCommand('copy');
+
+                        Swal.fire({
+                          icon: 'success',
+                          title: 'Copied!',
+                          text: 'Referral code copied to clipboard.',
+                          toast: true,
+                          position: 'top-end',
+                          showConfirmButton: false,
+                          timer: 2000
+                        });
+                      }
 
                     </script>
 
@@ -825,116 +887,139 @@
                 fetch(`/orderDetails/${orderId}`)
                   .then(response => response.json())
                   .then(order => {
-                    const totalMRP = order.originalTotalPrice || order.orderedItems.reduce((total, item) =>
+                    const totalMRP = order.orderedItems.reduce((total, item) =>
                       total + (item.price * item.quantity), 0);
 
                     let priceDetailsHTML = '';
-
                     const hasModifiedItems = order.orderedItems.some(item =>
-                      item.status === 'Cancelled' ||
-                      item.status === 'Returned'
+                      item.status === 'Cancelled' || item.status === 'Returned'
                     );
 
                     if (hasModifiedItems) {
                       const activeItems = order.orderedItems.filter(item =>
-                        item.status !== 'Cancelled' &&
-                        item.status !== 'Returned'
+                        item.status !== 'Cancelled' && item.status !== 'Returned'
                       );
+
+                      const currentTotalMRP = activeItems.reduce((total, item) =>
+                        total + (item.price * item.quantity), 0);
+
+                        const minimumPrice = order.couponMinPrice;
+                        const meetsMinimumAmount = currentTotalMRP >= minimumPrice;
+
+                        let finalAmount;
+            if (activeItems.length === 0) {
+                finalAmount = 0;
+            } else if (meetsMinimumAmount && order.discount) {
+                finalAmount = currentTotalMRP - order.discount;
+            } else {
+                finalAmount = currentTotalMRP;
+            }
 
                       if (activeItems.length === 0) {
                         priceDetailsHTML = `
-                        <div class="card mt-3">
-                            <div class="card-body">
-                                <h6>Price Details</h6>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Total MRP</span>
-                                    <span>₹${totalMRP}</span>
-                                </div>
-                                ${order.discount > 0 ? `
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Discount</span>
-                                        <span class="text-success">-₹${order.discount}</span>
-                                    </div>
-                                ` : ''}
-                                <hr>
-                                <div class="d-flex justify-content-between">
-                                    <strong>Total Amount</strong>
-                                    <strong>₹${totalMRP - order.discount}</strong>
-                                </div>
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Current Price Details</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Current Total MRP</span>
+                            <span>₹${currentTotalMRP}</span>
+                        </div>
+                        ${order.discount > 0 ? `
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Coupon ${!meetsMinimumAmount ? '(Removed)' : ''}</span>
+                                <span class="${meetsMinimumAmount ? 'text-success' : 'text-danger'}">
+                                    ${meetsMinimumAmount ? `-₹${order.discount}` : 'Not Applicable'}
+                                </span>
                             </div>
-                        </div>`;
+                            <div class="text-muted small">
+                                <i>Valid on orders above ₹${minimumPrice}</i>
+                            </div>
+                            ${!meetsMinimumAmount ? `
+                                <div class="alert alert-warning mt-2 mb-2 p-2">
+                                    <small>Coupon removed - Order total below minimum amount (₹${order.couponMinPrice})</small>
+                                </div>
+                            ` : ''}
+                        ` : ''}
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Final Amount</strong>
+                            <strong>₹${currentTotalMRP}</strong>
+                        </div>
+                    </div>
+                </div>`;
                       } else {
-                        const currentTotalMRP = activeItems.reduce((total, item) =>
-                          total + (item.price * item.quantity), 0);
-                        const currentDiscount = order.discount * (currentTotalMRP / totalMRP) || 0;
-
                         priceDetailsHTML = `
-                        <div class="card mt-3">
-                            <div class="card-body">
-                                <div class="row">
-                                 <div class="col-md-6">
-    <h6>Current Price Details</h6>
-    <div class="d-flex justify-content-between mb-2">
-        <span>Total MRP</span>
-        <span>₹${currentTotalMRP}</span>
-    </div>
-    ${currentDiscount > 0 ? `
-        <div class="d-flex justify-content-between mb-2">
-            <span>Discount</span>
-            <span class="text-success">-₹${Math.round(currentDiscount)}</span>
-        </div>
-    ` : ''}
-    <hr>
-    <div class="d-flex justify-content-between">
-        <strong>Total Amount</strong>
-        <strong>₹${Math.round(currentTotalMRP - currentDiscount)}</strong>
-    </div>
-</div>
-                                </div>
-                            </div>
-                        </div>`;
-                      }
-                    } else {
-                      priceDetailsHTML = `
                     <div class="card mt-3">
                         <div class="card-body">
-                            <h6>Price Details</h6>
+                            <h6>Current Price Details</h6>
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Total MRP</span>
-                                <span>₹${totalMRP}</span>
+                                <span>Current Total MRP</span>
+                                <span>₹${currentTotalMRP}</span>
                             </div>
                             ${order.discount > 0 ? `
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>Discount</span>
-                                    <span class="text-success">-₹${order.discount}</span>
+                                    <span>Coupon ${meetsMinimumAmount ? '' : '(Removed)'}</span>
+                                    <span class="${meetsMinimumAmount ? 'text-success' : 'text-danger'}">
+                                        ${meetsMinimumAmount ? `-₹${order.discount}` : 'Not Applicable'}
+                                    </span>
                                 </div>
+                                ${!meetsMinimumAmount ? `
+                                    <div class="alert alert-warning mt-2 mb-2 p-2">
+                                        <small>Coupon removed - Order total below minimum amount (₹${order.couponMinPrice})</small>
+                                    </div>
+                                ` : ''}
                             ` : ''}
                             <hr>
                             <div class="d-flex justify-content-between">
-                                <strong>Total Amount</strong>
-                                <strong>₹${totalMRP - order.discount}</strong>
+                                <strong>Final Amount</strong>
+                                <strong>₹${meetsMinimumAmount ? currentTotalMRP - order.discount : currentTotalMRP}</strong>
                             </div>
                         </div>
                     </div>`;
+                      }
+                    } else {
+                      priceDetailsHTML = `
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Price Details</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total MRP</span>
+                            <span>₹${totalMRP}</span>
+                        </div>
+                        ${order.discount > 0 ? `
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Coupon Discount</span>
+                                <span class="text-success">-₹${order.discount}</span>
+                            </div>
+                            <div class="text-muted small">
+    <i>Coupon Valid on orders above ₹${order.couponMinPrice}</i>
+                            </div>
+                        ` : ''}
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total Amount</strong>
+                            <strong>₹${order.finalAmount}</strong>
+                        </div>
+                    </div>
+                </div>`;
                     }
-
                     let paymentRetryHTML = '';
-            if (order.paymentStatus === 'Failed') {
-                paymentRetryHTML = `
+                    if (order.paymentStatus === 'Failed') {
+                      paymentRetryHTML = `
                     <div class="alert alert-warning mt-3">
                         <p class="mb-2"><strong>Payment Status:</strong> ${order.paymentStatus}</p>
-                        ${order.paymentFailureReason ? 
-                            `<p class="mb-2"><strong>Reason:</strong> ${order.paymentFailureReason}</p>` : 
-                            ''
+                        ${order.paymentFailureReason ?
+                          `<p class="mb-2"><strong>Reason:</strong> ${order.paymentFailureReason}</p>` :
+                          ''
                         }
-                        ${order.paymentRetryCount < 3 ? 
-                            `<button class="btn btn-primary mt-2" onclick="retryPaymentForOrder('${order._id}', ${order.finalAmount})">
+                        ${order.paymentRetryCount < 3 ?
+                          `<button class="btn btn-primary mt-2" onclick="retryPaymentForOrder('${order._id}', ${order.finalAmount})">
                                 Retry Payment
                             </button>` :
-                            `<p class="text-danger mb-0">Maximum retry attempts exceeded. Please contact support.</p>`
+                          `<p class="text-danger mb-0">Maximum retry attempts exceeded. Please contact support.</p>`
                         }
                     </div>`;
-            }
+                    }
                     let orderDetailsHTML = `
 
                 <div class="order-details-container">
@@ -946,9 +1031,9 @@
                  ${paymentRetryHTML}      
                 <div class="ordered-items-list">
                     ${order.orderedItems.map(item => {
-                        const itemStatus = item.status || order.status;
-                        const itemTotal = item.price * item.quantity;
-                        
+                      const itemStatus = item.status || order.status;
+                      const itemTotal = item.price * item.quantity;
+
 
                       return `
                                 <div class="card mb-3" data-product-id="${item.product._id}">
@@ -994,12 +1079,12 @@
                     setupStatusUpdateListener(orderId);
                   })
                   .catch(error => {
-            if (error.name !== 'AbortError' && !document.getElementById('orderDetailsContent').innerHTML) {
-                console.error('Error fetching order details:', error);
-                Swal.fire('Error', 'Failed to load order details', 'error');
-            }
-        });
-      }
+                    if (error.name !== 'AbortError' && !document.getElementById('orderDetailsContent').innerHTML) {
+                      console.error('Error fetching order details:', error);
+                      Swal.fire('Error', 'Failed to load order details', 'error');
+                    }
+                  });
+              }
 
               function getStatusBadgeClass(status) {
                 switch (status.toLowerCase()) {
@@ -1291,169 +1376,167 @@
                   }
                 });
               }
+              function retryPaymentForOrder(orderId, amount) {
+                console.log('Retrying payment for order:', orderId, 'amount:', amount);
 
-
-function retryPaymentForOrder(orderId, amount) {
-    console.log('Retrying payment for order:', orderId, 'amount:', amount);
-    
-    if (typeof Razorpay === 'undefined') {
-        Swal.fire('Error', 'Payment gateway is not loaded. Please refresh the page.', 'error');
-        return;
-    }
-
-    fetch('/initiate-retry-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, amount })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const options = {
-                key: data.razorpayKeyId,
-                amount: amount * 100,
-                currency: "INR",
-                name: "FashionKart",
-                description: "Order Payment Retry",
-                order_id: data.orderId,
-                handler: function(response) {
-                    verifyRetryPayment(data.originalOrderId, {
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_signature: response.razorpay_signature
-                    });
-                },
-                modal: {
-                    ondismiss: function() {
-                        handlePaymentFailure(orderId);
-                    }
-                },
-                prefill: {
-                    name: data.customerName,
-                    email: data.customerEmail
-                },
-                theme: {
-                    color: "#3399cc"
+                if (typeof Razorpay === 'undefined') {
+                  Swal.fire('Error', 'Payment gateway is not loaded. Please refresh the page.', 'error');
+                  return;
                 }
-            };
 
-            const rzp = new Razorpay(options);
-            rzp.on('payment.failed', function(response) {
-                handlePaymentFailure(orderId, response.error.description);
-            });
-            rzp.open();
-        } else {
-            Swal.fire('Error', data.message || 'Failed to initiate payment', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        Swal.fire('Error', 'Failed to initiate payment retry', 'error');
-    });
-}
+                fetch('/initiate-retry-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ orderId, amount })
+                })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      const options = {
+                        key: data.razorpayKeyId,
+                        amount: amount * 100,
+                        currency: "INR",
+                        name: "FashionKart",
+                        description: "Order Payment Retry",
+                        order_id: data.orderId,
+                        handler: function (response) {
+                          verifyRetryPayment(data.originalOrderId, {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature
+                          });
+                        },
+                        modal: {
+                          ondismiss: function () {
+                            handlePaymentFailure(orderId);
+                          }
+                        },
+                        prefill: {
+                          name: data.customerName,
+                          email: data.customerEmail
+                        },
+                        theme: {
+                          color: "#3399cc"
+                        }
+                      };
 
-function verifyRetryPayment(orderId, paymentDetails) {
-    fetch('/verify-retry-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            orderId: orderId,
-            ...paymentDetails
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Payment Successful',
-                text: 'Your payment has been processed successfully!',
-                showConfirmButton: true
-            }).then(() => {
-                viewOrderDetails(orderId);
-            });
-        } else {
-            throw new Error(data.message || 'Payment verification failed');
-        }
-    })
-    .catch(error => {
-        console.error('Payment verification error:', error);
-        handlePaymentFailure(orderId, 'Payment verification failed');
-    });
-}
+                      const rzp = new Razorpay(options);
+                      rzp.on('payment.failed', function (response) {
+                        handlePaymentFailure(orderId, response.error.description);
+                      });
+                      rzp.open();
+                    } else {
+                      Swal.fire('Error', data.message || 'Failed to initiate payment', 'error');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'Failed to initiate payment retry', 'error');
+                  });
+              }
 
-function handlePaymentFailure(orderId, reason = 'Payment was cancelled') {
-    fetch('/payment-failed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            orderId: orderId,
-            reason: reason
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Payment Failed',
-                text: reason || 'Your payment was not successful. Please try again.',
-                showConfirmButton: true
-            }).then(() => {
-                viewOrderDetails(orderId);
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error handling payment failure:', error);
-        Swal.fire('Error', 'Something went wrong. Please check your order status.', 'error');
-    });
-}
+              function verifyRetryPayment(orderId, paymentDetails) {
+                fetch('/verify-retry-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderId: orderId,
+                    ...paymentDetails
+                  })
+                })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      Swal.fire({
+                        icon: 'success',
+                        title: 'Payment Successful',
+                        text: 'Your payment has been processed successfully!',
+                        showConfirmButton: true
+                      }).then(() => {
+                        viewOrderDetails(orderId);
+                      });
+                    } else {
+                      throw new Error(data.message || 'Payment verification failed');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Payment verification error:', error);
+                    handlePaymentFailure(orderId, 'Payment verification failed');
+                  });
+              }
 
-function handlePaymentFailure(orderId, reason = 'Payment was declined') {
-    console.log('Handling payment failure for order:', orderId);
-    
-    return fetch('/updateOrderStatus', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            orderId: orderId,
-            status: 'Failed',
-            reason: reason
-        })
-    })
-    .then(response => response.json()) 
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Payment Failed',
-                text: 'Your payment didn\'t go through as it was declined by the bank. Try another payment method or contact your bank.',
-            }).then(() => {
-                viewOrderDetails(orderId);
-            });
-        } else {
-            throw new Error(data.message || 'Failed to update order status');
-        }
-    })
-    .catch(error => {
-        console.error('Error handling payment failure:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Something went wrong. Please check your order status.',
-            confirmButtonText: 'View Orders',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = '/orderSuccess';
-            }
-        });
-    });
-}
+              function handlePaymentFailure(orderId, reason = 'Payment was cancelled') {
+                fetch('/payment-failed', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderId: orderId,
+                    reason: reason
+                  })
+                })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Failed',
+                        text: reason || 'Your payment was not successful. Please try again.',
+                        showConfirmButton: true
+                      }).then(() => {
+                        viewOrderDetails(orderId);
+                      });
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error handling payment failure:', error);
+                    Swal.fire('Error', 'Something went wrong. Please check your order status.', 'error');
+                  });
+              }
+
+              function handlePaymentFailure(orderId, reason = 'Payment was declined') {
+                console.log('Handling payment failure for order:', orderId);
+
+                return fetch('/updateOrderStatus', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderId: orderId,
+                    status: 'Failed',
+                    reason: reason
+                  })
+                })
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Failed',
+                        text: 'Your payment didn\'t go through as it was declined by the bank. Try again.',
+                      }).then(() => {
+                        viewOrderDetails(orderId);
+                      });
+                    } else {
+                      throw new Error(data.message || 'Failed to update order status');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error handling payment failure:', error);
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Error',
+                      text: 'Something went wrong. Please check your order status.',
+                      confirmButtonText: 'View Orders',
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        window.location.href = '/orderSuccess';
+                      }
+                    });
+                  });
+              }
 
 
 
-          function confirmDelete(addressId) {
+              function confirmDelete(addressId) {
                 Swal.fire({
                   title: 'Are you sure?',
                   text: 'Do you want to delete this address?',

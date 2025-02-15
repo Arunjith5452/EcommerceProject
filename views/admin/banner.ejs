@@ -1,62 +1,84 @@
 <%- include("../../views/partials/admin/header") %>
-    <div class="content-header row">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="content-title card-title">Banners</h2>
-        </div>
+<div class="content-header row">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="content-title card-title">Banners</h2>
+        <a href="/admin/addBanner" class="btn btn-primary">Add New Banner</a>
     </div>
-    </div>
-    <div class="right mt-5">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Image</th>
-                    <th scope="col">Title</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Active</th>
-                    <th scope="col">Delete</th>
-                </tr>
-            </thead>
-            <tbody>
-                <%if(locals.data){%>
-                    <%for(let i=0;i<data.length;i++){%>
-                <tr>
-                    <td>
-                        <img src="/uploads/product-images/<%=data[i].image%>" style="height: 2rem; width: 3rem;" class="img-xs" alt="Item">
+</div>
 
-                    </td>
-                    <td>
-                        <%=data[i].title%>
-                    </td>
-                    <td>
-                        <%=data[i].description%>
-                    </td>
-                    <td>
-                        <%if(data[i].startDate < Date.now() && data[i].endDate > Date.now()){%>
-                        <p class="badge rounded-pill alert-success">Active</p>
-                        <%}else {%>
-                        <p class="badge rounded-pill alert-danger">No Active</p>
-                        <%}%>
-                    </td>
+<div class="card mt-4">
+    <div class="card-body">
+        <% if (message) { %>
+            <div class="alert alert-info">
+                <%= message %>
+            </div>
+        <% } %>
 
-
-                    <td class="action" data-title="Remove"><a href="/admin/deleteBanner?id=<%=data[i]._id%>"><i class="icon material-icons md-delete"></i> </a>
-                    </td>
-                </tr>
-                <%}%>
-                <%}else{%>
-                    No Banner Found
-                    <%}%>
-            </tbody>
-        </table>
-    </div>
-    <div class="container mt-3">
-        <div class="row justify-content-center">
-            <div class="col-md-6 text-center">
-                <a href="/admin/addBanner">
-                    <button class="btn btn-primary mt-3 mr-200" type="submit">Add Banner</button>
+        <% if (data && data.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Image</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Date Range</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% data.forEach(banner => { %>
+                            <tr>
+                                <td>
+                                    <% if (banner.image) { %>
+                                        <img src="/uploads/product-images/<%= banner.image %>" 
+                                             style="height: 2rem; width: 3rem;" 
+                                             class="img-xs" 
+                                             alt="<%= banner.title %>">
+                                    <% } else { %>
+                                        <span class="text-muted">No image</span>
+                                    <% } %>
+                                </td>
+                                <td><%= banner.title %></td>
+                                <td><%= banner.description %></td>
+                                <td>
+                                    <% if (new Date(banner.startDate) <= new Date() && new Date(banner.endDate) >= new Date()) { %>
+                                        <span class="badge bg-success">Active</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger">Inactive</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <%= banner.startDate.toLocaleDateString() %> - 
+                                    <%= banner.endDate.toLocaleDateString() %>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="/admin/deleteBanner/<%= banner._id %>" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('Are you sure you want to delete this banner?')">
+                                            Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-image fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-muted">No Banners Found</h5>
+                <p class="text-muted">Start by adding your first banner</p>
+                <a href="/admin/addBanner" class="btn btn-primary mt-3">
+                    Add Your First Banner
                 </a>
             </div>
-        </div>
+        <% } %>
     </div>
-    </div>
-    <%- include("../../views/partials/admin/footer") %>
+</div>
+<%- include("../../views/partials/admin/footer") %>

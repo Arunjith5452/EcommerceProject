@@ -5,7 +5,6 @@ const customerController = require("../controllers/admin/customerController");
 const categoryController = require("../controllers/admin/categoryController")
 const productController = require("../controllers/admin/productController");
 const orderController = require("../controllers/admin/orderController");
-const bannerController = require("../controllers/admin/bannerController");
 const couponController = require("../controllers/admin/couponController");
 
 const { adminAuth } = require("../middlewares/auth")
@@ -22,7 +21,7 @@ router.get('/dashboard/top-performers', adminController.getTopPerformers);
 router.get('/download/excel',adminController.generateExcelReport);
 router.get('/download/pdf',adminController.generatePDFReport);
 router.get("/dashboard", adminAuth, adminController.loadDashboard);             
-router.get("/logout", adminController.logout);
+router.get("/logout", adminController.adminLogout);
 
 router.get("/users", adminAuth, customerController.customerInfo);
 router.get("/blockCustomer", adminAuth, customerController.customerBlocked);
@@ -54,10 +53,6 @@ router.patch('/updateOrderStatus/:orderId', adminAuth, orderController.updateOrd
 router.get('/userOrderDetails/:orderId', adminAuth, orderController.getOrderDetails);
 router.patch('/userOrderCancel/:orderId', adminAuth, orderController.cancelSingleItem);
 router.patch('/handleReturnRequest/:orderId',adminAuth , orderController.handleReturnRequest);
-
-router.get("/banner", adminAuth, bannerController.getBannerPage);
-router.get("/addBanner", adminAuth, bannerController.getAddBannerPage);
-router.post("/addBanner", adminAuth, uploads.single("images"), bannerController.addBanner);
 
 router.get("/coupon", adminAuth, couponController.loadCoupon);
 router.post("/createCoupon", adminAuth, couponController.createCoupon);

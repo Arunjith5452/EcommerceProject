@@ -50,6 +50,9 @@ const loadHomepage = async (req, res) => {
             {isBlocked:false,
             category:{$in:categories.map(category=>category._id)}
         }).sort({createdAt:-1}).limit(4)
+
+        let isNewUser = req.session.isNewUser || false; 
+
         if (user) {
             const userData = await User.findOne({ _id: user })
 
@@ -64,10 +67,10 @@ const loadHomepage = async (req, res) => {
                 return;
             }
             
-            res.render("home", { user: userData ,products:productData })
+            res.render("home", { user: userData ,products:productData ,isNewUser})
 
         } else {
-            return res.render("home",{products:productData});
+            return res.render("home",{products:productData,isNewUser});
         }
 
     } catch (error) {
@@ -75,6 +78,16 @@ const loadHomepage = async (req, res) => {
         console.log("Home page not found");
         res.status(500).send("Server error")
 
+    }
+}
+
+const removeNewuseFlag = async (req,res) => {
+    try {
+        req.session.isNewUser = false;
+        res.sendStatus(200);
+    } catch (error) {
+        console.error("new user flag error",error)
+        
     }
 }
 
@@ -152,6 +165,7 @@ const signup = async (req, res) => {
         req.session.userOtp = otp;
         req.session.userData = { username, mobile, email, password ,referredBy: referredByUser ? referredByUser.referralCode : null 
         }
+        req.session.isNewUser = true
         res.render("verify-otp");
         console.log("OTP Sent", otp);
 
@@ -349,21 +363,13 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
     try {
-        req.session.destroy((err) => {
-            if (err) {
-                console.log("Session destruction error", err.message)
-                return res.redirect("/pageNotFound")
-            }
-            return res.redirect('/login')
-        })
+        delete req.session.user 
+        return res.redirect('/login');
     } catch (error) {
-
-        console.log("Logout error", error)
-        res.redirect("/pageNotFound")
-
+        console.log("Logout error", error);
+        res.redirect("/pageNotFound");
     }
-}
-
+};
 
 
 const getFilteredProducts = async (req) => {
@@ -392,8 +398,10 @@ const getFilteredProducts = async (req) => {
         query.category = { $in: categoryIds };
     }
 
-    if (req.body.query) {
-        query.productName = { $regex: new RegExp(req.body.query, "i") };
+    if (req.body.query || req.session.searchQuery) {
+        query.productName = { 
+            $regex: new RegExp(req.body.query || req.session.searchQuery, "i") 
+        };
     }
 
     if (req.session.priceFilter) {
@@ -429,11 +437,22 @@ const getFilteredProducts = async (req) => {
         .populate('category')
         .lean();
 
+        const updatedProducts = products.map((product) => {
+            const categoryOffer = product.category ? product.category.categoryOffer || 0 : 0;
+            const productOffer = product.productOffer || 0;
+            const totalOffer = categoryOffer + productOffer;
+            
+            return {
+                ...product,
+                totalOffer
+            };
+        });
+
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / limit);
 
     return {
-        products,
+        products:updatedProducts,
         totalProducts,
         totalPages,
         currentPage: page,
@@ -446,12 +465,15 @@ const loadShoppingPage = async (req, res) => {
     try {
         delete req.session.priceFilter;
         delete req.session.selectedCategory;
+        delete req.session.searchQuery; 
         delete req.body.query;
 
         req.query.sort = req.query.sort || req.session.sort || 'default';
 
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
+
+  
         
         const {
             products,
@@ -477,6 +499,7 @@ const loadShoppingPage = async (req, res) => {
             _id: category._id,
             name: category.name
         }));
+
 
         return res.render("shop", {
             user: userData,
@@ -579,8 +602,8 @@ const filterByPrice = async (req, res) => {
 
 const searchProducts = async (req, res) => {
     try {
-        req.query.sort = req.query.sort || 'default';
-
+        req.session.searchQuery = req.body.query;
+        req.query.sort = req.body.sort || req.query.sort || 'default';
         const { 
             products, 
             totalPages, 
@@ -600,7 +623,7 @@ const searchProducts = async (req, res) => {
             totalPages,
             currentPage,
             selectedSort: sort,
-            searchQuery: req.body.query || null,
+            searchQuery: req.body.query ,
             count: totalProducts,
             selectedCategory: req.session.selectedCategory || null,
             priceRange: req.session.priceFilter || null
@@ -611,6 +634,7 @@ const searchProducts = async (req, res) => {
     }
 }
 module.exports = {
+    removeNewuseFlag,
     loadHomepage, 
     pageNotFound,
     loadSignup,

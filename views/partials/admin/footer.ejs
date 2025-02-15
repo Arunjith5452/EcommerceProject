@@ -6,6 +6,22 @@
 </main>
 
 <!-- Libraries -->
+<script>
+    function setActiveMenuItem() {
+        const currentPath = window.location.pathname;
+        const menuItems = document.querySelectorAll('.menu-aside .menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active'); 
+            const link = item.querySelector('.menu-link');
+            const href = link.getAttribute('href');
+            
+            if (href && currentPath.includes(href)) {
+                item.classList.add('active');
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', setActiveMenuItem);
+</script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>

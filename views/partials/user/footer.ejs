@@ -1,69 +1,3 @@
-<footer class="footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-3 col-md-6 col-sm-6">
-                <div class="footer__about">
-                    <div class="footer__logo">
-                        <a href="#">
-                            <p class="logo">FashionKart</p>
-                        </a>
-                    </div>
-                    <p>The customer is at the heart of our unique business model, which includes design.</p>
-                    <a href="#"><img src="img/payment.png" alt=""></a>
-                </div>
-            </div>
-            <div class="col-lg-2 offset-lg-1 col-md-3 col-sm-6">
-                <div class="footer__widget">
-                    <h6>Shopping</h6>
-                    <ul>
-                        <li><a href="#">Clothing Store</a></li>
-                        <li><a href="#">Trending Shoes</a></li>
-                        <li><a href="#">Accessories</a></li>
-                        <li><a href="#">Sale</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-3 col-sm-6">
-                <div class="footer__widget">
-                    <h6>Shopping</h6>
-                    <ul>
-                        <li><a href="#">Contact Us</a></li>
-                        <li><a href="#">Payment Methods</a></li>
-                        <li><a href="#">Delivary</a></li>
-                        <li><a href="#">Return & Exchanges</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-lg-3 offset-lg-1 col-md-6 col-sm-6">
-                <div class="footer__widget">
-                    <h6>NewLetter</h6>
-                    <div class="footer__newslatter">
-                        <p>Be the first to know about new arrivals, look books, sales & promos!</p>
-                        <form action="#">
-                            <input type="text" placeholder="Your email">
-                            <button type="submit"><span class="icon_mail_alt"></span></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12 text-center">
-                <div class="footer__copyright__text">
-                    <p>Copyright ©
-                        <script>
-                            document.write(new Date().getFullYear());
-                        </script>2020
-                        All rights reserved | This template is made with 
-                           
-                    </p>
-
-                </div>
-            </div>
-        </div>
-    </div>
-</footer>
-
 <div class="search-model">
     <div class="h-100 d-flex align-items-center justify-content-center">
         <div class="search-close-switch">+</div>
@@ -89,5 +23,102 @@
 <script src="js/owl.carousel.min.js"></script>
 <script src="js/main.js"></script>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currentPath = window.location.pathname;
+        const menuItems = document.querySelectorAll('.header__menu ul li');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            const href = item.querySelector('a').getAttribute('href');
+            if (href === currentPath) {
+                item.classList.add('active');
+            }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        var isNewUser = false;
+<% if (typeof isNewUser !== 'undefined') { %>
+            isNewUser = <%= isNewUser %>;
+<% } %>
 
+if (isNewUser) {
+            const tooltip = document.querySelector('.profile-tooltip');
+            if (tooltip) {
+                tooltip.style.display = 'block';
+                tooltip.style.opacity = '0';
+                tooltip.style.transform = 'translateX(-50%) translateY(5px)';
+                tooltip.style.transition = 'all 0.2s ease';
+
+                setTimeout(function () {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.transform = 'translateX(-50%) translateY(0)';
+                }, 100);
+
+                setTimeout(function () {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.transform = 'translateX(-50%) translateY(-5px)';
+
+                    setTimeout(function () {
+                        tooltip.style.display = 'none';
+                        fetch('/remove-new-user-flag').then(function () {
+                        }).catch(function (error) {
+                            console.log('Error removing new user flag:', error);
+                        });
+                    }, 200);
+                }, 10000);
+            }
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+    // Get the canvas open button and the mobile menu
+    const canvasOpen = document.querySelector('.canvas__open');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const header = document.querySelector('.header__menu');
+    
+    // Initialize mobile menu state
+    let isMenuOpen = false;
+    
+    // Create mobile menu overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'mobile-menu-overlay';
+    document.body.appendChild(overlay);
+    
+    function toggleMobileMenu() {
+        isMenuOpen = !isMenuOpen;
+        
+        canvasOpen.classList.toggle('active');
+        
+        if (isMenuOpen) {
+            mobileMenu.style.display = 'block';
+            mobileMenu.style.transform = 'translateX(0)';
+            overlay.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        } else {
+            mobileMenu.style.transform = 'translateX(-100%)';
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                mobileMenu.style.display = 'none';
+            }, 300);
+        }
+    }
+    
+    canvasOpen.addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleMobileMenu();
+    });
+    
+    overlay.addEventListener('click', function() {
+        if (isMenuOpen) {
+            toggleMobileMenu();
+        }
+    });
+    
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && isMenuOpen) {
+            toggleMobileMenu();
+        }
+    });
+});
+</script>
 </html>

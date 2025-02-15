@@ -451,45 +451,70 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
 
-        const checkoutButton = document.querySelector('#checkoutButton');
-        checkoutButton.addEventListener("click", async () => {
-            try {
-                const response = await fetch("/checkout", {
-                    method: "GET",
-                    headers: {
-                        "Accept": "text/html,application/json"
-                    }
-                });
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorMessage = urlParams.get("error");
 
-                const contentType = response.headers.get("Content-Type");
+    if (errorMessage === "insufficient_stock") {
+        Swal.fire({
+            title: "Error",
+            text: "Insufficient stock for one or more items in your cart.",
+            icon: "error",
+            confirmButtonColor: "#3399cc"
+        });
+        history.replaceState(null, null, '/cart');
+    }
+});
 
-                if (contentType && contentType.includes("application/json")) {
-                    const result = await response.json();
-                    if (!result.success) {
-                        Swal.fire({
-                            title: 'Error',
-                            text: result.message || 'Error processing COD order',
-                            icon: 'error',
-                            confirmButtonColor: '#3399cc'
-                        });
-                    }
-                } else {
-                    // This use because  history.pushState to update the URL and browser history 
-                    history.pushState(null, '', '/checkout');
-
-                    document.open();
-                    document.write(await response.text());
-                    document.close();
-                }
-            } catch (error) {
-                console.error("Checkout error:", error);
-                Swal.fire({
-                    title: "Error",
-                    text: error.message || "An error occurred during checkout"
-                });
+const checkoutButton = document.querySelector('#checkoutButton');
+checkoutButton.addEventListener("click", async () => {
+    try {
+        const response = await fetch("/checkout", {
+            method: "GET",
+            headers: {
+                "Accept": "text/html,application/json"
             }
         });
 
+        const contentType = response.headers.get("Content-Type");
+
+        if (contentType && contentType.includes("application/json")) {
+            const result = await response.json();
+            if (!result.success) {
+                Swal.fire({
+                    title: 'Error',
+                    text: result.message || 'Error processing order',
+                    icon: 'error',
+                    confirmButtonColor: '#3399cc'
+                });
+            }
+        } else {
+            if (response.url.includes('error=insufficient_stock')) {
+                Swal.fire({
+                    title: "Error",
+                    text: "Insufficient stock for one or more items in your cart.",
+                    icon: "error",
+                    confirmButtonColor: "#3399cc"
+                });
+                history.replaceState(null, null, '/cart');
+                return;
+            }
+
+            history.pushState(null, '', '/checkout');
+            document.open();
+            document.write(await response.text());
+            document.close();
+        }
+    } catch (error) {
+        console.error("Checkout error:", error);
+        Swal.fire({
+            title: "Error",
+            text: error.message || "An error occurred during checkout",
+            icon: "error",
+            confirmButtonColor: "#3399cc"
+        });
+    }
+});
         document.querySelectorAll('.quantity-controls button').forEach(button => {
     button.addEventListener('click', async (e) => {
         const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
@@ -504,6 +529,11 @@
             quantity--;
         } else if (isIncreasing) {
             quantity++;
+        }
+
+        if (quantity === 0) {
+                e.preventDefault()
+                return;
         }
 
         try {

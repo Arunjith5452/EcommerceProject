@@ -92,6 +92,53 @@
             position: relative;
             padding: 0 10px;
         }
+
+        .profile-tooltip {
+            display: none;
+            position: absolute;
+            background: #3b82f6;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 5px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .arrow {
+            display: inline-block;
+            margin-right: 4px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(3px);
+            }
+        }
+
+        .profile-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 4px 4px 4px;
+            border-style: solid;
+            border-color: transparent transparent #3b82f6 transparent;
+        }
+        
     </style>
 
     <div class="container">
@@ -114,10 +161,14 @@
             <div class="col-lg-3 col-md-3">
                 <div class="header__nav__option">
                     <% if(locals.user) { %>
-                        <div class="dropdown">
+                        <div class="dropdown profile-container">
                             <a href="#" class="sign-in-link">
                                 <%= locals.user.username %>
                             </a>
+                            <div class="profile-tooltip">
+                                <span class="arrow">→</span>
+                                Click for profile
+                            </div>
                             <div class="dropdown-content">
                                 <a href="/userProfile">Profile</a>
                                 <a href="/logout">Logout</a>
@@ -136,16 +187,4 @@
         <div class="canvas__open"><i class="fa fa-bars"></i></div>
     </div>
     </header>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const currentPath = window.location.pathname;
-            const menuItems = document.querySelectorAll('.header__menu ul li');
-            menuItems.forEach(item => {
-                item.classList.remove('active');
-                const href = item.querySelector('a').getAttribute('href');
-                if (href === currentPath) {
-                    item.classList.add('active');
-                }
-            });
-        });
-    </script>
+   

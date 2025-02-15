@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express();
 const path = require('path');
-const env = require('dotenv').config();
+ require('dotenv').config();
 const session = require('express-session');
 const passport = require('./config/passport');
 const db = require('./config/db');
@@ -9,11 +9,10 @@ const nocache = require("nocache");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
 const errorHandler = require("./middlewares/errorHandler");
-const helmet = require("helmet")
 
-app.use(helmet)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
+app.use(nocache());
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
@@ -37,9 +36,9 @@ app.use(express.static(path.join(__dirname, "./public")));
 app.use("/admin", adminRouter);
 app.use("/", userRouter);
 
-app.use(nocache());
 
 app.use(errorHandler);
+
 app.use((req, res, next) => {
     const isAdminRoute = req.originalUrl.startsWith('/admin');
     const redirectUrl = isAdminRoute ? '/admin/dashboard' : '/'; 

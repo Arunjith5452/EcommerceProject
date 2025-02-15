@@ -1001,6 +1001,11 @@ async function placeOrder() {
     const finalAmountText = document.querySelector('.summary-row.total span:last-child')?.textContent.replace('₹', '') || '0';
     const finalAmount = parseFloat(finalAmountText) || 0;
 
+    if (selectedPayment.value === 'COD' && finalAmount > 1000) {
+        showSwalError('COD is not allowed for orders above ₹1000. Please choose an online payment method.');
+        return;
+    }
+    
     try {
         const orderData = {
             addressId: selectedAddress.value,
@@ -1038,8 +1043,6 @@ async function placeOrder() {
     });
     return;
 }
-
-
         await initiateRazorpayPayment(orderResult.order);
 
     } catch (error) {

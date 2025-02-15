@@ -123,8 +123,8 @@
                     <i class="text-muted material-icons md-file_download"></i> Download Report
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="downloadReportDropdown">
-                    <li><a class="dropdown-item" href="/admin/download/pdf" id="exportPdf">Export PDF</a></li>
-                    <li><a class="dropdown-item" href="/admin/download/excel" id="exportExcel">Export Excel</a></li>
+                    <li><a class="dropdown-item" href="/admin/download/pdf?filter=<%= selectedFilter %>&startDate=<%= startDate %>&endDate=<%= endDate %>" id="exportPdf">Export PDF</a></li>
+                    <li><a class="dropdown-item" href="/admin/download/excel?filter=<%= selectedFilter %>&startDate=<%= startDate %>&endDate=<%= endDate %>" id="exportExcel">Export Excel</a></li>
                 </ul>
             </div>
         </div>

@@ -25,7 +25,13 @@ const bannerSchema = new mongoose.Schema({
     endDate: {
         type: Date,
         required: true
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
+}, {
+    timestamps: true
 
 })
 
