@@ -276,9 +276,17 @@ const applyCoupon = async (req, res) => {
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user;
-        const {addressId, finalAmount, paymentMethod, paymentConfirmed, razorpay_payment_id, razorpay_order_id, razorpay_signature, orderId, failureReason,
+        const {
+            addressId,
+            finalAmount,
+            paymentMethod,
+            paymentConfirmed,
+            razorpay_payment_id,
+            razorpay_order_id,
+            razorpay_signature,
+            orderId,
+            failureReason,
         } = req.body;
-
 
         if (orderId) {
             const existingOrder = await Order.findById(orderId);
@@ -288,6 +296,7 @@ const placeOrder = async (req, res) => {
                     message: "Order not found"
                 });
             }
+
             if (!paymentConfirmed && req.body.paymentStatus === 'Failed') {
                 await Promise.all([
                     Order.findByIdAndUpdate(orderId, {
@@ -299,7 +308,6 @@ const placeOrder = async (req, res) => {
                         { userId },
                         { $set: { items: [], bill: 0 } }
                     ),
-
                     User.findByIdAndUpdate(
                         existingOrder.userId,
                         { $addToSet: { orderHistory: orderId } }
@@ -330,18 +338,14 @@ const placeOrder = async (req, res) => {
                             status: "Pending",
                             paymentId: razorpay_payment_id
                         }),
-
                         Cart.updateOne(
                             { userId },
                             { $set: { items: [], bill: 0 } }
                         ),
-
                         User.findByIdAndUpdate(
                             existingOrder.userId,
                             { $addToSet: { orderHistory: orderId } }
-
                         ),
-
                         ...existingOrder.orderedItems.map(item =>
                             Product.updateOne(
                                 { _id: item.product, "sizeVariants.size": item.size },
@@ -358,7 +362,6 @@ const placeOrder = async (req, res) => {
                         message: "Payment successful",
                         order: { _id: orderId }
                     });
-
                 } catch (error) {
                     console.error("Payment verification error:", error);
                     await Order.findByIdAndUpdate(orderId, {
@@ -391,38 +394,107 @@ const placeOrder = async (req, res) => {
             addr._id.toString() === addressId
         );
 
-        console.log("Active Coupon ID:", req.session.activeCoupon);
-
         const actualDiscount = req.session.activeCoupon ? (req.session.couponDiscount || 0) : 0;
         const coupon = req.session.activeCoupon
-        ? await Coupon.findOne({ name: req.session.activeCoupon })  
-        : null;
+            ? await Coupon.findOne({ name: req.session.activeCoupon })
+            : null;
         const couponMinPrice = coupon ? coupon.minimumPrice || 0 : 0;
-        const orderData = {
-            userId,
-            orderId: `ORD${Date.now()}`,
-            orderedItems: cart.items.map(item => ({
-                product: item.productId._id,
-                quantity: item.quantity,
-                price: item.price,
-                size: item.size
-            })),
-            totalPrice: cart.items.reduce((total, item) => total + item.totalPrice, 0),
-            discount: actualDiscount,
-            finalAmount,
-            paymentMethod,
-            address: selectedAddress,
-            couponMinPrice,
-            status: paymentMethod === 'COD' ? 'Pending' : 'Pending',
-            paymentStatus: paymentMethod === 'COD' ? 'Success' : 'Pending',
-            createdOn: new Date(),
-            couponApplied: req.session.activeCoupon ? true : false 
-        };
 
-        const order = await Order.create(orderData);
+        if (paymentMethod === 'WALLET') {
+            const user = await User.findById(userId);
+            if (user.wallet < finalAmount) {
+                return res.status(200).json({
+                    success: false,
+                    message: `Your wallet balance is insufficient. You currently have ₹${user.wallet}. Please choose a different payment method.`
+                });
+            }
+            
+            
+
+            const walletTransaction = {
+                transactionId: `WAL${Date.now()}`,
+                type: "debit",
+                amount: finalAmount,
+                status: "Completed"
+            };
+
+            const orderData = {
+                userId,
+                orderId: `ORD${Date.now()}`,
+                orderedItems: cart.items.map(item => ({
+                    product: item.productId._id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    size: item.size
+                })),
+                totalPrice: cart.items.reduce((total, item) => total + item.totalPrice, 0),
+                discount: actualDiscount,
+                finalAmount,
+                paymentMethod: 'WALLET',
+                address: selectedAddress,
+                couponMinPrice,
+                status: 'Pending',
+                paymentStatus: 'Success',
+                createdOn: new Date(),
+                couponApplied: req.session.activeCoupon ? true : false
+            };
+
+            const order = await Order.create(orderData);
+
+            await Promise.all([
+                User.findByIdAndUpdate(userId, {
+                    $inc: { wallet: -finalAmount },
+                    $push: {
+                        walletHistory: walletTransaction,
+                        orderHistory: order._id
+                    }
+                }),
+                ...cart.items.map(item =>
+                    Product.updateOne(
+                        { _id: item.productId._id, "sizeVariants.size": item.size },
+                        { $inc: { "sizeVariants.$.quantity": -item.quantity } }
+                    )
+                ),
+                Cart.updateOne(
+                    { userId },
+                    { $set: { items: [], bill: 0 } }
+                )
+            ]);
+
+            req.session.activeCoupon = null;
+            req.session.couponDiscount = null;
+
+            return res.status(200).json({
+                success: true,
+                order: { _id: order._id },
+                redirectUrl: `/orderSuccess/${order._id}`
+            });
+        }
 
         if (paymentMethod === 'COD') {
-        
+            const orderData = {
+                userId,
+                orderId: `ORD${Date.now()}`,
+                orderedItems: cart.items.map(item => ({
+                    product: item.productId._id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    size: item.size
+                })),
+                totalPrice: cart.items.reduce((total, item) => total + item.totalPrice, 0),
+                discount: actualDiscount,
+                finalAmount,
+                paymentMethod,
+                address: selectedAddress,
+                couponMinPrice,
+                status: 'Pending',
+                paymentStatus: 'Success',
+                createdOn: new Date(),
+                couponApplied: req.session.activeCoupon ? true : false
+            };
+
+            const order = await Order.create(orderData);
+
             await Promise.all([
                 ...cart.items.map(item =>
                     Product.updateOne(
@@ -451,6 +523,29 @@ const placeOrder = async (req, res) => {
         }
 
         if (paymentMethod === "RAZORPAY") {
+            const orderData = {
+                userId,
+                orderId: `ORD${Date.now()}`,
+                orderedItems: cart.items.map(item => ({
+                    product: item.productId._id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    size: item.size
+                })),
+                totalPrice: cart.items.reduce((total, item) => total + item.totalPrice, 0),
+                discount: actualDiscount,
+                finalAmount,
+                paymentMethod,
+                address: selectedAddress,
+                couponMinPrice,
+                status: 'Pending',
+                paymentStatus: 'Pending',
+                createdOn: new Date(),
+                couponApplied: req.session.activeCoupon ? true : false
+            };
+
+            const order = await Order.create(orderData);
+
             try {
                 const razorpayOrder = await razorpay.orders.create({
                     amount: finalAmount * 100,

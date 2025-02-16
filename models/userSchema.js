@@ -1,6 +1,4 @@
 const mongoose = require("mongoose");
-// const { search } = require("..");
-// const { search } = require("..");
 const { Schema } = mongoose;
 
 const userSchema = new mongoose.Schema({
