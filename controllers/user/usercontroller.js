@@ -248,8 +248,6 @@ const verifyOtp = async (req, res) => {
 
 async function resendVerificationEmail(email, otp) {
 
-    console.log("the otp verification goining on");
-
     try {
         const transporter = nodemailer.createTransport({
             service: "gmail",
@@ -278,8 +276,6 @@ async function resendVerificationEmail(email, otp) {
 }
 
 const resendotp = async (req, res) => {
-    console.log("Resend otp is working, sending the request");
-
     try {
         const { email } = req.session.userData;
         console.log("eamil is here in resednotp ", email)

@@ -750,16 +750,8 @@ function fetchChartData() {
     const quickFilter = document.getElementById('quickFilter').value;
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-
-    console.log('Fetching chart data with params:', {
-        quickFilter,
-        startDate,
-        endDate
-    });
-
     fetch(`/admin/dashboard/analytics?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`)
         .then(response => {
-            console.log('Response status:', response.status);
             if (!response.ok) {
                 return response.text().then(errorText => {
                     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -767,9 +759,7 @@ function fetchChartData() {
             }
             return response.json();
         })
-        .then(data => {
-            console.log('Received data:', data);
-            
+        .then(data => {            
             if (!data.salesData || !Array.isArray(data.salesData)) {
                 console.error('Invalid data format:', data);
                 showNoDataMessage();

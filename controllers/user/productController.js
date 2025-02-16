@@ -15,9 +15,7 @@ const productDetails = async (req,res) => {
       }
         const product = await Product.findById(productId).populate('category');
         const findCategory = product.category;
-        console.log('Product Category:', findCategory);
         const relatedProduct = await Product.find({category:findCategory,_id:{$ne:productId}}).sort({ createdAt: -1 }).limit(4)
-        console.log('Related Products:', relatedProduct.length);
         const categoryOffer = findCategory ? findCategory.categoryOffer || 0 : 0
         const productOffer = product.productOffer || 0;
         const totalOffer = categoryOffer + productOffer;

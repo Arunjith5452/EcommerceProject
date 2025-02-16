@@ -201,10 +201,8 @@ const userProfile = async (req, res) => {
 }
 
 const updateProfile = async (req, res) => {
-    console.log('hello update profile')
     try {
         const userId = req.session.user
-        console.log('userId:',userId)
         const { username, mobile } = req.body
         
   
@@ -617,11 +615,7 @@ const cancelSingleProduct = async (req, res) => {
         const remainingTotal = remainingItems.reduce((total, orderItem) => 
             total + (orderItem.price * orderItem.quantity), 0);
 
-
-        console.log("the coupon minimum price is ",order.couponMinPrice)
-
         const meetsMinimumAmount = remainingTotal >= (order.couponMinPrice|| 0);
-
 
         let refundAmount;
         if (!meetsMinimumAmount && order.discount) {

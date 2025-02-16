@@ -67,7 +67,6 @@ const getCheckoutPage = async (req, res) => {
         if (!isStockSufficient) {
             console.log("Insufficient stock for one or more items in your cart.")
             return res.redirect('/cart?error=insufficient_stock');        }
-
         ("Stock is sufficient for all items.");
 
         const subtotal = cart.items.reduce((total, item) => total + item.totalPrice, 0)
@@ -611,7 +610,6 @@ const initiateRetryPayment = async (req, res) => {
         const { orderId, amount } = req.body;
         const userId = req.session.user;
 
-        console.log('Initiating retry payment for order:', orderId);
 
         const order = await Order.findOne({ _id: orderId, userId }).populate('userId').lean();
 
@@ -643,12 +641,7 @@ const initiateRetryPayment = async (req, res) => {
                 order_id: orderId
             }
         };
-
-        console.log('Creating Razorpay order with options:', options);
-
         const razorpayOrder = await razorpay.orders.create(options);
-        console.log('Razorpay order created:', razorpayOrder);
-
         await Order.updateOne(
             { _id: orderId },
             {
@@ -690,12 +683,6 @@ const verifyRetryPayment = async (req, res) => {
             razorpay_order_id
         } = req.body;
 
-        console.log("Verifying retry payment:", {
-            orderId,
-            razorpay_payment_id,
-            razorpay_order_id
-        });
-
         const order = await Order.findById(orderId);
         if (!order) {
             console.log("Order not found:", orderId);
@@ -703,7 +690,6 @@ const verifyRetryPayment = async (req, res) => {
         }
 
         const payment = await razorpay.payments.fetch(razorpay_payment_id);
-        console.log("Payment details fetched:", payment);
 
         if (payment.status === "captured") {
             await Promise.all([

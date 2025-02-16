@@ -305,7 +305,6 @@
                     });
                 }
             }
-            console.log('Size Variants before sending:', sizeVariants);
             formData.append('sizeVariants', JSON.stringify(sizeVariants));
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);

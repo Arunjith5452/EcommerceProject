@@ -936,17 +936,12 @@
                     return;
                 }
 
-                console.log("selected size",selectedSize)
-
                 const productId = window.location.pathname.split('/').pop();
                 const data = {
                     productId: productId,
                     size: selectedSize,
                     quantity: quantity
                 };
-
-                console.log(data)
-
                 fetch('/addToCart', {
                     method: 'POST',
                     headers: {

@@ -14,7 +14,6 @@ const loadCoupon = async (req,res) => {
 
 const createCoupon = async (req,res) => {
     try {
-        console.log("req.body",req.body)
         const data = {
             couponName : req.body.couponName,
             startDate : new Date(req.body.startDate + "T00:00:00"),
@@ -30,7 +29,6 @@ const createCoupon = async (req,res) => {
             offerPrice:data.offerPrice,
             minimumPrice:data.minimumPrice
         })
-         console.log("newCoupon",newCoupon)
         await newCoupon.save();
         return res.redirect("/admin/coupon");
 
@@ -64,7 +62,6 @@ const updateCoupon = async (req,res) => {
             const startDate = new Date(req.body.startDate)  
             const endDate = new Date(req.body.endDate)
 
-            console.log(new Date(req.body.endDate)); 
 
             const updateCoupon = await Coupon.updateOne(
                 {_id:oid},

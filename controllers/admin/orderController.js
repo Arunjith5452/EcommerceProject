@@ -26,8 +26,6 @@ const orderList = async (req,res) => {
         .skip((page - 1) * limit)
         .lean();
 
-         console.log('Initial orders:', JSON.stringify(orders, null, 2));
-
         const ordersWithDetails = await Promise.all(orders.map(async (order) => {
             try {
                 if (!order.address) {
@@ -182,9 +180,7 @@ const getOrderDetails = async (req, res) => {
                 path: 'orderedItems.product',
                 select: 'productName price sizeVariants productImage'
             }).lean()
-    
-        console.log('Full Order Object:', JSON.stringify(order, null, 2));
-        
+            
             
         if (!order) {
             return res.status(404).json({ 
@@ -264,128 +260,6 @@ const cancelSingleItem = async (req,res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
-
-
-const cancelSingleProduct = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { cancelReason, productId } = req.body;
-        console.log("From cancelsingleProduct cancel reason:", cancelReason)
-        const userId = req.session.user;
-
-        const order = await Order.findOne({ orderId }).populate('orderedItems.product');
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-
-        if (!order.originalTotalPrice) {
-            order.originalTotalPrice = order.orderedItems.reduce((total, item) => 
-                total + (item.price * item.quantity), 0);
-            order.originalDiscount = order.discount || 0;
-        }
-
-        const item = order.orderedItems.find(item => 
-            item.product._id.toString() === productId
-        );
-
-        if (!item) {
-            return res.status(404).json({ success: false, message: 'Product not found in the order' });
-        }
-
-        const itemTotal = item.price * item.quantity;
-        
-        // Calculate remaining order total after removing this item
-        const remainingItems = order.orderedItems.filter(orderItem => 
-            orderItem.product._id.toString() !== productId &&
-            orderItem.status !== 'Cancelled' &&
-            orderItem.status !== 'Returned'
-        );
-        
-        const remainingTotal = remainingItems.reduce((total, orderItem) => 
-            total + (orderItem.price * orderItem.quantity), 0);
-
-        // Check if remaining total meets coupon criteria
-        const meetsMinimumAmount = remainingTotal >= (order.couponMinAmount || 0);
-        
-        let refundAmount;
-
-        if (!meetsMinimumAmount && order.discount) {
-            // If doesn't meet minimum, refund = product price - coupon discount
-            refundAmount = itemTotal - order.discount;
-            order.discount = 0; // Remove coupon from order
-        } else {
-            // If meets minimum, refund full product price, keep coupon
-            refundAmount = itemTotal;
-        }
-
-        item.status = 'Cancelled';
-        item.cancelReason = cancelReason;
-
-        const allItemsCancelled = order.orderedItems.every(item => 
-            item.status === 'Cancelled' || item.status === 'Returned'
-        );
-        
-        if (allItemsCancelled) {
-            order.status = 'Cancelled';
-            order.finalAmount = 0;
-        } else {
-            order.finalAmount = remainingTotal - (meetsMinimumAmount ? order.discount : 0);
-        }
-
-        // Update product inventory
-        await Product.updateOne(
-            { 
-                _id: item.product._id,
-                "sizeVariants.size": item.size 
-            },
-            { 
-                $inc: { "sizeVariants.$.quantity": item.quantity }
-            }
-        );
-
-        let currentWalletBalance = 0;
-        if (order.paymentMethod !== 'COD') {
-            const user = await User.findById(userId);
-            user.wallet += refundAmount;
-            user.walletHistory.push({
-                transactionId: `TXN${Date.now()}`,
-                type: 'credit',
-                amount: refundAmount,
-                date: new Date(),
-                description: !meetsMinimumAmount ? 
-                    'Product refund with adjusted coupon amount' : 
-                    'Product refund'
-            });
-            await user.save();
-            currentWalletBalance = user.wallet;
-        }
-
-        await order.save();
-
-        return res.status(200).json({
-            success: true,
-            message: 'Product cancelled successfully',
-            refundDetails: {
-                itemPrice: itemTotal,
-                refundAmount: refundAmount,
-                meetsMinimumAmount: meetsMinimumAmount
-            },
-            orderTotals: {
-                remainingTotal: remainingTotal,
-                finalAmount: order.finalAmount
-            },
-            currentWalletBalance,
-            redirectUrl: '/userProfile?tab=orders'
-        });
-    } catch (error) {
-        console.error('Error in cancelSingleProduct:', error);
-        return res.status(500).json({
-            success: false, 
-            message: 'An error occurred while canceling the product'
-        });
-    }
-};
-
 const handleReturnRequest = async (req, res) => {
     try {
         const { orderId } = req.params;

@@ -313,7 +313,6 @@ const editProduct = async (req, res) => {
     try {
 
         const id = req.params.id;
-        console.log("id", id)
         const product = await Product.findOne({ _id: id });
         const data = req.body;
 
@@ -356,9 +355,6 @@ const editProduct = async (req, res) => {
             sizeVariants: sizeVariants
         };
 
-        console.log("Update fields:", updateFields);
-
-
         if (images.length > 0) {
             await Product.findByIdAndUpdate(
                 id,
@@ -392,9 +388,7 @@ const deleteSingleImage = async (req, res) => {
         const imagePath = path.join("public", 'uploads', 're-image', imageNameToServer);
         if (fs.existsSync(imagePath)) {
             await fs.unlinkSync(imagePath);
-            console.log(`Image ${imageNameToServer} deleted successfully`);
         } else {
-            console.log(`Image ${imageNameToServer} not found`)
         }
         return res.send({ status: true });
 
@@ -408,8 +402,6 @@ const deleteProduct = async (req, res) => {
     try {
 
         const { productId } = req.body;
-        console.log("product id is ", productId)
-
         const product = await Product.findByIdAndDelete(productId)
 
         if (product) {

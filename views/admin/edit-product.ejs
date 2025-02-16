@@ -203,9 +203,7 @@
 
     <script>
         function validateForm() {
-            console.log("Starting form validation");
             let imageDatas = false;
-            console.log("validate form");
             clearErrorMessages();
 
             const form = document.getElementById('productForm');
@@ -253,8 +251,6 @@
             }
 
             let formData = new FormData(form);
-
-            console.log("Initial form data:");
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);
             }
@@ -286,7 +282,6 @@
             sizeVariantsInput.value = sizeVariantsJSON;
 
             formData = new FormData(form);
-            console.log("Final form data before submission:");
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);
             }
@@ -411,7 +406,6 @@
             }
         }
         function addVariant() {
-            console.log("Adding new variant");
             const container = document.getElementById('sizeVariantsContainer');
             const variantIndex = container.children.length;
 

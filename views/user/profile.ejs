@@ -1377,8 +1377,6 @@
                 });
               }
               function retryPaymentForOrder(orderId, amount) {
-                console.log('Retrying payment for order:', orderId, 'amount:', amount);
-
                 if (typeof Razorpay === 'undefined') {
                   Swal.fire('Error', 'Payment gateway is not loaded. Please refresh the page.', 'error');
                   return;
@@ -1494,8 +1492,6 @@
               }
 
               function handlePaymentFailure(orderId, reason = 'Payment was declined') {
-                console.log('Handling payment failure for order:', orderId);
-
                 return fetch('/updateOrderStatus', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },

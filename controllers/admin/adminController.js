@@ -381,8 +381,6 @@ const getAnalyticsData = async (req, res) => {
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
 
-    console.log('Getting analytics data with filter:', filter); // Debug log
-
     let dateFilter = {};
     const now = new Date();
     const today = new Date(now.setHours(0, 0, 0, 0));
@@ -477,12 +475,6 @@ const getAnalyticsData = async (req, res) => {
         getBestCategories(dateFilter),
         getSalesData(dateFilter)
       ]);
-
-    console.log('Analytics data:', {
-      bestSellingProducts: bestSellingProducts.length,
-      bestCategories: bestCategories.length,
-      salesData: salesData.length
-    });
 
 
     res.json({
@@ -581,8 +573,6 @@ const getTopPerformers = async (req, res) => {
 
 
 const createDateFilter = (filter, startDate, endDate) => {
-  console.log('createDateFilter called with:', { filter, startDate, endDate });
-
   filter = filter || 'daily';
 
   const now = new Date();
@@ -663,13 +653,6 @@ const createDateFilter = (filter, startDate, endDate) => {
       };
   }
 
-  console.log('Generated date filter:', { 
-    filter, 
-    dateFilter: JSON.stringify(dateFilter),
-    start: new Date(dateFilter.createdOn.$gte).toISOString(),
-    end: new Date(dateFilter.createdOn.$lte).toISOString()
-  });
-
   return dateFilter;
 };
 
@@ -679,11 +662,8 @@ const generateExcelReport = async (req, res) => {
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
 
-    console.log('Excel Report - Received parameters:', { filter, startDate, endDate });
 
     const dateFilter = createDateFilter(filter, startDate, endDate);
-    console.log('Excel Report - Generated filter:', JSON.stringify(dateFilter));
-
     const orders = await Order.aggregate([
       { 
         $match: {
