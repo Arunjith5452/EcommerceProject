@@ -422,7 +422,7 @@ const getFilteredProducts = async (req) => {
             sortOption = { productName: -1 };
             break;
         default:
-            sortOption = { createdOn: -1 };
+            sortOption = { createdAt: -1 };
     }
 
     const products = await Product.find(query)

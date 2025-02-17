@@ -1108,6 +1108,10 @@
               }
 
               function getActionButton(order, item, itemStatus) {
+
+                if (order.paymentStatus === 'Failed') {
+                 return ''; 
+              }
                 if (itemStatus === 'Delivered' && !['Returned', 'Return Request'].includes(item.status || order.status)) {
                   return `<button class="btn btn-sm btn-warning return-button" onclick="requestReturn('${order.orderId}', '${item.product._id}')">Return</button>`;
                 }
@@ -1451,7 +1455,7 @@
                         text: 'Your payment has been processed successfully!',
                         showConfirmButton: true
                       }).then(() => {
-                        viewOrderDetails(orderId);
+                        window.location.reload(viewOrderDetails(orderId));
                       });
                     } else {
                       throw new Error(data.message || 'Payment verification failed');

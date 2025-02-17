@@ -9,7 +9,7 @@ const loadCart = async (req, res) => {
         const userId = req.session.user;
 
         const cart = await Cart.findOne({ userId: userId })
-            .populate('items.productId', 'productName salePrice sizeVariants productImage');
+            .populate('items.productId', 'productName salePrice sizeVariants productImage isBlocked');
 
         if (!cart) {
             return res.render("cart", {
@@ -18,9 +18,13 @@ const loadCart = async (req, res) => {
             })
         }  
 
+        const filteredItems = cart.items.filter(item => 
+            item.productId && !item.productId.isBlocked
+        );
+
         return res.render("cart", {
             user: await User.findById(userId),
-            cart: cart.items
+            cart: filteredItems
         })
 
 
@@ -43,6 +47,10 @@ const addToCart = async (req, res) => {
         const product = await Product.findById(productId);
         if (!product) {
             return res.status(404).json({ status: false, message: "Product not found" });
+        }
+
+        if (product.isBlocked) {
+            return res.status(400).json({ status: false, message: "This product is currently unavailable" });
         }
 
         if (quantity > product.quantity) {
@@ -142,6 +150,16 @@ const updateCartQuantity = async (req, res) => {
             });
         }
 
+        if (product.isBlocked) {
+            cart.items = cart.items.filter(item => item._id.toString() !== cartItemId);
+            await cart.save();
+            return res.json({ 
+                status: false, 
+                removed: true,
+                message: 'This product is no longer available and has been removed from your cart'
+            });
+        }
+
         let availableStock = product.quantity;
         if (product.sizeVariants && product.sizeVariants.length > 0) {
             const sizeVariant = product.sizeVariants.find(v => v.size === cartItem.size);
@@ -190,7 +208,6 @@ const updateCartQuantity = async (req, res) => {
         });
     }
 };
-
 const removeFromCart = async (req,res) => {
     try {
         
