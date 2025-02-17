@@ -757,7 +757,6 @@
                       </div>
                     </div>
                     <!-- Referrals Tab -->
-                    <!-- Referrals Tab -->
                     <div class="tab-pane fade" id="referral">
                       <div class="card">
                         <div class="card-header">
@@ -1108,18 +1107,24 @@
               }
 
               function getActionButton(order, item, itemStatus) {
-
-                if (order.paymentStatus === 'Failed') {
-                 return ''; 
-              }
-                if (itemStatus === 'Delivered' && !['Returned', 'Return Request'].includes(item.status || order.status)) {
-                  return `<button class="btn btn-sm btn-warning return-button" onclick="requestReturn('${order.orderId}', '${item.product._id}')">Return</button>`;
-                }
-                else if (['Processing', 'Pending'].includes(itemStatus)) {
-                  return `<button class="btn btn-sm btn-danger cancel-button" onclick="cancelSingleProduct('${order.orderId}', '${item.product._id}', this)">Cancel</button>`;
-                }
-                return '';
-              }
+    if (order.paymentStatus === 'Failed') {
+        return ''; 
+    }
+    
+    if (itemStatus === 'Delivered' && !['Returned', 'Return Request'].includes(item.status || order.status)) {
+        return `<button class="btn btn-sm btn-warning return-button" 
+            onclick="requestReturn('${order.orderId}', '${item.product._id}', '${item.size}')">
+            Return
+        </button>`;
+    }
+    else if (['Processing', 'Pending'].includes(itemStatus)) {
+        return `<button class="btn btn-sm btn-danger cancel-button" 
+            onclick="cancelSingleProduct('${order.orderId}', '${item.product._id}', '${item.size}',this)">
+            Cancel
+        </button>`;
+    }
+    return '';
+}
 
 
               function setupStatusUpdateListener(orderId) {
@@ -1162,7 +1167,7 @@
 
 
 
-              function cancelSingleProduct(orderId, productId, buttonElement) {
+              function cancelSingleProduct(orderId, productId,size, buttonElement) {
                 const cancelReasons = [
                   'Ordered by Mistake',
                   'Delayed Delivery',
@@ -1241,6 +1246,7 @@
                         },
                         body: JSON.stringify({
                           productId,
+                          size,
                           cancelReason: selectedReason
                         })
                       })
@@ -1352,6 +1358,7 @@
                       },
                       body: JSON.stringify({
                         returnReason: result.value,
+                        size,
                         productId: productId
                       })
                     })

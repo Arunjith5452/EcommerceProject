@@ -587,17 +587,22 @@ const viewOrderDetails = async (req,res) => {
 const cancelSingleProduct = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { cancelReason, productId } = req.body;
+        const { cancelReason, productId, size } = req.body;
         const userId = req.session.user;
 
-        const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+        const order = await Order.findOne({ orderId })
+            .populate({
+                path: 'orderedItems.product',
+                select: 'productName salePrice regularPrice productOffer sizeVariants productImage'
+            });
         
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         const item = order.orderedItems.find(item => 
-            item.product._id.toString() === productId
+            item.product._id.toString() === productId && 
+            item.size === size
         );
 
         if (!item) {
@@ -607,7 +612,7 @@ const cancelSingleProduct = async (req, res) => {
         const itemTotal = item.price * item.quantity;
         
         const remainingItems = order.orderedItems.filter(orderItem => 
-            orderItem.product._id.toString() !== productId &&
+            !(orderItem.product._id.toString() === productId && orderItem.size === size) &&
             orderItem.status !== 'Cancelled' &&
             orderItem.status !== 'Returned'
         );
@@ -615,7 +620,7 @@ const cancelSingleProduct = async (req, res) => {
         const remainingTotal = remainingItems.reduce((total, orderItem) => 
             total + (orderItem.price * orderItem.quantity), 0);
 
-        const meetsMinimumAmount = remainingTotal >= (order.couponMinPrice|| 0);
+        const meetsMinimumAmount = remainingTotal >= (order.couponMinPrice || 0);
 
         let refundAmount;
         if (!meetsMinimumAmount && order.discount) {
@@ -624,6 +629,16 @@ const cancelSingleProduct = async (req, res) => {
         } else {
             refundAmount = itemTotal;
         }
+
+        await Product.updateOne(
+            { 
+                _id: productId,
+                'sizeVariants.size': size 
+            },
+            { 
+                $inc: { 'sizeVariants.$.quantity': item.quantity }
+            }
+        );
 
         item.status = 'Cancelled';
         item.cancelReason = cancelReason;
@@ -638,16 +653,6 @@ const cancelSingleProduct = async (req, res) => {
         } else {
             order.finalAmount = remainingTotal - (meetsMinimumAmount ? order.discount : 0);
         }
-
-        await Product.updateOne(
-            { 
-                _id: item.product._id,
-                "sizeVariants.size": item.size 
-            },
-            { 
-                $inc: { "sizeVariants.$.quantity": item.quantity }
-            }
-        );
 
         let currentWalletBalance = 0;
         if (order.paymentMethod !== 'COD') {
@@ -692,15 +697,17 @@ const cancelSingleProduct = async (req, res) => {
     }
 };
 
-
 const productReturn = async (req, res) => {
     try {
         const orderId = req.params.orderId;
-        const { returnReason, productId, } = req.body; 
+        const { returnReason, productId, size } = req.body;
         const userId = req.session.user;
 
-
-        const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+        const order = await Order.findOne({ orderId })
+            .populate({
+                path: 'orderedItems.product',
+                select: 'productName salePrice regularPrice productOffer sizeVariants productImage'
+            });
 
         if (!order) {
             return res.status(404).json({
@@ -710,7 +717,8 @@ const productReturn = async (req, res) => {
         }
 
         const orderItem = order.orderedItems.find(
-            item => item.product._id.toString() === productId
+            item => item.product._id.toString() === productId && 
+                   item.size === size
         );
 
         if (!orderItem) {
@@ -739,11 +747,10 @@ const productReturn = async (req, res) => {
 
         order.status = 'Return Request';
         order.returnStatus = 'Pending';
-        order.returnReason = returnReason;
 
         await order.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Return request submitted successfully',
             redirectUrl: '/userProfile?tab=orders'
@@ -757,8 +764,6 @@ const productReturn = async (req, res) => {
         });
     }
 };
-
-
 
 module.exports = {
     getForgotPassPage,

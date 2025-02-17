@@ -420,11 +420,11 @@
         }
     });
 
-            document.getElementById('productSubmitForm').addEventListener('submit', function (e) {
-                const sizes = document.getElementsByName('sizes[]');
-                const quantities = document.getElementsByName('quantities[]');
-                let isValid = true;
-                let errorMessage = '';
+            // document.getElementById('productSubmitForm').addEventListener('submit', function (e) {
+            //     const sizes = document.getElementsByName('sizes[]');
+            //     const quantities = document.getElementsByName('quantities[]');
+            //     let isValid = true;
+            //     let errorMessage = '';
 
 
                 const selectedSizes = Array.from(sizes).map(size => size.value);
@@ -448,7 +448,6 @@
                     alert(errorMessage);
                 }
             });
-        });
 
 
         function validateForm() {
