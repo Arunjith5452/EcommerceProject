@@ -505,8 +505,7 @@
                 displayErrorMessage('color-error', 'Please enter a color.');
                 isValid = false;
             }
-
-            const imageCount = selectedImages.filter(img => img !== null).length;
+            const imageCount = Object.keys(croppedImages).length;
     if (imageCount < 3) {
         displayErrorMessage('images-error1', 'Please upload at least 3 images');
         isValid = false;
