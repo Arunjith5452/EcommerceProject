@@ -89,18 +89,20 @@
                                     <td>
                                         <% if (order.status==='Return Request' ) { %>
                                             <span class="badge bg-warning">Return Pending</span>
-                                            <% } else { %>
-                                                <select class="form-select form-select-sm status-select"
-                                                    onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
-                                                    <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled'
-                                                        , 'Returned' ].forEach(status=> { %>
-                                                        <option value="<%= status %>" <%=order.status===status
-                                                            ? 'selected' : '' %>>
-                                                            <%= status %>
-                                                        </option>
-                                                        <% }) %>
-                                                </select>
-                                                <% } %>
+                                        <% } else if (order.status==='Cancelled' || order.status==='Returned') { %>
+                                            <span class="badge <%= order.status==='Cancelled' ? 'bg-danger' : 'bg-secondary' %>">
+                                                <%= order.status %>
+                                            </span>
+                                        <% } else { %>
+                                            <select class="form-select form-select-sm status-select"
+                                                onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
+                                                <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled' , 'Returned' ].forEach(status=> { %>
+                                                    <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %>>
+                                                        <%= status %>
+                                                    </option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
                                     </td>
                                     <td>
                                         <%= formatDate(order.createdOn) %>
