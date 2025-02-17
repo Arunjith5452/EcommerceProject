@@ -183,8 +183,9 @@ const getAllProducts = async (req, res) => {
 const addProductOffer = async (req, res) => {
     try {
         const { productId, percentage } = req.body;
+        const numericPercentage = parseFloat(percentage);
 
-        if (isNaN(percentage) || percentage <= 0 || percentage >= 100) {
+        if (isNaN(numericPercentage) || numericPercentage <= 0 || numericPercentage >= 100) {
             return res.status(400).json({
                 status: false,
                 message: "Offer percentage must be between 1 and 99"
@@ -196,34 +197,42 @@ const addProductOffer = async (req, res) => {
             return res.status(404).json({ status: false, message: "Product not found" });
         }
 
+        if (!product.regularPrice || product.regularPrice <= 0) {
+            return res.status(400).json({
+                status: false,
+                message: "Invalid regular price"
+            });
+        }
+
         const category = await Category.findById(product.category);
         if (!category) {
             return res.status(404).json({ status: false, message: "Category not found" });
         }
 
-        if (category.categoryOffer >= percentage) {
-            return res.json({
-                status: false,
-                message: "Category offer is already equal or better than the proposed product offer"
-            });
+        if (category.categoryOffer > 0) {
+            if (category.categoryOffer >= numericPercentage) {
+                return res.json({
+                    status: false,
+                    message: "Category offer is already equal or better than the proposed product offer"
+                });
+            }
+            category.categoryOffer = 0;
+            await category.save();
         }
 
-        const newSalePrice = Math.floor(product.regularPrice * (1 - percentage / 100));
-        if (newSalePrice < 0) {
+        const discountAmount = (product.regularPrice * numericPercentage) / 100;
+        const newSalePrice = Math.max(0, Math.round(product.regularPrice - discountAmount));
+
+        if (newSalePrice >= product.regularPrice) {
             return res.status(400).json({
                 status: false,
-                message: "Offer would result in negative price"
+                message: "Sale price must be less than regular price"
             });
         }
 
         product.salePrice = newSalePrice;
-        product.productOffer = percentage;
+        product.productOffer = numericPercentage;
         await product.save();
-
-        if (category.categoryOffer > 0) {
-            category.categoryOffer = 0;
-            await category.save();
-        }
 
         return res.json({
             status: true,
@@ -244,6 +253,13 @@ const removeProductOffer = async (req, res) => {
             return res.status(404).json({ status: false, message: "Product not found" });
         }
 
+        if (!product.regularPrice || product.regularPrice <= 0) {
+            return res.status(400).json({
+                status: false,
+                message: "Invalid regular price"
+            });
+        }
+
         const category = await Category.findById(product.category);
         if (!category) {
             return res.status(404).json({ status: false, message: "Category not found" });
@@ -252,9 +268,13 @@ const removeProductOffer = async (req, res) => {
         product.productOffer = 0;
 
         if (category.categoryOffer > 0) {
-            const discountAmount = Math.floor((product.regularPrice * category.categoryOffer) / 100);
+            const discountAmount = Math.round((product.regularPrice * category.categoryOffer) / 100);
             product.salePrice = Math.max(0, product.regularPrice - discountAmount);
         } else {
+            product.salePrice = product.regularPrice;
+        }
+
+        if (product.salePrice > product.regularPrice) {
             product.salePrice = product.regularPrice;
         }
 

@@ -480,7 +480,11 @@
                             <h3 class="product-name"><%=products[i].productName%></h3>
                             <div class="product-price">
                                 <span class="current-price">₹<%=products[i].salePrice.toLocaleString('en-IN')%></span>
+                                <%if(products[i].salePrice < products[i].regularPrice){%>
                                 <span class="original-price">₹<%=products[i].regularPrice.toLocaleString('en-IN')%></span>
+                                <%}else{%>
+                                    <span class="original-price">₹5999</span>
+                                    <%}%>
                             </div>
                            
                                 <div class="product-offer" style="color: green; font-size: 15px">
