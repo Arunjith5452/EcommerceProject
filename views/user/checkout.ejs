@@ -526,7 +526,7 @@
                                         <form id="address-form">
                                             <div class="form-group">
                                                 <label for="address-type">Address Type</label>
-                                                <input type="text" id="address-type" name="addressType">
+                                                <input type="text" id="address-type" name="addressType" placeholder="eg:home,office">
                                             </div>
                                             <div class="form-group">
                                                 <label for="address-name">Name</label>
@@ -1005,14 +1005,6 @@ async function placeOrder() {
         showSwalError('COD is not allowed for orders above ₹1000. Please choose an online payment method.');
         return;
     }
-
-    // if (selectedPayment.value === 'WALLET') {
-    //     const walletBalance = parseFloat(document.getElementById('wallet-balance').textContent);
-    //     if (walletBalance < finalAmount) {
-    //         showSwalError('Insufficient wallet balance. Please choose another payment method.');
-    //         return;
-    //     }
-    // }
     
     try {
         const orderData = {

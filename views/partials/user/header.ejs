@@ -31,7 +31,6 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     
 
-
     <style>
         .dropdown {
             position: relative;
@@ -142,51 +141,107 @@
             border-style: solid;
             border-color: transparent transparent #3b82f6 transparent;
         }
-    </style>
 
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-3 col-md-3">
-                <div class="header__logo">
-                    <a href="/">
-                        <p class="logo">FashionKart</p>
-                    </a>
+        /* Mobile menu styles */
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 499;
+        }
+
+        .mobile-menu .header__nav__option {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            border-top: 1px solid #eee;
+            margin-top: 15px;
+        }
+
+        .mobile-menu .header__nav__option a {
+            margin: 5px 0;
+            padding: 5px 0;
+            display: block;
+        }
+
+        .mobile-menu .dropdown-content {
+            position: static;
+            box-shadow: none;
+            display: block;
+            padding-left: 15px;
+        }
+
+        .mobile-menu .profile-tooltip {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 250px;
+                background-color: white;
+                z-index: 1000;
+                overflow-y: auto;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                display: none;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-3">
+                    <div class="header__logo">
+                        <a href="/">
+                            <p class="logo">FashionKart</p>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <nav class="header__menu mobile-menu">
+                        <ul>
+                            <li class="active"><a href="/">Home</a></li>
+                            <li><a href="/shop">Shop</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="col-lg-3 col-md-3">
+                    <div class="header__nav__option">
+                        <% if(locals.user) { %>
+                            <div class="dropdown profile-container">
+                                <a href="#" class="sign-in-link">
+                                    <%= locals.user.username %>
+                                </a>
+                                <div class="profile-tooltip">
+                                    <span class="arrow">→</span>
+                                    Click for profile
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="/userProfile">Profile</a>
+                                    <a href="/logout">Logout</a>
+                                </div>
+                            </div>
+                            <% } else { %>
+                                <a href="/signup" class="sign-in-link">Sign Up</a>
+                                <a href="/login" class="sign-in-link">Log in</a>
+                                <% } %>
+                                    <!-- <a href="#" class="search-switch"><img src="/img/icon/search.png" alt=""></a> -->
+                                    <a href="/wishlist"><img src="/img/icon/heart.png" alt=""></a>
+                                    <a href="/cart"><img src="/img/icon/cart.png" alt=""></a>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6">
-                <nav class="header__menu mobile-menu">
-                    <ul>
-                        <li class="active"><a href="/">Home</a></li>
-                        <li><a href="/shop">Shop</a></li>
-                    </ul>
-                </nav>
-            </div>
-            <div class="col-lg-3 col-md-3">
-                <div class="header__nav__option">
-                    <% if(locals.user) { %>
-                        <div class="dropdown profile-container">
-                            <a href="#" class="sign-in-link">
-                                <%= locals.user.username %>
-                            </a>
-                            <div class="profile-tooltip">
-                                <span class="arrow">→</span>
-                                Click for profile
-                            </div>
-                            <div class="dropdown-content">
-                                <a href="/userProfile">Profile</a>
-                                <a href="/logout">Logout</a>
-                            </div>
-                        </div>
-                        <% } else { %>
-                            <a href="/signup" class="sign-in-link">Sign Up</a>
-                            <a href="/login" class="sign-in-link">Log in</a>
-                            <% } %>
-                                <!-- <a href="#" class="search-switch"><img src="/img/icon/search.png" alt=""></a> -->
-                                <a href="/wishlist"><img src="/img/icon/heart.png" alt=""></a>
-                                <a href="/cart"><img src="/img/icon/cart.png" alt=""></a>
-                </div>
-            </div>
+            <div class="canvas__open"><i class="fa fa-bars"></i></div>
         </div>
-        <div class="canvas__open"><i class="fa fa-bars"></i></div>
-    </div>
     </header>

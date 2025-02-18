@@ -853,12 +853,12 @@ const generatePDFReport = async (req, res) => {
     doc.pipe(res);
 
     doc.fontSize(20)
-       .fillColor('#000080') 
+       .fillColor('#000000') 
        .text('Sales Report (Delivered Items Only)', { align: 'center' });
     doc.moveDown();
 
     doc.fontSize(12)
-       .fillColor('#404040')  
+       .fillColor('#000000')  
        .text(`Filter Type: ${filter}`);
     doc.text(`Date Range: ${dateFilter.createdOn.$gte.toLocaleDateString()} to ${dateFilter.createdOn.$lte.toLocaleDateString()}`);
     doc.moveDown();
@@ -889,7 +889,7 @@ const generatePDFReport = async (req, res) => {
 
     const createTable = async () => {
       await doc.table(table, {
-        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10).fillColor('#404040'),
+        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10).fillColor('#000000'),
         prepareRow: (row, indexColumn, indexRow, rectRow) => {
           doc.font('Helvetica').fontSize(9);
           doc.addBackground(rectRow, indexRow % 2 ? 'white' : '#f5f5f5');
@@ -897,7 +897,7 @@ const generatePDFReport = async (req, res) => {
           if (indexColumn === 5) {  
             doc.fillColor(row.status.color);
           } else {
-            doc.fillColor('#333333'); 
+            doc.fillColor('#000000'); 
           }
         },
         padding: 8, 
@@ -908,7 +908,7 @@ const generatePDFReport = async (req, res) => {
     await createTable();
 
     doc.moveDown(2);  
-    doc.fillColor('#000080') 
+    doc.fillColor('#000000') 
        .fontSize(12)
        .text('Summary', { underline: true });
     doc.moveDown(0.5);
@@ -918,7 +918,7 @@ const generatePDFReport = async (req, res) => {
     const totalDiscount = orders.reduce((sum, order) => sum + (order.discount || 0), 0);
     const netAmount = orders.reduce((sum, order) => sum + order.finalAmount, 0);
     
-    doc.fillColor('#404040')
+    doc.fillColor('#000000')
        .fontSize(11);
     doc.text(`Total Orders: ${orders.length}`);
     doc.text(`Total Items: ${totalItems}`);
