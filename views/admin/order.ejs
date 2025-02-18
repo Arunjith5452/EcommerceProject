@@ -217,10 +217,10 @@
                                         return `
                                     <div class="mb-2">
                                         <p>Product: ${item.product.productName}</p>
-                                        <button class="btn btn-success me-2" onclick="handleReturnRequest('${orderId}', 'approve', '${item.product._id}')">
+                                        <button class="btn btn-success me-2" onclick="handleReturnRequest('${orderId}', 'approve', '${item.product._id}' , '${item.size}')">
                                             Approve Return
                                         </button>
-                                        <button class="btn btn-danger" onclick="handleReturnRequest('${orderId}', 'reject', '${item.product._id}')">
+                                        <button class="btn btn-danger" onclick="handleReturnRequest('${orderId}', 'reject', '${item.product._id}' , '${item.size}')">
                                             Reject Return
                                         </button>
                                     </div>
@@ -301,49 +301,84 @@ ${data.order.orderedItems.map(item => `
                             content.innerHTML = `<div class="alert alert-danger">Error loading order details: ${error.message}</div>`;
                         });
                 }
-                function cancelSingleItem(orderId, productId) {
-                    if (confirm('Are you sure you want to cancel this item?')) {
-                        fetch(`/admin/userOrderCancel/${orderId}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ productId })
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Error cancelling item');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('Error cancelling item');
-                            });
+                function cancelSingleItem(orderId, productId ,size) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you want to cancel this item?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, cancel it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/userOrderCancel/${orderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId,size })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Cancelled!', 'The item has been cancelled.', 'success')
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('Error!', data.message || 'Error cancelling item', 'error');
                     }
-                }
-                function handleReturnRequest(orderId, action, productId) {
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Error cancelling item', 'error');
+                });
+        }
+    });
+}
 
+function handleReturnRequest(orderId, action, productId ,size) {
 
-                    if (confirm(`Are you sure you want to ${action} this return request?`)) {
-                        fetch(`/admin/handleReturnRequest/${orderId}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action, productId })
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Error processing return request');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('Error processing return request');
-                            });
+    if (!size) {
+        console.error('Size parameter is required');
+        Swal.fire('Error!', 'Size parameter is missing', 'error');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to ${action} this return request?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: `Yes, ${action} it!`
+    }).then((result) => {
+        if (result.isConfirmed) {
+            console.log('Sending request with:', {
+                orderId,
+                action,
+                productId,
+                size
+            });
+            fetch(`/admin/handleReturnRequest/${orderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, productId ,size })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Processed!', `The return request has been ${action}ed.`, 'success')
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('Error!', data.message || 'Error processing return request', 'error');
                     }
-                }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Error processing return request', 'error');
+                });
+        }
+    });
+}
+
             </script>
             <%- include("../../views/partials/admin/footer") %>

@@ -232,16 +232,21 @@ const cancelSingleItem = async (req,res) => {
     try {
         
         const {orderId} =  req.params;
-        const {productId} = req.body;
+        const {productId , size} = req.body;
 
-        const order = await Order.findOne({orderId});
+        const order = await Order.findOne({ orderId })
+        .populate({
+            path: 'orderedItems.product',
+            select: 'productName salePrice regularPrice productOffer sizeVariants productImage'
+        });
 
         if(!order){
             return res.status(404).json({success:false,message:'Order not found'});
         }
-        order.orderedItems = order.orderedItems.filter(item => 
-            item.product.toString() !== productId
-        )
+        const orderItem = order.orderedItems.find(
+            item => item.product._id.toString() === productId && 
+                   item.size === size
+        );
         order.finalAmount = order.orderedItems.reduce((total , item)=>
         total + (item.quantity * item.product.price),0
     )
@@ -263,18 +268,22 @@ const cancelSingleItem = async (req,res) => {
 const handleReturnRequest = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { action, productId } = req.body;
+        const { action, productId, size } = req.body;
 
         const order = await Order.findOne({ orderId })
-            .populate('orderedItems.product')
-            .populate('userId');
+        .populate({
+            path: 'orderedItems.product',
+            select: 'productName salePrice regularPrice productOffer sizeVariants productImage'
+        })
+        .populate('userId');
 
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         const orderItem = order.orderedItems.find(item => 
-            item.product._id.toString() === productId
+            item.product._id.toString() === productId && 
+            item.size === size
         );
 
         if (!orderItem) {
@@ -296,7 +305,7 @@ const handleReturnRequest = async (req, res) => {
             const itemTotal = orderItem.price * orderItem.quantity;
             
             const remainingItems = order.orderedItems.filter(item => 
-                item.product._id.toString() !== productId &&
+                !(item.product._id.toString() === productId && item.size === size) &&
                 item.status !== 'Cancelled' &&
                 item.status !== 'Returned'
             );
@@ -344,6 +353,7 @@ const handleReturnRequest = async (req, res) => {
                 order.status = hasOtherReturns ? 'Return Request' : 'Delivered';
                 order.finalAmount = remainingTotal - (meetsMinimumAmount ? order.discount : 0);
             }
+            
             await order.save();
 
             return res.json({
@@ -361,7 +371,7 @@ const handleReturnRequest = async (req, res) => {
                 currentWalletBalance: user.wallet,
                 order
             });
-        } else if(action === 'reject') {
+        } else if (action === 'reject') {
             orderItem.status = 'Delivered';
             order.returnStatus = 'Rejected';
 
@@ -369,11 +379,7 @@ const handleReturnRequest = async (req, res) => {
                 item => item.status === 'Return Request'
             );
 
-            if (hasOtherReturns) {
-                order.status = 'Return Request';
-            } else {
-                order.status = 'Delivered';
-            }
+            order.status = hasOtherReturns ? 'Return Request' : 'Delivered';
 
             await order.save();
 

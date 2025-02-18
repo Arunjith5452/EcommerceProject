@@ -1305,16 +1305,19 @@
                   });
                 }
               }
-              function requestReturn(orderId, productId) {
+              function requestReturn(orderId, productId ,size) {
                 Swal.fire({
                   title: 'Return Product',
                   text: 'Please select a reason for return:',
                   input: 'select',
                   inputOptions: {
-                    'defective': 'Defective Product',
-                    'wrong_size': 'Wrong Size',
-                    'not_as_described': 'Not as Described',
-                    'damaged': 'Damaged During Shipping',
+  'defective': 'Defective Product',
+  'wrong_size': 'Wrong Size',
+  'not_as_described': 'Not as Described',
+  'damaged': 'Damaged During Shipping',
+  'quality_issue': 'Poor Quality',
+  'late_delivery': 'Late Delivery',
+  'wrong_item': 'Received Wrong Item',
                     // 'other': 'Other Reason'
                   },
                   inputPlaceholder: 'Select a reason',
