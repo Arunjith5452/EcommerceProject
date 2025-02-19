@@ -263,70 +263,65 @@
 </div>
 </section>
 <script>
- function validateForm() {
-   document.querySelectorAll(".error-message").forEach((element) => (element.innerHTML = ""));
-   const sDate = document.getElementsByName("startDate")[0].value;
-   const eDate = document.getElementsByName("endDate")[0].value;
-   const sDateObj = new Date(sDate);
-   const eDateObj = new Date(eDate);
-   const todayDateObj = new Date();
-   todayDateObj.setHours(0, 0, 0, 0);
+function validateForm() {
+  document.querySelectorAll(".error-message").forEach((element) => (element.innerHTML = ""));
+  
+  const sDate = document.getElementsByName("startDate")[0].value;
+  const eDate = document.getElementsByName("endDate")[0].value;
+  const sDateObj = new Date(sDate);
+  const eDateObj = new Date(eDate);
+  const todayDateObj = new Date();
+  todayDateObj.setHours(0, 0, 0, 0);
 
+  if (sDateObj < todayDateObj) {
+    document.getElementById("error-start-date").innerHTML = 
+      "Starting date must be today or a future date";
+    return false;
+  }
 
-   if (sDateObj > eDateObj) {
-     document.getElementById("error-end-date").innerHTML ="End date should be after the start date";
-     return false;
-   }
+  if (sDateObj >= eDateObj) {
+    document.getElementById("error-end-date").innerHTML = 
+      "End date must be after the start date";
+    return false;
+  }
 
+  let name = document.getElementsByName("couponName")[0].value;
+  const nameRegex = /^[A-Za-z0-9]{3,50}$/;
 
-   if (sDateObj <= todayDateObj) {
-     document.getElementById("error-start-date").innerHTML ="Starting date should be greater than or equal to today's date";
-     return false;
-   }
+  if (!nameRegex.test(name)) {
+    document.getElementById("error-coupon-name").innerHTML = 
+"Coupon name must be 3-50 characters long and can only contain letters and numbers."
+    return false;
+  }
 
+  const offerPriceInput = document.getElementsByName("offerPrice")[0];
+  const minimumPriceInput = document.getElementsByName("minimumPrice")[0];
 
-   let name = document.getElementsByName("couponName")[0].value;
-   const nameRegex = /^[A-Za-z0-9]{1,50}$/;
+  const offerPrice = offerPriceInput.value.trim() !== "" ? 
+    parseFloat(offerPriceInput.value) : NaN;
+  const minimumPrice = minimumPriceInput.value.trim() !== "" ? 
+    parseFloat(minimumPriceInput.value) : NaN;
 
+  if (isNaN(offerPrice) || isNaN(minimumPrice)) {
+    document.getElementById("error-offer-price").innerHTML = 
+      "Please enter valid numeric values for both Offer Price and Minimum Price";
+    return false;
+  }
 
-   if (!nameRegex.test(name)) {
-     document.getElementById("error-coupon-name").innerHTML =
-       "Coupon Name error";
-     return false;
-   }
+  if (offerPrice <= 0 || minimumPrice <= 0) {
+    document.getElementById("error-offer-price").innerHTML = 
+      "Prices must be greater than zero";
+    return false;
+  }
 
+  if (offerPrice >= minimumPrice) {
+    document.getElementById("error-offer-price").innerHTML = 
+      "Offer Price must be less than Minimum Price";
+    return false;
+  }
 
-   const offerPriceInput = document.getElementsByName("offerPrice")[0];
-   const minimumPriceInput = document.getElementsByName("minimumPrice")[0];
-
-
-   const offerPrice = offerPriceInput.value.trim() !== ""? parseInt(offerPriceInput.value): NaN;
-   const minimumPrice = minimumPriceInput.value.trim() !== ""? parseInt(minimumPriceInput.value): NaN;
-
-
-   if (isNaN(offerPrice) || isNaN(minimumPrice) || offerPrice >= minimumPrice) {
-     document.getElementById("error-offer-price").innerHTML = "Offer Price must be greater than Minimum Price";
-     return false;
-   }
-
-
-   if (isNaN(offerPrice) || isNaN(minimumPrice)) {
-     document.getElementById("error-offer-price").innerHTML ="Please enter numeric values for Offer Price and Minimum Price";
-     return false;
-   }
-
-
-       const formData = {
-       couponName: name,
-       startDate: sDateObj,
-       endDate: eDateObj,
-       offerPrice: offerPrice,
-       minimumPrice: minimumPrice
-   };
-   return true;
- }
-
-
+  return true;
+}
  function setDefaultStartDate(){
     const today = new Date();
     const year = today.getFullYear();
