@@ -126,7 +126,7 @@
                 }
             });
             }else{
-                alert("Failed")
+                Swal.fire("Failed", data.message || "Adding offer failed", "error");
             }
         })
         .catch((error)=>{

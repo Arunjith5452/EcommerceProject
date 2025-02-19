@@ -103,34 +103,35 @@ const addCategoryOffer = async (req, res) => {
       res.status(500).json({ status: false, message: "Internal server error" });
     }
   };
-  
+
   const removeCategoryOffer = async (req, res) => {
     try {
-      const categoryId = req.body.categoryId;
-      
-      const category = await Category.findById(categoryId);
-      if (!category) {
-        return res.status(404).json({ status: false, message: "Category not found" });
-      }
-  
-      const products = await Product.find({ category: category._id });
-  
-      for (const product of products) {
-        if (!product.productOffer) { 
-          product.salePrice = product.regularPrice;
+        const categoryId = req.body.categoryId;
+
+        const category = await Category.findById(categoryId);
+        if (!category) {
+            return res.status(404).json({ status: false, message: "Category not found" });
         }
-        await product.save();
-      }
-  
-      category.categoryOffer = 0;
-      await category.save();
-  
-      res.json({ status: true, message: "Category offer removed successfully" });
+
+        const products = await Product.find({ category: category._id });
+
+        for (const product of products) {
+            product.salePrice = product.regularPrice; 
+            product.productOffer = 0; 
+            await product.save();
+        }
+
+        category.categoryOffer = 0; 
+        await category.save();
+
+        res.json({ status: true, message: "Category offer removed successfully" });
     } catch (error) {
-      console.error("Error in removeCategoryOffer:", error);
-      res.status(500).json({ status: false, message: "Internal server error" });
+        console.error("Error in removeCategoryOffer:", error);
+        res.status(500).json({ status: false, message: "Internal server error" });
     }
-  };
+};
+
+
 const getListCategory = async (req, res) => {
     try {
         let id = req.query.id;
