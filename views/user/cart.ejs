@@ -452,6 +452,20 @@
     <script>
 
 document.addEventListener("DOMContentLoaded", function() {
+    const cartItems = document.querySelectorAll('.cart-table tbody tr');
+
+    function isCartEmpty() {
+        return cartItems.length === 0 || 
+               (cartItems.length === 1 && cartItems[0].querySelector('.lead')?.textContent.includes('No items'));
+    }
+     if (isCartEmpty()) {
+        if (checkoutButton) {
+            checkoutButton.disabled = true;
+            checkoutButton.style.opacity = '0.5';
+            checkoutButton.style.cursor = 'not-allowed';
+        }
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const errorMessage = urlParams.get("error");
 
@@ -468,6 +482,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 const checkoutButton = document.querySelector('#checkoutButton');
 checkoutButton.addEventListener("click", async () => {
+
+    
     try {
         const response = await fetch("/checkout", {
             method: "GET",

@@ -364,69 +364,78 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function addToCartFromWishlist(productId) {
-            const sizeSelect = document.getElementById(`size-${productId}`);
-            const selectedSize = sizeSelect.value;
+       function addToCartFromWishlist(productId) {
+    const sizeSelect = document.getElementById(`size-${productId}`);
+    const selectedSize = sizeSelect.value;
 
-            if (!selectedSize) {
-                showNotification('Please select a size');
-                return;
-            }
+    if (!selectedSize) {
+        showNotification('Please select a size');
+        return;
+    }
 
-            fetch('/addToCart', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    productId: productId,
-                    size: selectedSize,
-                    quantity: 1
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status) {
+    fetch('/addToCart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            productId: productId,
+            size: selectedSize,
+            quantity: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            fetch(`/removeFromWishlist?productId=${productId}`)
+                .then(() => {
                     showNotification('Product added to cart successfully!');
-                } else {
-                    showNotification(data.message || 'Error adding product to cart');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Error adding product to cart');
-            });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000); 
+                });
+        } else {
+            showNotification(data.message || 'Error adding product to cart');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error adding product to cart');
+    });
+}
 
-        function confirmRemove(productId) {
-            Swal.fire({
-                title: "Are you sure?",
-                text: "Do you want to remove this item from your wishlist?",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#d33",
-                cancelButtonColor: "#3085d6",
-                confirmButtonText: "Yes, remove it!",
-                cancelButtonText: "Cancel"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/removeFromWishlist?productId=${productId}`;
-                }
-            });
+function confirmRemove(productId) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to remove this item from your wishlist?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, remove it!",
+        cancelButtonText: "Cancel"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/removeFromWishlist?productId=${productId}`;
         }
+    });
+}
 
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            const messageElement = document.getElementById('notification-message');
-
-            messageElement.textContent = message;
-            notification.style.display = 'block';
-
-            setTimeout(() => {
-                hideNotification();
-            }, 3000);
-        }
-
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    const messageElement = document.getElementById('notification-message');
+    
+    if (window.notificationTimeout) {
+        clearTimeout(window.notificationTimeout);
+    }
+    
+    messageElement.textContent = message;
+    notification.style.display = 'block';
+    
+    window.notificationTimeout = setTimeout(() => {
+        hideNotification();
+    }, 5000);
+}
         function hideNotification() {
             const notification = document.getElementById('notification');
             notification.style.display = 'none';
