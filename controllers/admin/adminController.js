@@ -31,6 +31,10 @@ const login = async (req, res) => {
     const admin = await User.findOne({ email, isAdmin: true });
     if (admin) {
       const passwordMatch = await bcrypt.compare(password, admin.password);
+
+      console.log("password:", password)
+      console.log("findUser.password:", findUser.password)
+
       if (passwordMatch) {
         req.session.admin = admin._id;
         return res.redirect("/admin/dashboard")
@@ -133,7 +137,7 @@ const getBestCategories = async (dateFilter) => {
           }
         }
       },
-      { $match: { _id: { $ne: null } } }, 
+      { $match: { _id: { $ne: null } } },
       { $sort: { revenue: -1 } },
       { $limit: 10 }
     ]);
@@ -193,15 +197,15 @@ const getDateFormat = (startDate, endDate) => {
   const diffDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 1) {
-    return "%Y-%m-%d %H:00"; 
+    return "%Y-%m-%d %H:00";
   } else if (diffDays <= 7) {
-    return "%Y-%m-%d";       
+    return "%Y-%m-%d";
   } else if (diffDays <= 31) {
-    return "%Y-%m-%d";      
+    return "%Y-%m-%d";
   } else if (diffDays <= 365) {
-    return "%Y-%m";          
+    return "%Y-%m";
   } else {
-    return "%Y-%m";          
+    return "%Y-%m";
   }
 };
 
@@ -296,9 +300,9 @@ const loadDashboard = async (req, res) => {
       Order.countDocuments(dateFilter),
 
       Order.aggregate([
-        { $match: dateFilter }, 
+        { $match: dateFilter },
         { $unwind: "$orderedItems" },
-        { $match: { "orderedItems.status": "Delivered" } },  
+        { $match: { "orderedItems.status": "Delivered" } },
         {
           $group: {
             _id: null,
@@ -615,7 +619,7 @@ const createDateFilter = (filter, startDate, endDate) => {
       if (startDate && endDate) {
         const customStart = new Date(startDate);
         const customEnd = new Date(endDate);
-        
+
         if (!isNaN(customStart.getTime()) && !isNaN(customEnd.getTime())) {
           dateFilter = {
             createdOn: {
@@ -665,16 +669,16 @@ const generateExcelReport = async (req, res) => {
 
     const dateFilter = createDateFilter(filter, startDate, endDate);
     const orders = await Order.aggregate([
-      { 
+      {
         $match: {
           ...dateFilter,
-          "orderedItems.status": "Delivered" 
+          "orderedItems.status": "Delivered"
         }
       },
       { $unwind: "$orderedItems" },
-      { 
-        $match: { 
-          "orderedItems.status": "Delivered" 
+      {
+        $match: {
+          "orderedItems.status": "Delivered"
         }
       },
       {
@@ -683,23 +687,23 @@ const generateExcelReport = async (req, res) => {
           orderId: { $first: "$orderId" },
           createdOn: { $first: "$createdOn" },
           status: { $first: "$orderedItems.status" },
-          totalPrice: { 
-            $sum: { 
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+          totalPrice: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
             }
           },
           discount: { $first: "$discount" },
-          finalAmount: { 
-            $sum: { 
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+          finalAmount: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
             }
           },
-          items: { 
+          items: {
             $push: {
               quantity: "$orderedItems.quantity",
               price: "$orderedItems.price",
-              total: { 
-                $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+              total: {
+                $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
               }
             }
           }
@@ -714,7 +718,7 @@ const generateExcelReport = async (req, res) => {
     const titleRow = worksheet.addRow(['Sales Report (Delivered Items Only)']);
     titleRow.font = { bold: true, size: 16 };
     worksheet.addRow(['Filter Type:', filter]);
-    worksheet.addRow(['Date Range:', 
+    worksheet.addRow(['Date Range:',
       `${dateFilter.createdOn.$gte.toLocaleDateString()} to ${dateFilter.createdOn.$lte.toLocaleDateString()}`
     ]);
     worksheet.addRow([]);
@@ -762,7 +766,7 @@ const generateExcelReport = async (req, res) => {
     worksheet.addRow([]);
     const summaryTitleRow = worksheet.addRow(['Summary']);
     summaryTitleRow.font = { bold: true, size: 12 };
-    
+
     const summaryRows = [
       ['Total Orders:', orders.length],
       ['Total Items:', orders.reduce((sum, order) => sum + order.items.length, 0)],
@@ -783,7 +787,7 @@ const generateExcelReport = async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=DeliveredSalesReport.xlsx');
     await workbook.xlsx.write(res);
     res.end();
-    
+
   } catch (error) {
     console.error("Error generating Excel report:", error);
     return res.redirect("/admin/pageerror");
@@ -797,18 +801,18 @@ const generatePDFReport = async (req, res) => {
     const endDate = req.query.endDate;
 
     const dateFilter = createDateFilter(filter, startDate, endDate);
-    
+
     const orders = await Order.aggregate([
-      { 
+      {
         $match: {
           ...dateFilter,
-          "orderedItems.status": "Delivered" 
+          "orderedItems.status": "Delivered"
         }
       },
       { $unwind: "$orderedItems" },
-      { 
-        $match: { 
-          "orderedItems.status": "Delivered" 
+      {
+        $match: {
+          "orderedItems.status": "Delivered"
         }
       },
       {
@@ -817,23 +821,23 @@ const generatePDFReport = async (req, res) => {
           orderId: { $first: "$orderId" },
           createdOn: { $first: "$createdOn" },
           status: { $first: "$orderedItems.status" },
-          totalPrice: { 
-            $sum: { 
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+          totalPrice: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
             }
           },
           discount: { $first: "$discount" },
-          finalAmount: { 
-            $sum: { 
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+          finalAmount: {
+            $sum: {
+              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
             }
           },
-          items: { 
+          items: {
             $push: {
               quantity: "$orderedItems.quantity",
               price: "$orderedItems.price",
-              total: { 
-                $multiply: ["$orderedItems.price", "$orderedItems.quantity"] 
+              total: {
+                $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
               }
             }
           }
@@ -853,26 +857,26 @@ const generatePDFReport = async (req, res) => {
     doc.pipe(res);
 
     doc.fontSize(20)
-       .fillColor('#000000') 
-       .text('Sales Report (Delivered Items Only)', { align: 'center' });
+      .fillColor('#000000')
+      .text('Sales Report (Delivered Items Only)', { align: 'center' });
     doc.moveDown();
 
     doc.fontSize(12)
-       .fillColor('#000000')  
-       .text(`Filter Type: ${filter}`);
+      .fillColor('#000000')
+      .text(`Filter Type: ${filter}`);
     doc.text(`Date Range: ${dateFilter.createdOn.$gte.toLocaleDateString()} to ${dateFilter.createdOn.$lte.toLocaleDateString()}`);
     doc.moveDown();
 
     const table = {
       headers: [
-        { label: 'Order ID', property: 'orderId', width: 80 },  
-        { label: 'Date', property: 'date', width: 90 },        
+        { label: 'Order ID', property: 'orderId', width: 80 },
+        { label: 'Date', property: 'date', width: 90 },
         { label: 'Qty', property: 'quantity', width: 40 },
-        { label: 'Price', property: 'price', width: 70 },      
-        { label: 'Total', property: 'total', width: 80 },     
+        { label: 'Price', property: 'price', width: 70 },
+        { label: 'Total', property: 'total', width: 80 },
         { label: 'Status', property: 'status', width: 60 }
       ],
-      datas: orders.flatMap(order => 
+      datas: orders.flatMap(order =>
         order.items.map(item => ({
           orderId: order.orderId,
           date: order.createdOn.toLocaleDateString(),
@@ -893,33 +897,33 @@ const generatePDFReport = async (req, res) => {
         prepareRow: (row, indexColumn, indexRow, rectRow) => {
           doc.font('Helvetica').fontSize(9);
           doc.addBackground(rectRow, indexRow % 2 ? 'white' : '#f5f5f5');
-          
-          if (indexColumn === 5) {  
+
+          if (indexColumn === 5) {
             doc.fillColor(row.status.color);
           } else {
-            doc.fillColor('#000000'); 
+            doc.fillColor('#000000');
           }
         },
-        padding: 8, 
-        columnSpacing: 10  
+        padding: 8,
+        columnSpacing: 10
       });
     };
 
     await createTable();
 
-    doc.moveDown(2);  
-    doc.fillColor('#000000') 
-       .fontSize(12)
-       .text('Summary', { underline: true });
+    doc.moveDown(2);
+    doc.fillColor('#000000')
+      .fontSize(12)
+      .text('Summary', { underline: true });
     doc.moveDown(0.5);
-    
+
     const totalItems = orders.reduce((sum, order) => sum + order.items.length, 0);
     const totalSales = orders.reduce((sum, order) => sum + order.totalPrice, 0);
     const totalDiscount = orders.reduce((sum, order) => sum + (order.discount || 0), 0);
     const netAmount = orders.reduce((sum, order) => sum + order.finalAmount, 0);
-    
+
     doc.fillColor('#000000')
-       .fontSize(11);
+      .fontSize(11);
     doc.text(`Total Orders: ${orders.length}`);
     doc.text(`Total Items: ${totalItems}`);
     doc.text(`Total Sales: ₹${totalSales.toFixed(2)}`);
@@ -936,11 +940,11 @@ const generatePDFReport = async (req, res) => {
 
 const adminLogout = async (req, res) => {
   try {
-      delete req.session.admin 
-      return res.redirect('/admin/login');
+    delete req.session.admin
+    return res.redirect('/admin/login');
   } catch (error) {
-      console.log("Admin logout error", error);
-      res.redirect("/pageError");
+    console.log("Admin logout error", error);
+    res.redirect("/pageError");
   }
 };
 

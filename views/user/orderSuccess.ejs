@@ -282,25 +282,78 @@
     background: #ffebee;
     color: #c62828;
 }
+    .failure-icon {
+        width: 80px;
+        height: 80px;
+        background: #e53637;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .failure-icon i {
+        color: white;
+        font-size: 40px;
+    }
+
+    .failure-title {
+        color: #e53637;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .btn-retry {
+        background: #e53637 !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-retry:hover {
+        background: #c22d2d !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 54, 55, 0.3);
+    }
 </style>
 
 <div class="success-container">
     <div class="success-card">
-        <div class="success-icon">
-            <i class="fas fa-check"></i>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-            <div class="confetti"></div>
-        </div>
-        
-        <h1 class="success-title">Thank You for Your Order!</h1>
-        <p class="order-id">Order ID: <%= order.orderId %></p>
+        <% if (order.paymentStatus === 'Failed') { %>
+            <div class="failure-icon">
+                <i class="fas fa-times"></i>
+            </div>
+            <h1 class="failure-title">Payment Unsuccessful</h1>
+            <p class="order-id">Status: Payment Failed for Order #<%= order.orderId %></p>
+            <div class="alert alert-warning mb-4" style="background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 15px; border-radius: 8px; font-size: 14px;">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Your order has been placed but the payment could not be processed. Please retry to complete your purchase.
+            </div>
+        <% } else { %>
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+            </div>
+            <h1 class="success-title">Thank You for Your Order!</h1>
+            <p class="order-id">Order ID: <%= order.orderId %></p>
+        <% } %>
 
         <div class="order-status">
             <span class="status-badge <%= order.status.toLowerCase() %>">
                 <%= order.status %>
             </span>
+            <% if (order.paymentStatus === 'Failed') { %>
+                <span class="status-badge cancelled ml-2">Unpaid</span>
+            <% } %>
         </div>
         <div class="order-items">
             <h3>Order Items</h3>
@@ -410,8 +463,93 @@
             </div>
         </div>
         <div class="action-buttons">
+            <% if (order.paymentStatus === 'Failed') { %>
+                <button onclick="retryPayment('<%= order._id %>', <%= order.finalAmount %>)" class="btn btn-retry">
+                    <i class="fas fa-redo-alt mr-2"></i> Retry Payment
+                </button>
+            <% } %>
             <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
-            <a href="/download-invoice/<%= order.orderId %>" class="btn btn-primary">Download Invoice</a>
+            <% if (order.paymentStatus !== 'Failed') { %>
+                <a href="/download-invoice/<%= order.orderId %>" class="btn btn-primary">Download Invoice</a>
+            <% } %>
         </div>
     </div>
 </div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    async function retryPayment(orderId, amount) {
+        try {
+            const response = await fetch('/initiate-retry-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, amount })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to initiate retry');
+            }
+
+            const options = {
+                key: data.razorpayKeyId,
+                amount: data.amount,
+                currency: "INR",
+                name: "FashionKart",
+                description: "Payment Retry",
+                order_id: data.orderId,
+                handler: async function (response) {
+                    const verificationResponse = await fetch('/verify-retry-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderId: data.originalOrderId,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    });
+
+                    const verificationData = await verificationResponse.json();
+                    if (verificationData.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Payment Successful',
+                            text: 'Your payment has been completed successfully!',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(verificationData.message || 'Verification failed');
+                    }
+                },
+                prefill: {
+                    name: data.customerName,
+                    email: data.customerEmail
+                },
+                theme: { color: "#e53637" }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Payment Failed',
+                    text: response.error.description
+                });
+            });
+            rzp.open();
+
+        } catch (error) {
+            console.error('Retry error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Something went wrong while initiating payment'
+            });
+        }
+    }
+</script>

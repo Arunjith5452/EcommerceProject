@@ -647,7 +647,7 @@ const initiateRetryPayment = async (req, res) => {
             {
                 $inc: { paymentRetryCount: 1 },
                 $set: {
-                    paymentStatus: 'Success',
+                    paymentStatus: 'Pending',
                     status: 'Pending',
                     razorpay_order_id: razorpayOrder.id
                 }
@@ -680,17 +680,25 @@ const verifyRetryPayment = async (req, res) => {
         const {
             orderId,
             razorpay_payment_id,
-            razorpay_order_id
+            razorpay_order_id,
+            razorpay_signature
         } = req.body;
+
+        const secret = process.env.RAZORPAY_KEY_SECRET;
+        const hmac = crypto.createHmac("sha256", secret);
+        hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+        const generated_signature = hmac.digest("hex");
+
+        if (generated_signature !== razorpay_signature) {
+            return res.status(400).json({ success: false, message: "Payment verification failed: Signature mismatch" });
+        }
 
         const order = await Order.findById(orderId);
         if (!order) {
-            console.log("Order not found:", orderId);
             return res.status(404).json({ success: false, message: "Order not found" });
         }
 
         const payment = await razorpay.payments.fetch(razorpay_payment_id);
-
         if (payment.status === "captured") {
             await Promise.all([
                 Order.findByIdAndUpdate(orderId, {

@@ -10,11 +10,12 @@ const orderList = async (req,res) => {
         const limit = 5
         
         const query = search ? {
+            paymentStatus: 'Success',
             $or: [
                 { orderId: { $regex: new RegExp(search, 'i') } },
                 { 'address.name': { $regex: new RegExp(search, 'i') } }
             ]
-        } : {};
+        } : { paymentStatus: 'Success' };
         const orders = await Order.find(query)
         .populate({
             path: 'orderedItems.product',
