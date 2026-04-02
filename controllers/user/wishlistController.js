@@ -72,12 +72,12 @@ const addToWishlist = async (req,res) => {
         wishlist.products.push({productId:productId});
         await wishlist.save();
 
-        return res.status(200).json({status:true,message:'Product added to wishlist'})
+        return res.status(200).json({success:true,message:'Product added to wishlist'})
 
     } catch (error) {
        
         console.error("Error on adding wishlist",error);
-        return res.status(500).json({status:false,message:'Internal Server Error'})
+        return res.status(500).json({success:false,message:'Internal Server Error'})
         
     }
 }

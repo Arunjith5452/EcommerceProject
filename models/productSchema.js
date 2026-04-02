@@ -3,7 +3,6 @@ const { schema } = require("./userSchema")
 const { Schema } = mongoose
 
 
-
 const productSchema = new mongoose.Schema({
     productName: {
         type: String,

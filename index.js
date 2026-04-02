@@ -28,6 +28,12 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Global variables for all templates
+app.use((req, res, next) => {
+    res.locals.isNewUser = req.session.isNewUser || false;
+    next();
+});
+
 app.set("view engine", "ejs");
 app.set("views", [path.join(__dirname, 'views/user'), path.join(__dirname, 'views/admin')])
 app.use(express.static(path.join(__dirname, "./public")));

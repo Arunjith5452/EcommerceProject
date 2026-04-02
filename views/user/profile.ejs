@@ -21,31 +21,34 @@
     }
 
     .dashboard-menu .nav-link {
-      padding: 12px 20px;
-      margin-bottom: 8px;
-      border-radius: 8px;
-      font-weight: 500;
-      color: #4a5568;
-      transition: all 0.3s ease;
+      padding: 15px 20px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      font-weight: 600;
+      color: #111;
+      transition: 0.3s;
       display: flex;
       align-items: center;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .dashboard-menu .nav-link i {
-      margin-right: 12px;
-      font-size: 1.2em;
+      margin-right: 15px;
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
     }
 
     .dashboard-menu .nav-link:hover {
-      background-color: #f7fafc;
-      color: #2b6cb0;
-      transform: translateX(5px);
+      background-color: #f9f9f9;
+      color: #e53637;
     }
 
     .dashboard-menu .nav-link.active {
-      background-color: #ebf8ff;
-      color: #2b6cb0;
-      font-weight: 600;
+      background-color: #e53637;
+      color: #fff;
     }
 
     /* Cards */
@@ -88,29 +91,33 @@
     }
 
     .profile-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 90px;
-      margin: 25px 0;
-      margin-left: 165px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 30px 0;
     }
 
     .stat-item {
-      padding: 15px;
-      background-color: white;
-      border-radius: 10px;
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #eee;
+      border-radius: 8px;
       text-align: center;
+      min-width: 150px;
     }
 
     .stat-value {
-      font-size: 24px;
-      font-weight: 600;
-      color: #2b6cb0;
+      font-size: 26px;
+      font-weight: 800;
+      color: #e53637;
     }
 
     .stat-label {
-      color: #718096;
-      font-size: 14px;
+      color: #999;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 5px;
     }
 
     /* Buttons */
@@ -155,62 +162,64 @@
       vertical-align: middle;
     }
 
-    /* Breadcrumb */
-    .breadcrumb-wrap {
-      background-color: #f7fafc;
-      /* Light background */
+    /* Modern Breadcrumbs */
+    .breadcrumb-container {
+      background-color: #f3f3f3;
       padding: 20px 0;
-      /* Adjusted padding */
       margin-bottom: 30px;
-      border-bottom: 2px solid #e2e8f0;
     }
 
-    .breadcrumb {
-      margin: 0;
-      display: flex;
-      align-items: center;
-      font-family: 'Poppins', sans-serif;
+    .breadcrumb-nav {
+      font-size: 14px;
+      color: #999;
     }
 
-    .breadcrumb a {
-      color: #2b6cb0;
-      /* Blue color for links */
+    .breadcrumb-nav a {
+      color: #999;
       text-decoration: none;
-      font-weight: 500;
-      margin-right: 8px;
     }
 
-    .breadcrumb span {
-      color: #718096;
-      /* Lighter gray color for separators */
-      margin: 0 8px;
-      font-weight: 500;
+    .breadcrumb-nav a:hover {
+      color: #e53637;
     }
 
-    .breadcrumb a:hover {
-      color: #1e4b81;
-      /* Darker blue on hover */
-      text-decoration: underline;
+    .breadcrumb-nav .sep {
+      margin: 0 10px;
+      color: #ccc;
+    }
+
+    .breadcrumb-nav .current {
+      color: #111;
+      font-weight: 600;
     }
 
     /* Address Cards */
     .address-card {
-      padding: 20px;
-      border-radius: 10px;
-      background-color: white;
+      padding: 25px;
+      border-radius: 8px;
+      background-color: #fff;
+      border: 1px solid #eee;
       margin-bottom: 20px;
       position: relative;
+      transition: 0.3s;
+    }
+
+    .address-card:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
 
     .address-type {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      padding: 4px 12px;
-      background-color: #ebf8ff;
-      color: #2b6cb0;
-      border-radius: 20px;
-      font-size: 12px;
+      top: 20px;
+      right: 20px;
+      padding: 5px 15px;
+      background-color: #111;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .order-id {
@@ -237,8 +246,8 @@
       height: 60px;
       overflow: hidden;
       margin-right: 15px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+      background: #f9f9f9;
     }
 
     .item-image {
@@ -363,12 +372,13 @@
   <body>
 
     <main class="main">
-      <div class="page-header breadcrumb-wrap">
+      <div class="breadcrumb-container">
         <div class="container">
-          <div class="breadcrumb">
+          <nav class="breadcrumb-nav">
             <a href="/">Home</a>
-            <span></span> Profile <span></span>
-          </div>
+            <span class="sep">/</span>
+            <span class="current">My Account</span>
+          </nav>
         </div>
       </div>
 
@@ -685,17 +695,15 @@
                     <div class="tab-pane fade" id="wallet">
                       <div class="card">
                         <div class="card-header">
-                          <h5 class="mb-0">Wallet Status</h5>
+                          <h5 class="mb-0">Wallet Balance</h5>
                         </div>
                         <div class="card-body">
-                          <div class="text-center py-4">
+                          <div class="text-center py-5">
                             <div class="mb-4">
-                              <i class="fas fa-wallet fa-3x text-primary"></i>
+                              <i class="fas fa-wallet fa-4x" style="color: #e53637;"></i>
                             </div>
-                            <h3 class="mb-2">₹<%= user.wallet%>
-                            </h3>
-                            <p class="text-muted">Current Balance</p>
-                            <!-- <button class="btn btn-primary mt-3">Add Money</button> -->
+                            <h2 class="mb-2" style="font-weight: 900; color: #111;">₹<%= user.wallet%></h2>
+                            <p class="text-muted text-uppercase fw-bold" style="font-size: 11px; letter-spacing: 2px;">Available Balance</p>
                           </div>
                         </div>
                       </div>
@@ -767,11 +775,11 @@
                             <div class="mb-4">
                               <i class="fas fa-user-friends fa-3x text-primary"></i>
                             </div>
-                            <h6 class="mb-3">Your Referral Code</h6>
-                            <div class="d-flex justify-content-center align-items-center gap-2 mb-4">
+                            <h6 class="mb-3 text-uppercase fw-bold" style="font-size: 12px; letter-spacing: 1px;">Your Referral Code</h6>
+                            <div class="d-flex justify-content-center align-items-center gap-0 mb-4">
                               <input type="text" id="referralCodeInput" class="form-control text-center"
-                                style="max-width: 200px" value="<%= user.referralCode %>" readonly>
-                              <button class="btn btn-primary btn-small" onclick="copyReferralCode()">Copy</button>
+                                style="max-width: 200px; border-radius: 4px 0 0 4px; border: 2px solid #111; font-weight: 800; letter-spacing: 2px;" value="<%= user.referralCode %>" readonly>
+                              <button class="btn btn-dark" style="border-radius: 0 4px 4px 0; padding: 10px 20px;" onclick="copyReferralCode()">COPY</button>
                             </div>
                             <div class="row justify-content-center">
                               <div class="col-md-6">

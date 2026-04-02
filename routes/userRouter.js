@@ -14,6 +14,7 @@ const passport = require('passport');
 router.get("/pageNotFound", userController.pageNotFound);
 
 router.get("/", userController.loadHomepage);
+router.get("/about", userController.loadAboutPage);
 router.get("/signup", userController.loadSignup);
 router.post("/signup", userController.signup);
 router.post("/verify-otp", userController.verifyOtp);
@@ -60,6 +61,7 @@ router.get("/addAddress", userAuth, profileController.addAddress)
 router.post("/addAddress", userAuth, profileController.postAddAddress);
 
 router.get("/shop",userAuth, userController.loadShoppingPage);
+router.get("/api/header-counts", userController.getHeaderCounts);
 router.get("/filter", userAuth, userController.filterProduct);
 router.get("/filterPrice", userAuth, userController.filterByPrice);
 router.get('/search', userAuth, userController.searchProducts);

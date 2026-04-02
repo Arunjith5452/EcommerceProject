@@ -1,0 +1,140 @@
+<%-include("../../views/partials/user/header")%>
+
+<style>
+    .about-hero {
+        background: #fbfbfb;
+        padding: 100px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .about-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 56px;
+        font-weight: 900;
+        color: #111;
+        margin-bottom: 30px;
+    }
+    .about-story-section {
+        padding: 80px 0;
+    }
+    .story-content {
+        font-size: 18px;
+        line-height: 1.8;
+        color: #555;
+    }
+    .highlight-strip {
+        background: #111;
+        color: #fff;
+        padding: 60px 0;
+        margin: 40px 0;
+    }
+    .stat-box h3 {
+        font-size: 40px;
+        font-weight: 800;
+        color: #e53637;
+        margin-bottom: 10px;
+    }
+    .stat-box p {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #999;
+    }
+    .mission-card {
+        padding: 40px;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    .mission-card:hover {
+        box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+        transform: translateY(-5px);
+    }
+</style>
+
+<div class="about-hero text-center">
+    <div class="container">
+        <h1 class="about-title">Our Story. Our Passion.</h1>
+        <p class="lead text-muted" style="max-width: 700px; margin: 0 auto; font-size: 20px;">We didn't just start a store; we started a movement to redefine modern elegance for everyone.</p>
+    </div>
+</div>
+
+<section class="about-story-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <div style="background: #eee; height: 500px; border-radius: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                    <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=1000" alt="Fashion Journey" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+            <div class="col-lg-6 ps-lg-5">
+                <h2 style="font-weight: 800; margin-bottom: 25px; font-size: 32px;">The FashionKart Journey</h2>
+                <div class="story-content">
+                    <p>Founded in 2018, FashionKart was born out of a simple realization: the fashion industry was divided between overpriced luxury and low-quality fast fashion. We saw a void that needed to be filled—a space for high-quality, thoughtfully designed clothing that remains accessible to those who value style over labels.</p>
+                    <p>What started as a small collection of 10 signature pieces curated in a Mumbai studio has evolved into a global brand. Today, we serve over 100,000 customers worldwide, but our core philosophy remains unchanged: <strong>Style is a right, not a luxury.</strong></p>
+                    <p>Every piece in our collection is a testament to our commitment to craftsmanship. We source the finest fabrics and work with ethical workshops to ensure that every stitch tells a story of quality and integrity.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="highlight-strip text-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h3>2018</h3>
+                    <p>Year Founded</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h3>100K+</h3>
+                    <p>Happy Customers</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h3>50+</h3>
+                    <p>Designer Collabs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="about-story-section" style="background: #fff;">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 style="font-weight: 800; font-size: 32px;">Why Choose FashionKart?</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="mission-card">
+                    <i class="fas fa-gem mb-4" style="font-size: 30px; color: #e53637;"></i>
+                    <h4 style="font-weight: 700; margin-bottom: 15px;">Quality First</h4>
+                    <p class="text-muted">We don't compromise. Every product undergoes a 12-point quality check before it reaches your doorstep.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="mission-card">
+                    <i class="fas fa-leaf mb-4" style="font-size: 30px; color: #e53637;"></i>
+                    <h4 style="font-weight: 700; margin-bottom: 15px;">Sustainable Style</h4>
+                    <p class="text-muted">We are committed to reducing our carbon footprint through eco-friendly packaging and conscious sourcing.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="mission-card">
+                    <i class="fas fa-users mb-4" style="font-size: 30px; color: #e53637;"></i>
+                    <h4 style="font-weight: 700; margin-bottom: 15px;">Community Focus</h4>
+                    <p class="text-muted">Our designs are inspired by you. We listen to our community to create pieces you'll actually want to wear.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<%-include("../../views/partials/user/footer")%>

@@ -3,32 +3,45 @@
 
 
     <style>
-        .breadcrumb-wrap {
-            background-color: #e9ecef;
-            padding: 15px 0;
+        /* Standard Breadcrumbs to match wishlist/product-details */
+        .breadcrumb-container {
+            background-color: #f3f3f3;
+            padding: 20px 0;
             margin-bottom: 30px;
         }
 
-        .page-header {
-            margin-bottom: 20px;
-            background-color: #f1f1f1;
+        .breadcrumb-nav {
+            font-size: 14px;
+            color: #999;
         }
 
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-        }
-
-        .breadcrumb a {
-            color: #1b1b1c;
+        .breadcrumb-nav a {
+            color: #999;
             text-decoration: none;
-            font-size: 16px;
         }
 
-        .breadcrumb span {
-            margin: 0 5px;
-            color: #6c757d;
+        .breadcrumb-nav a:hover {
+            color: #e53637;
         }
+
+        .breadcrumb-nav .sep {
+            margin: 0 10px;
+            color: #ccc;
+        }
+
+        .breadcrumb-nav .current {
+            color: #111;
+            font-weight: 600;
+        }
+
+        .cart-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #111;
+        }
+
+
 
         .cart-section {
             padding: 60px 0;
@@ -343,17 +356,21 @@
             }
         }
     </style>
-    <div class="page-header breadcrumb-wrap">
+    <div class="breadcrumb-container">
         <div class="container">
-            <div class="breadcrumb">
-                <a href="/" rel="nofollow">Home</a>
-                <span><a href="/shop" rel="nofollow">Shop</a></span>
-                <span><a href="/" rel="nofollow">Cart</a></span>
-            </div>
+            <nav class="breadcrumb-nav">
+                <a href="/">Home</a>
+                <span class="sep">/</span>
+                <a href="/shop">Shop</a>
+                <span class="sep">/</span>
+                <span class="current">Shopping Cart</span>
+            </nav>
         </div>
     </div>
-    <section class="cart-section">
+
+    <section class="cart-section" style="background: #fff; padding-top: 0;">
         <div class="container">
+            <h1 class="cart-title">Shopping Cart</h1>
             <div style="display: flex; gap: 30px; flex-wrap: wrap;">
                 <div style="flex: 1 1 65%;">
                     <div class="cart-table">
@@ -584,24 +601,7 @@ checkoutButton.addEventListener("click", async () => {
         }
     });
 })
-        document.querySelectorAll('.remove-item').forEach(button => {
-            button.addEventListener('click', async (e) => {
-
-                const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
-
-                const response = await fetch(`/removeFromCart/${cartItemId}`, {
-                    method: 'DELETE',
-                });
-
-                const data = await response.json();
-                if (data.status) {
-                    e.target.closest('tr').remove();
-
-                    updateCartSummary()
-                    showNotification('Item removed from cart successfully');
-                }
-            });
-        });
+       
 
         function updateCartSummary() {
 
@@ -621,6 +621,24 @@ checkoutButton.addEventListener("click", async () => {
                 summaryTotal.textContent = `₹ ${newTotal}`;
             }
         }
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', async (e) => {
+
+                const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
+
+                const response = await fetch(`/removeFromCart/${cartItemId}`, {
+                    method: 'DELETE',
+                });
+
+                const data = await response.json();
+                if (data.status) {
+                    e.target.closest('tr').remove();
+
+                    updateCartSummary()
+                    showNotification('Item removed from cart successfully');
+                }
+            });
+        });
 
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
