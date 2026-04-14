@@ -345,6 +345,7 @@ const login = async (req, res) => {
 
         const passwordMatch = await bcrypt.compare(password, findUser.password);
 
+
         if (!passwordMatch) {
             return res.render('login', { message: "Invalid Password" })
         }
@@ -503,6 +504,20 @@ const loadShoppingPage = async (req, res) => {
         }));
 
 
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({
+                products: updatedProducts,
+                category: categoriesWithIds,
+                totalProducts,
+                currentPage,
+                totalPages,
+                selectedSort: sort,
+                searchQuery: null,
+                priceRange: null,
+                selectedCategory: req.session.selectedCategory || null,
+            });
+        }
+
         return res.render("shop", {
             user: userData,
             products: updatedProducts,
@@ -525,6 +540,11 @@ const filterProduct = async (req, res) => {
     try {
         const user = req.session.user;
         const category = req.query.category;
+        
+        // Reset price and search when clicking a category specifically
+        // delete req.session.priceFilter; 
+        delete req.session.searchQuery;
+        if (req.body) delete req.body.query;
 
         const {
             products,
@@ -545,6 +565,20 @@ const filterProduct = async (req, res) => {
                 });
                 await userData.save();
             }
+        }
+
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({
+                products,
+                category: categories,
+                totalPages,
+                currentPage,
+                totalProducts,
+                selectedCategory: req.session.selectedCategory || null,
+                selectedSort: sort,
+                priceRange: req.session.priceFilter || null,
+                searchQuery: req.body.query || null
+            });
         }
 
         return res.render("shop", {
@@ -572,6 +606,8 @@ const filterByPrice = async (req, res) => {
                 gt: parseInt(req.query.gt),
                 lt: parseInt(req.query.lt)
             };
+        } else {
+            delete req.session.priceFilter;
         }
 
         const {
@@ -585,6 +621,20 @@ const filterByPrice = async (req, res) => {
 
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
+
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({
+                products,
+                category: categories,
+                totalPages,
+                currentPage,
+                totalProducts,
+                selectedSort: sort,
+                selectedCategory: req.session.selectedCategory || null,
+                searchQuery: req.session.searchQuery || null,
+                priceRange: req.session.priceFilter || null
+            });
+        }
 
         return res.render("shop", {
             user: userData,
@@ -606,7 +656,11 @@ const filterByPrice = async (req, res) => {
 
 const searchProducts = async (req, res) => {
     try {
-        req.session.searchQuery = req.body.query;
+        // Global search resets category and price filters
+        delete req.session.selectedCategory;
+        delete req.session.priceFilter;
+        
+        req.session.searchQuery = req.body.query || req.query.query;
         req.query.sort = req.body.sort || req.query.sort || 'default';
         const {
             products,
@@ -619,6 +673,20 @@ const searchProducts = async (req, res) => {
 
         const user = req.session.user;
         const userData = await User.findOne({ _id: user });
+
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({
+                products,
+                category: categories,
+                totalPages,
+                currentPage,
+                totalProducts,
+                selectedSort: sort,
+                searchQuery: req.body.query || req.session.searchQuery,
+                selectedCategory: req.session.selectedCategory || null,
+                priceRange: req.session.priceFilter || null
+            });
+        }
 
         return res.render("shop", {
             user: userData,

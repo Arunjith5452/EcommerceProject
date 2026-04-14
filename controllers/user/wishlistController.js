@@ -67,7 +67,7 @@ const addToWishlist = async (req,res) => {
         }
 
         if(wishlist.products.some(item => item.productId.toString() === productId)) {
-            return res.status(200).json({status:false,message:'Product already in wishlist'});
+            return res.status(200).json({success:false,message:'Product already in wishlist'});
         }
         wishlist.products.push({productId:productId});
         await wishlist.save();
@@ -89,19 +89,23 @@ const removeProduct = async (req,res)=> {
         const productId = req.query.productId;
         const userId = req.session.user;
 
-        const wishlist = await Wishlist.findOne({userId:userId})
+        const wishlist = await Wishlist.findOne({userId:userId});
 
         if(!wishlist){
             return res.status(404).json({status:false,message:"Wishlist not found"})
         }
 
-        const index = wishlist.products.findIndex(item => item.productId.toString()===productId)
+        const index = wishlist.products.findIndex(item => item.productId.toString() === productId);
+        
         if(index > -1){
-            wishlist.products.splice(index,1)
+            wishlist.products.splice(index,1);
             await wishlist.save();
         }
        
-        return res.redirect("/wishlist")
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({ status: true, message: "Product removed from wishlist" });
+        }
+        return res.redirect("/wishlist");
         
     } catch (error) {
         console.error(error);

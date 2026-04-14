@@ -21,10 +21,9 @@
 </div>
 
 <%-include("../../views/partials/admin/footer")%>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById("editCategoryForm").addEventListener("submit", async function (event) {
-    event.preventDefault(); 
+    event.preventDefault();
 
     const categoryId = "<%= category._id %>";
     const categoryName = document.getElementById("categoryName").value;
@@ -33,32 +32,21 @@ document.getElementById("editCategoryForm").addEventListener("submit", async fun
     try {
         const response = await fetch(`/admin/editCategory/${categoryId}`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ categoryName, description })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || "Something went wrong"); 
+            throw new Error(data.error || "Something went wrong");
         }
 
-        Swal.fire({
-            icon: "success",
-            title: "Success!",
-            text: data.message
-        }).then(() => {
-            window.location.href = "/admin/category"; 
-        });
+        showToast(data.message || "Category updated successfully", "success");
+        setTimeout(() => { window.location.href = "/admin/category"; }, 1500);
 
     } catch (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message 
-        });
+        showToast(error.message || "Failed to update category", "error");
     }
 });
 </script>

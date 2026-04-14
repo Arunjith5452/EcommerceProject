@@ -79,43 +79,16 @@
         </div>
         <%-include("../../views/partials/admin/pagination")%>
     </section>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function confirmBlock(userId) {
-            Swal.fire({
-                text: "Block this user?",
-                showCancelButton: true,
-                confirmButtonText: "Yes",
-                cancelButtonText: "No",
-                buttonsStyling: false,
-                customClass: {
-                    popup: "simple-alert",
-                    confirmButton: "simple-btn",
-                    cancelButton: "simple-btn"
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/admin/blockCustomer?id=${userId}`;
-                }
+            showConfirm("Block User", "Are you sure you want to block this user?", () => {
+                window.location.href = `/admin/blockCustomer?id=${userId}`;
             });
         }
     
         function confirmUnblock(userId) {
-            Swal.fire({
-                text: "Unblock this user?",
-                showCancelButton: true,
-                confirmButtonText: "Yes",
-                cancelButtonText: "No",
-                buttonsStyling: false,
-                customClass: {
-                    popup: "simple-alert",
-                    confirmButton: "simple-btn",
-                    cancelButton: "simple-btn"
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/admin/UnblockCustomer?id=${userId}`;
-                }
+            showConfirm("Unblock User", "Are you sure you want to unblock this user?", () => {
+                window.location.href = `/admin/UnblockCustomer?id=${userId}`;
             });
         }
     </script>

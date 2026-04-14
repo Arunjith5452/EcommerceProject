@@ -553,6 +553,9 @@ const deleteAddress = async (req, res) => {
                 }
             })
 
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({ success: true, message: "Address deleted successfully" });
+        }
         return res.redirect("/userProfile?tab=address")
 
     } catch (error) {

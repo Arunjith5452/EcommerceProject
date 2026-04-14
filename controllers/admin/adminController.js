@@ -32,9 +32,6 @@ const login = async (req, res) => {
     if (admin) {
       const passwordMatch = await bcrypt.compare(password, admin.password);
 
-      console.log("password:", password)
-      console.log("findUser.password:", findUser.password)
-
       if (passwordMatch) {
         req.session.admin = admin._id;
         return res.redirect("/admin/dashboard")

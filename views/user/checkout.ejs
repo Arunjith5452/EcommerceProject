@@ -488,35 +488,37 @@
                         </div>
                     </div>
                 </div>
-                        <div class="checkout-card">
-                            <div class="section-heading">
-                                <i class="fas fa-map-marker-alt"></i>
-                                Delivery Address
-                            </div>
-                        
-                            <%if(address && address.length > 0){%>
-                                <%address.forEach((address,index)=>{%>
-                                    <div class="address-box <%=index === 0 ? 'selected' : '' %>" data-address-id="<%=address._id%>">
-                                        <div class="address-content">
-                                            <div class="address-actions">
-                                                <button type="button" class="edit-address-btn" 
-                                                        data-address='<%- JSON.stringify(address).replace(/'/g, "&apos;") %>'>
-                                                    Edit
-                                                </button>
-                                            </div>
-                                            <input type="radio" name="address" value="<%=address._id%>" <%=index===0 ? 'checked' : '' %>>
-                                            <div class="address-details">
-                                                <p class="name"><%=address.name%></p>
-                                                <p><%=address.landMark%></p>
-                                                <p><%=address.city%>, <%=address.state%> <%=address.pincode%></p>
-                                                <p>Phone: <%=address.phone%></p>
-                                                <p>Alt Phone: <%=address.altPhone || 'Not provided'%></p>
-                                                <p class="address-type"><%=address.addressType%></p>
-                                            </div>
+                <div class="checkout-card" id="address-container-card">
+                    <div id="address-list-container">
+                        <div class="section-heading">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Delivery Address
+                        </div>
+                    
+                        <%if(address && address.length > 0){%>
+                            <%address.forEach((address,index)=>{%>
+                                <div class="address-box <%=index === 0 ? 'selected' : '' %>" data-address-id="<%=address._id%>">
+                                    <div class="address-content">
+                                        <div class="address-actions">
+                                            <button type="button" class="edit-address-btn" 
+                                                    data-address='<%- JSON.stringify(address).replace(/'/g, "&apos;") %>'>
+                                                Edit
+                                            </button>
+                                        </div>
+                                        <input type="radio" name="address" value="<%=address._id%>" <%=index===0 ? 'checked' : '' %>>
+                                        <div class="address-details">
+                                            <p class="name"><%=address.name%></p>
+                                            <p><%=address.landMark%></p>
+                                            <p><%=address.city%>, <%=address.state%> <%=address.pincode%></p>
+                                            <p>Phone: <%=address.phone%></p>
+                                            <p>Alt Phone: <%=address.altPhone || 'Not provided'%></p>
+                                            <p class="address-type"><%=address.addressType%></p>
                                         </div>
                                     </div>
-                                <%})%>
-                            <%}%>
+                                </div>
+                            <%})%>
+                        <%}%>
+                    </div>
                         
                             <button class="add-address-btn" type="button">+ Add New Address</button>
                                     <!-- <a href="#" class="add-address-btn" onclick="showAddressForm()">+ Add New
@@ -533,8 +535,8 @@
                                                 <input type="text" id="address-name" name="name">
                                             </div>
                                             <div class="form-group">
-                                                <label for="address-landmark">LandMark</label>
-                                                <input type="text" id="address-landmark" name="landmark">
+                                                <label for="address-landMark">LandMark</label>
+                                                <input type="text" id="address-landMark" name="landMark">
                                             </div>
                                             <div class="form-group">
                                                 <label for="address-city">City</label>
@@ -564,7 +566,7 @@
                                     </div>
                                     <div id="edit-address-form" class="address-box" style="display: none;">
                                         <h4>Edit Address</h4>
-                                        <form id="edit-address-form">
+                                        <form id="edit-address-wrapper-form">
                                             <input type="hidden" id="edit-address-id">
                                             <div class="form-group">
                                                 <label for="edit-address-type">Address Type</label>
@@ -575,8 +577,8 @@
                                                 <input type="text" id="edit-address-name" name="name">
                                             </div>
                                             <div class="form-group">
-                                                <label for="edit-address-landmark">LandMark</label>
-                                                <input type="text" id="edit-address-landmark" name="landmark">
+                                                <label for="edit-address-landMark">LandMark</label>
+                                                <input type="text" id="edit-address-landMark" name="landMark">
                                             </div>
                                             <div class="form-group">
                                                 <label for="edit-address-city">City</label>
@@ -758,11 +760,7 @@ function clearError(input) {
 }
 
 function showSwalError(message) {
-    Swal.fire({
-        title: 'Error',
-        text: message,
-        icon: 'error'
-    });
+    showToast(message, 'error');
 }
 
 function showAddressForm() {
@@ -1033,16 +1031,12 @@ async function placeOrder() {
             return;
         }
         if (selectedPayment.value !== "RAZORPAY") {
-    Swal.fire({
-        title: "Payment Successful!",
-        text: "Your order has been placed successfully.",
-        icon: "success",
-        confirmButtonText: "OK"
-    }).then(() => {
-        window.location.href = `/orderSuccess/${orderResult.order._id}`;
-    });
-    return;
-}
+            showToast("Payment Successful! Order placed successfully.", "success");
+            setTimeout(() => {
+                window.location.href = `/orderSuccess/${orderResult.order._id}`;
+            }, 1500);
+            return;
+        }
         await initiateRazorpayPayment(orderResult.order);
 
     } catch (error) {
@@ -1080,13 +1074,10 @@ async function initiateRazorpayPayment(order) {
                 const confirmData = await confirmResponse.json();
                 
                 if (confirmData.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Payment Successful',
-                        text: 'Your order has been placed successfully!',
-                    }).then(() => {
+                    showToast('Payment Successful! Order placed successfully!', 'success');
+                    setTimeout(() => {
                         window.location.href = `/orderSuccess/${order._id}`;
-                    });
+                    }, 1500);
                 } else {
                     throw new Error(confirmData.message || 'Payment confirmation failed');
                 }
@@ -1101,7 +1092,13 @@ async function initiateRazorpayPayment(order) {
             email: "user@example.com",
             contact: "9999999999"
         },
-        theme: { color: "#3399cc" }
+        theme: { color: "#3399cc" },
+        modal: {
+            ondismiss: function() {
+                console.log("Razorpay payment modal closed");
+                window.location.href = `/orderSuccess/${order._id}`;
+            }
+        }
     };
 
     const rzp = new Razorpay(options);
@@ -1126,25 +1123,19 @@ async function initiateRazorpayPayment(order) {
             const failedData = await failedResponse.json();
             
             if (failedData.success) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Payment Failed',
-                    text: response.error.description || 'Payment declined. Try another payment method.',
-                }).then(() => {
+                showToast(response.error.description || 'Payment failed. Try again.', 'error');
+                setTimeout(() => {
                     window.location.href = `/orderSuccess/${order._id}`;
-                });
+                }, 2000);
             } else {
                 throw new Error(failedData.message);
             }
         } catch (error) {
             console.error("Failed payment update error:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Payment failed. Please try again later.'
-            }).then(() => {
+            showToast('Payment failed. Please try again later.', 'error');
+            setTimeout(() => {
                 window.location.href = `/orderSuccess/${order._id}`;
-            });
+            }, 2000);
         }
     });
 
@@ -1182,14 +1173,14 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit-address-id').value = addressData._id;
             document.getElementById('edit-address-type').value = addressData.addressType || '';
             document.getElementById('edit-address-name').value = addressData.name || '';
-            document.getElementById('edit-address-landmark').value = addressData.landMark || '';
+            document.getElementById('edit-address-landMark').value = addressData.landMark || '';
             document.getElementById('edit-address-city').value = addressData.city || '';
             document.getElementById('edit-address-state').value = addressData.state || '';
             document.getElementById('edit-address-pincode').value = addressData.pincode || '';
             document.getElementById('edit-address-phone').value = addressData.phone || '';
             document.getElementById('edit-address-altPhone').value = addressData.altPhone || '';
 
-            editForm.style.display = 'block';
+            document.getElementById('edit-address-form').style.display = 'block';
         });
     });
 
@@ -1212,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = {
                 addressType: document.getElementById('address-type').value,
                 name: document.getElementById('address-name').value,
-                landMark: document.getElementById('address-landmark').value,
+                landMark: document.getElementById('address-landMark').value,
                 city: document.getElementById('address-city').value,
                 state: document.getElementById('address-state').value,
                 pincode: document.getElementById('address-pincode').value,
@@ -1230,7 +1221,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 if (data.success) {
                     addAddressForm.style.display = 'none';
-                    location.reload();
+                    
+                    // Create new address box element
+                    const addr = data.address;
+                    const addressHtml = `
+                        <div class="address-box selected" data-address-id="${addr._id}">
+                            <div class="address-content">
+                                <div class="address-actions">
+                                    <button type="button" class="edit-address-btn" 
+                                            data-address='${JSON.stringify(addr).replace(/'/g, "&apos;")}'>
+                                        Edit
+                                    </button>
+                                </div>
+                                <input type="radio" name="address" value="${addr._id}" checked>
+                                <div class="address-details">
+                                    <p class="name">${addr.name}</p>
+                                    <p>${addr.landMark}</p>
+                                    <p>${addr.city}, ${addr.state} ${addr.pincode}</p>
+                                    <p>Phone: ${addr.phone}</p>
+                                    <p>Alt Phone: ${addr.altPhone || 'Not provided'}</p>
+                                    <p class="address-type">${addr.addressType}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Deselect others and append
+                    document.querySelectorAll('.address-box').forEach(b => b.classList.remove('selected'));
+                    const list = document.getElementById('address-list-container');
+                    list.insertAdjacentHTML('beforeend', addressHtml);
+                    
+                    // Attach click listener to new box
+                    const newBox = list.querySelector(`[data-address-id="${addr._id}"]`);
+                    newBox.addEventListener('click', function() {
+                        document.querySelectorAll('.address-box').forEach(b => b.classList.remove('selected'));
+                        this.classList.add('selected');
+                        this.querySelector('input[type="radio"]').checked = true;
+                    });
+                    
+                    // Attach edit listener
+                    newBox.querySelector('.edit-address-btn').addEventListener('click', function(e) {
+                         e.stopPropagation();
+                         const addressData = JSON.parse(this.getAttribute('data-address'));
+                         const editForm = document.getElementById('edit-address-form');
+                         document.getElementById('edit-address-id').value = addressData._id;
+                         document.getElementById('edit-address-type').value = addressData.addressType || '';
+                         document.getElementById('edit-address-name').value = addressData.name || '';
+                         document.getElementById('edit-address-landMark').value = addressData.landMark || '';
+                         document.getElementById('edit-address-city').value = addressData.city || '';
+                         document.getElementById('edit-address-state').value = addressData.state || '';
+                         document.getElementById('edit-address-pincode').value = addressData.pincode || '';
+                         document.getElementById('edit-address-phone').value = addressData.phone || '';
+                         document.getElementById('edit-address-altPhone').value = addressData.altPhone || '';
+                         document.getElementById('edit-address-form').style.display = 'block';
+                    });
+
+                    showToast('Address added successfully', 'success');
                 } else {
                     showSwalError(data.message || 'Error adding address');
                 }
@@ -1241,9 +1287,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const editAddressForm = document.getElementById('edit-address-form');
-    if (editAddressForm) {
-        editAddressForm.addEventListener('submit', async function(event) {
+    const editAddressFormElement = document.getElementById('edit-address-wrapper-form');
+    if (editAddressFormElement) {
+        editAddressFormElement.addEventListener('submit', async function(event) {
             event.preventDefault();
             if (!validateEditAddressForm()) return;
 
@@ -1251,7 +1297,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = {
                 addressType: document.getElementById('edit-address-type').value.trim(),
                 name: document.getElementById('edit-address-name').value.trim(),
-                landMark: document.getElementById('edit-address-landmark').value.trim(),
+                landMark: document.getElementById('edit-address-landMark').value.trim(),
                 city: document.getElementById('edit-address-city').value.trim(),
                 state: document.getElementById('edit-address-state').value.trim(),
                 pincode: document.getElementById('edit-address-pincode').value.trim(),
@@ -1275,8 +1321,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const data = await response.json();
                 if (data.success) {
-                    editAddressForm.style.display = 'none';
-                    location.reload();
+                    document.getElementById('edit-address-form').style.display = 'none';
+                    
+                    // Update DOM element
+                    const box = document.querySelector(`.address-box[data-address-id="${addressId}"]`);
+                    if (box) {
+                        box.querySelector('.name').textContent = formData.name;
+                        const details = box.querySelector('.address-details');
+                        details.querySelectorAll('p')[1].textContent = formData.landMark;
+                        details.querySelectorAll('p')[2].textContent = `${formData.city}, ${formData.state} ${formData.pincode}`;
+                        details.querySelectorAll('p')[3].textContent = `Phone: ${formData.phone}`;
+                        details.querySelectorAll('p')[4].textContent = `Alt Phone: ${formData.altPhone || 'Not provided'}`;
+                        details.querySelector('.address-type').textContent = formData.addressType;
+                        
+                        const editBtn = box.querySelector('.edit-address-btn');
+                        formData._id = addressId;
+                        editBtn.setAttribute('data-address', JSON.stringify(formData).replace(/'/g, "&apos;"));
+                    }
+                    
+                    showToast('Address updated successfully', 'success');
                 } else {
                     showSwalError(data.message || 'Error updating address');
                 }

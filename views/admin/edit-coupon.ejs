@@ -111,9 +111,7 @@
       </div>
     </div>
   </section>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-
  function setDefaultStartDate() {
   const couponStartDate = new Date("<%= findCoupon.createdOn %>");
   const year = couponStartDate.getFullYear();
@@ -207,40 +205,39 @@ document.getElementById("coupon-form").addEventListener("submit", function (even
   }
 });
 
-function updateCoupon() {
-  $.ajax({
-    url: "/admin/updatecoupon",
-    method: "post",
-    data: {
+async function updateCoupon() {
+  try {
+    const body = new URLSearchParams({
       couponId: document.getElementById("coupon-id").value,
       couponName: document.getElementById("coupon-name").value,
       startDate: document.getElementById("startingDate").value,
       endDate: document.getElementById("expiringDate").value,
       offerPrice: document.getElementById("offer-price").value,
       minimumPrice: document.getElementById("minimum-price").value,
-    },
-    success: function (response) {
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Coupon updated successfully!",
-        confirmButtonText: "OK",
-      }).then(() => {
-        window.location.href = "/admin/coupon";
-      });
-    },
-    error: function (xhr, status, error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update the coupon. Please try again!",
-        confirmButtonText: "OK",
-      });
-      console.error("Error updating coupon:", error);
-    },
-  });
+    });
+
+    const response = await fetch("/admin/updateCoupon", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+
+    if (response.ok) {
+      showToast("Coupon updated successfully!", "success");
+      setTimeout(() => { window.location.href = "/admin/coupon"; }, 1500);
+    } else {
+      showToast("Failed to update the coupon. Please try again!", "error");
+    }
+  } catch (error) {
+    console.error("Error updating coupon:", error);
+    showToast("An error occurred while updating the coupon.", "error");
+  }
 }
- 
- 
- </script>
+
+window.addEventListener("load", function() {
+  setDefaultStartDate();
+  setDefaultendDate();
+});
+   
+   </script>
   <%- include("../../views/partials/admin/footer") %>

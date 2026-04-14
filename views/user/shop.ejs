@@ -443,52 +443,54 @@
                     </div>
                 </div>
 
-                <% if (products.length === 0) { %>
-                    <div class="no-results">
-                        <i class="fa fa-shopping-bag"></i>
-                        <h3>We couldn't find any items matching your criteria</h3>
-                        <p>Try resetting your filters or using broader search terms.</p>
-                        <a href="/shop" class="primary-btn" style="background: var(--dark); border-radius: 30px; padding: 12px 35px; color: #fff; text-decoration: none;">Explore All Products</a>
-                    </div>
-                <% } else { %>
-                    <div class="row">
-                        <% for(let i=0; i<products.length; i++) { %>
-                            <div class="col-lg-4 col-md-6 col-sm-6">
-                                <div class="product__item">
-                                    <div class="product__item__pic">
-                                        <img src="/uploads/product-images/<%= products[i].productImage[0] %>" alt="<%= products[i].productName %>">
-                                        <% if (products[i].totalOffer > 0) { %>
-                                            <span class="product__label"><%= products[i].totalOffer %>% OFF</span>
-                                        <% } %>
-                                        <ul class="product__hover">
-                                            <li><button onclick="addToWishlist('<%= products[i]._id %>')"><i class="fa fa-heart"></i></button></li>
-                                            <li><a href="/productDetails/<%= products[i]._id %>"><i class="fa fa-expand"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="product__item__text">
-                                        <h6><%= products[i].productName %></h6>
-                                        <div class="price-container">
-                                            <h5>₹<%= products[i].salePrice.toLocaleString('en-IN') %></h5>
-                                            <% if (products[i].regularPrice > products[i].salePrice) { %>
-                                                <span>₹<%= products[i].regularPrice.toLocaleString('en-IN') %></span>
+                <div id="shop-content">
+                    <% if (products.length === 0) { %>
+                        <div class="no-results">
+                            <i class="fa fa-shopping-bag"></i>
+                            <h3>We couldn't find any items matching your criteria</h3>
+                            <p>Try resetting your filters or using broader search terms.</p>
+                            <a href="/shop" onclick="handleFilterClick(event, this.href)" class="primary-btn" style="background: var(--dark); border-radius: 30px; padding: 12px 35px; color: #fff; text-decoration: none;">Explore All Products</a>
+                        </div>
+                    <% } else { %>
+                        <div class="row" id="productGrid">
+                            <% for(let i=0; i<products.length; i++) { %>
+                                <div class="col-lg-4 col-md-6 col-sm-6">
+                                    <div class="product__item">
+                                        <div class="product__item__pic">
+                                            <img src="/uploads/product-images/<%= products[i].productImage[0] %>" alt="<%= products[i].productName %>">
+                                            <% if (products[i].totalOffer > 0) { %>
+                                                <span class="product__label"><%= products[i].totalOffer %>% OFF</span>
                                             <% } %>
+                                            <ul class="product__hover">
+                                                <li><button onclick="addToWishlist('<%= products[i]._id %>')"><i class="fa fa-heart"></i></button></li>
+                                                <li><a href="/productDetails/<%= products[i]._id %>"><i class="fa fa-expand"></i></a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="product__item__text">
+                                            <h6><%= products[i].productName %></h6>
+                                            <div class="price-container">
+                                                <h5>₹<%= products[i].salePrice.toLocaleString('en-IN') %></h5>
+                                                <% if (products[i].regularPrice > products[i].salePrice) { %>
+                                                    <span>₹<%= products[i].regularPrice.toLocaleString('en-IN') %></span>
+                                                <% } %>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        <% } %>
-                    </div>
-                <% } %>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
 
-                <div class="product__pagination">
+                <div class="product__pagination" id="paginationContainer">
                     <% if (currentPage > 1) { %>
-                        <a href="?page=<%= currentPage - 1 %>&sort=<%= selectedSort %>"><i class="fa fa-angle-left"></i></a>
+                        <a href="?page=<%= currentPage - 1 %>&sort=<%= selectedSort %>" onclick="handlePagination(event, this.href)"><i class="fa fa-angle-left"></i></a>
                     <% } %>
                     <% for (let i = 1; i <= totalPages; i++) { %>
-                        <a class="<%= currentPage === i ? 'active' : '' %>" href="?page=<%= i %>&sort=<%= selectedSort %>"><%= i %></a>
+                        <a class="<%= currentPage === i ? 'active' : '' %>" href="?page=<%= i %>&sort=<%= selectedSort %>" onclick="handlePagination(event, this.href)"><%= i %></a>
                     <% } %>
                     <% if (currentPage < totalPages) { %>
-                        <a href="?page=<%= currentPage + 1 %>&sort=<%= selectedSort %>"><i class="fa fa-angle-right"></i></a>
+                        <a href="?page=<%= currentPage + 1 %>&sort=<%= selectedSort %>" onclick="handlePagination(event, this.href)"><i class="fa fa-angle-right"></i></a>
                     <% } %>
                 </div>
             </div>
@@ -507,23 +509,173 @@ function addToWishlist(productId){
     })
     .then(res => res.json())
     .then(data => {
-        Swal.fire({
-            title: data.status ? 'Added!' : 'Info',
-            text: data.status ? 'Product added to wishlist' : data.message,
-            icon: data.status ? 'success' : 'info',
-            timer: 1500,
-            showConfirmButton: false
-        });
+        if (data.success) {
+            showToast(data.message || 'Added to wishlist', 'success');
+            if(typeof updateHeaderCounts === 'function') updateHeaderCounts();
+        } else {
+            showToast(data.message || 'Already in wishlist', 'info');
+        }
     })
     .catch(() => {
-        Swal.fire({title: 'Error', text: 'Something went wrong', icon: 'error'});
+        showToast('Something went wrong', 'error');
     });
+}
+
+async function updateShop(url, method = 'GET', body = null) {
+    try {
+        const options = {
+            method: method,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        };
+        if (body) {
+            options.body = body;
+            if (!(body instanceof FormData)) {
+                options.headers['Content-Type'] = 'application/json';
+            }
+        }
+
+        const response = await fetch(url, options);
+        const data = await response.json();
+
+        renderProducts(data.products);
+        renderPagination(data.currentPage, data.totalPages, data.selectedSort);
+        
+        window.history.pushState(null, '', url);
+        
+        const countText = `Showing ${data.products.length} results of ${data.totalProducts || data.products.length}`;
+        const countContainer = document.querySelector('.shop__product__option__left p');
+        if (countContainer) countContainer.textContent = countText;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        updateSidebarActiveStates(data.selectedCategory, data.priceRange);
+
+    } catch (error) {
+        console.error('Error updating shop:', error);
+    }
+}
+
+function renderProducts(products) {
+    const container = document.getElementById('shop-content');
+    if (!container) return;
+    
+    if (products.length === 0) {
+        const pagination = document.getElementById('paginationContainer');
+        if (pagination) pagination.innerHTML = '';
+        
+        container.innerHTML = `
+            <div class="no-results">
+                <i class="fa fa-shopping-bag"></i>
+                <h3>We couldn't find any items matching your criteria</h3>
+                <p>Try resetting your filters or using broader search terms.</p>
+                <a href="/shop" onclick="handleFilterClick(event, this.href)" class="primary-btn" style="background: var(--dark); border-radius: 30px; padding: 12px 35px; color: #fff; text-decoration: none;">Explore All Products</a>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="row" id="productGrid">
+            ${products.map(product => `
+                <div class="col-lg-4 col-md-6 col-sm-6">
+                    <div class="product__item">
+                        <div class="product__item__pic">
+                            <img src="/uploads/product-images/${product.productImage[0]}" alt="${product.productName}">
+                            ${product.totalOffer > 0 ? `<span class="product__label">${product.totalOffer}% OFF</span>` : ''}
+                            <ul class="product__hover">
+                                <li><button onclick="addToWishlist('${product._id}')"><i class="fa fa-heart"></i></button></li>
+                                <li><a href="/productDetails/${product._id}"><i class="fa fa-expand"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="product__item__text">
+                            <h6>${product.productName}</h6>
+                            <div class="price-container">
+                                <h5>₹${product.salePrice.toLocaleString('en-IN')}</h5>
+                                ${product.regularPrice > product.salePrice ? `<span>₹${product.regularPrice.toLocaleString('en-IN')}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderPagination(currentPage, totalPages, selectedSort) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+
+    const currentUrl = new URL(window.location.href);
+    
+    let html = '';
+    if (currentPage > 1) {
+        currentUrl.searchParams.set('page', currentPage - 1);
+        html += `<a href="${currentUrl.toString()}" onclick="handlePagination(event, this.href)"><i class="fa fa-angle-left"></i></a>`;
+    }
+    for (let i = 1; i <= totalPages; i++) {
+        currentUrl.searchParams.set('page', i);
+        html += `<a class="${currentPage === i ? 'active' : ''}" href="${currentUrl.toString()}" onclick="handlePagination(event, this.href)">${i}</a>`;
+    }
+    if (currentPage < totalPages) {
+        currentUrl.searchParams.set('page', currentPage + 1);
+        html += `<a href="${currentUrl.toString()}" onclick="handlePagination(event, this.href)"><i class="fa fa-angle-right"></i></a>`;
+    }
+    container.innerHTML = html;
+}
+
+function updateSidebarActiveStates(selectedCategory, priceRange) {
+    document.querySelectorAll('.sidebar__categories a').forEach(a => {
+        const url = new URL(a.href, window.location.origin);
+        const catId = url.searchParams.get('category');
+        if ((!catId && !selectedCategory) || (catId === selectedCategory)) {
+            a.classList.add('active');
+        } else {
+            a.classList.remove('active');
+        }
+    });
+
+    document.querySelectorAll('.sidebar__price a').forEach(a => {
+        const url = new URL(a.href, window.location.origin);
+        const gt = url.searchParams.get('gt');
+        const lt = url.searchParams.get('lt');
+        if (priceRange && gt == priceRange.gt && lt == priceRange.lt) {
+            a.classList.add('active');
+        } else {
+            a.classList.remove('active');
+        }
+    });
+}
+
+function handleFilterClick(event, url) {
+    event.preventDefault();
+    updateShop(url);
+}
+
+function handlePagination(event, url) {
+    event.preventDefault();
+    updateShop(url);
 }
 
 function sortProducts(value) {
     let url = new URL(window.location.href);
     url.searchParams.set('sort', value);
-    window.location.href = url.toString();
+    updateShop(url.toString());
 }
+
+document.querySelector('.shop__sidebar__search form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    updateShop('/search', 'POST', JSON.stringify(data));
+});
+
+document.querySelectorAll('.sidebar__link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        updateShop(this.href);
+    });
+});
+
 </script>
 <%-include("../../views/partials/user/footer")%>

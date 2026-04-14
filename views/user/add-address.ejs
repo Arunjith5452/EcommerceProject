@@ -43,145 +43,97 @@
        <button type="submit" id="submitButton" class="btn btn-primary">Submit</button>
    </form>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  
-   document.getElementById('addressForm').addEventListener('submit', function(event) {
-       if (!validateForm()) {
-           event.preventDefault();
-       }
-   });
+ <script>
+    document.getElementById('addressForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!validateForm()) return;
 
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
 
-   function validateForm() {
-       let isValid = true;
-       const requiredFields = ["addressType", "name", "city", "landMark", "state", "pincode", "phone"];
-       requiredFields.forEach(function(field) {
-           const input = document.getElementById(field);
-           const inputValue = input.value.trim();
-           const errorElement = document.getElementById(field + '-error');
-
-
-           if (inputValue === "") {
-               if (!errorElement) {
-                   const errorMessage = "This field is required.";
-                   const errorDiv = document.createElement('div');
-                   errorDiv.className = "text-danger";
-                   errorDiv.textContent = errorMessage;
-                   errorDiv.id = field + '-error';
-                   input.parentNode.appendChild(errorDiv);
-               }
-               isValid = false;
-               return false
-           } else {
-               if (errorElement) {
-                   errorElement.remove();
-               }
-           }
-       });
-
-       if(!isValid) return false
-
-
-       const addressType = document.getElementById('addressType').value;
-    const name = document.getElementById('name').value;
-    const city = document.getElementById('city').value;
-    const landMark = document.getElementById('landMark').value;
-    const state = document.getElementById('state').value;
-    const pincode = document.getElementById('pincode').value;
-    const phone = document.getElementById('phone').value;
-    const altPhone = document.getElementById('altPhone').value;
-    
-    const namePattern = /^[A-Za-z\s]+$/;
-    const pincodePattern = /^\d{6}$/;
-    const phonePattern = /^\d{10}$/;
-    const allZerosPattern = /^0+$/;
-
-    if (!namePattern.test(name)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Name should contain alphabets only.',
-            icon: 'error'
+        fetch('/addAddress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => {
+            if(res.redirected) {
+                window.location.href = res.url;
+                return;
+            }
+            return res.json().catch(() => ({ success: true }));
+        })
+        .then(data => {
+            if(data && data.success === false) {
+                showToast(data.message || 'Failed to add address', 'error');
+            } else {
+                showToast('Address added successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = '/userProfile?tab=address';
+                }, 1500);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Something went wrong', 'error');
         });
-        isValid = false;
-    }
-    if (!namePattern.test(city)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'City should contain alphabets only.',
-            icon: 'error'
-        });
-        isValid = false;
-    }
-    if (!namePattern.test(landMark)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Landmark should contain alphabets only.',
-            icon: 'error'
-        });
-        isValid = false;
-    }
-    if (!namePattern.test(state)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'State should contain alphabets only.',
-            icon: 'error'
-        });
-        isValid = false;
-    }
-    if (!pincodePattern.test(pincode)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Pincode should be a 6-digit number.',
-            icon: 'error'
-        });
-        isValid = false;
-    }
-    if (!phonePattern.test(phone)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Phone number should be a 10-digit number.',
-            icon: 'error'
-        });
-        isValid = false;
-    } else if (allZerosPattern.test(phone)) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Phone number cannot be all zeros.',
-            icon: 'error'
-        });
-        isValid = false;
-    }
-    
-    if (altPhone !== "") {
-        if (!phonePattern.test(altPhone)) {
-            Swal.fire({
-                title: 'Error',
-                text: 'Alternate phone number should be a 10-digit number.',
-                icon: 'error'
-            });
-            isValid = false;
-        } else if (allZerosPattern.test(altPhone)) {
-            Swal.fire({
-                title: 'Error',
-                text: 'Alternate phone number cannot be all zeros.',
-                icon: 'error'
-            });
+    });
+
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = ["addressType", "name", "city", "landMark", "state", "pincode", "phone"];
+        
+        for (const field of requiredFields) {
+            const input = document.getElementById(field);
+            const value = input.value.trim();
+            if (value === "") {
+                showToast(`Please fill in the ${field.replace(/([A-Z])/g, ' $1')}.`, 'error');
+                isValid = false;
+                break;
+            }
+        }
+        if(!isValid) return false;
+
+        const namePattern = /^[A-Za-z\s]+$/;
+        const alphabetFields = ["name", "city", "landMark", "state"];
+        for(const field of alphabetFields) {
+            const val = document.getElementById(field).value.trim();
+            if(!namePattern.test(val)) {
+                showToast(`${field.charAt(0).toUpperCase() + field.slice(1)} should contain alphabets only.`, 'error');
+                isValid = false;
+                break;
+            }
+        }
+        if(!isValid) return false;
+
+        const pincode = document.getElementById('pincode').value.trim();
+        if (!/^\d{6}$/.test(pincode)) {
+            showToast('Pincode should be a 6-digit number.', 'error');
             isValid = false;
         }
-    }
+        if(!isValid) return false;
 
-    if (altPhone !== "" && phone === altPhone) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Phone number and alternate phone number should be different.',
-            icon: 'error'
-        });
-        isValid = false;
-    }
+        const phone = document.getElementById('phone').value.trim();
+        if (!/^\d{10}$/.test(phone) || /^0+$/.test(phone)) {
+            showToast('Invalid primary phone number.', 'error');
+            isValid = false;
+        }
+        if(!isValid) return false;
 
-    return isValid;
-}
+        const altPhone = document.getElementById('altPhone').value.trim();
+        if (altPhone !== "") {
+            if (!/^\d{10}$/.test(altPhone) || /^0+$/.test(altPhone)) {
+                showToast('Invalid alternate phone number.', 'error');
+                isValid = false;
+            } else if (altPhone === phone) {
+                showToast('Phone numbers must be different.', 'error');
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+ </script>
 </script>
 <%- include("../../views/partials/user/footer") %>
 

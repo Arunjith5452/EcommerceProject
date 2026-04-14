@@ -331,51 +331,25 @@ function validateForm() {
  }
 
 
- async function confirmDelete(couponId) {
-  const result = await Swal.fire({
-    title: "Are you sure?",
-    text: "You won't be able to revert this!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#d33",
-    cancelButtonColor: "#3085d6",
-    confirmButtonText: "Yes, delete it!"
-  });
+ function confirmDelete(couponId) {
+    showConfirm("Delete Coupon", "You won't be able to revert this!", async () => {
+        try {
+            const response = await fetch(`/admin/deleteCoupon?id=${couponId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
 
-  if (result.isConfirmed) {
-    await deleteCoupon(couponId);
-  }
-}
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
 
-async function deleteCoupon(couponId) {
-  try {
-    const response = await fetch(`/admin/deletecoupon?id=${couponId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+            showToast("Coupon deleted successfully", "success");
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+            console.error('Error:', error);
+            showToast("Failed to delete the coupon. Please try again.", "error");
+        }
     });
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    await Swal.fire({
-      icon: "success",
-      title: "Deleted!",
-      text: "The coupon has been deleted.",
-      confirmButtonText: "OK"
-    });
-
-    window.location.reload();
-  } catch (error) {
-    console.error('Error:', error);
-    await Swal.fire({
-      icon: "error",
-      title: "Error!",
-      text: "Failed to delete the coupon. Please try again."
-    });
-  }
 }
 </script>
 <%- include("../../views/partials/admin/footer") %>

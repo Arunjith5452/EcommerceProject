@@ -138,53 +138,27 @@
 
 
             <script>
-               function updateOrderStatus(orderId, status) {
-    Swal.fire({
-        title: `Change status to "${status}"?`,
-        text: "This action cannot be undone!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, update it!"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`/admin/updateOrderStatus/${orderId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: "Updated!",
-                        text: "Order status has been changed.",
-                        icon: "success",
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => location.reload());
-                } else {
-                    Swal.fire({
-                        title: "Error!",
-                        text: "Failed to update order status.",
-                        icon: "error",
-                        confirmButtonColor: "#d33"
+                function updateOrderStatus(orderId, status) {
+                    showConfirm(`Change status to "${status}"?`, "This action cannot be undone!", async () => {
+                        try {
+                            const response = await fetch(`/admin/updateOrderStatus/${orderId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                showToast("Order status updated successfully", "success");
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                showToast(data.message || "Failed to update order status", "error");
+                            }
+                        } catch (error) {
+                            console.error("Error:", error);
+                            showToast("Something went wrong. Try again later.", "error");
+                        }
                     });
                 }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                Swal.fire({
-                    title: "Oops!",
-                    text: "Something went wrong. Try again later.",
-                    icon: "error",
-                    confirmButtonColor: "#d33"
-                });
-            });
-        }
-    });
-}
 
                 function showOrderDetails(orderId) {
                     const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
@@ -301,84 +275,54 @@ ${data.order.orderedItems.map(item => `
                             content.innerHTML = `<div class="alert alert-danger">Error loading order details: ${error.message}</div>`;
                         });
                 }
-                function cancelSingleItem(orderId, productId ,size) {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: 'Do you want to cancel this item?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, cancel it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`/admin/userOrderCancel/${orderId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ productId,size })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire('Cancelled!', 'The item has been cancelled.', 'success')
-                            .then(() => location.reload());
-                    } else {
-                        Swal.fire('Error!', data.message || 'Error cancelling item', 'error');
+                function cancelSingleItem(orderId, productId, size) {
+                    showConfirm('Are you sure?', 'Do you want to cancel this item?', async () => {
+                        try {
+                            const response = await fetch(`/admin/userOrderCancel/${orderId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ productId, size })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                showToast('Item cancelled successfully', 'success');
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                showToast(data.message || 'Error cancelling item', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showToast('Error cancelling item', 'error');
+                        }
+                    });
+                }
+
+                function handleReturnRequest(orderId, action, productId, size) {
+                    if (!size) {
+                        showToast('Size parameter is missing', 'error');
+                        return;
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire('Error!', 'Error cancelling item', 'error');
-                });
-        }
-    });
-}
 
-function handleReturnRequest(orderId, action, productId ,size) {
-
-    if (!size) {
-        console.error('Size parameter is required');
-        Swal.fire('Error!', 'Size parameter is missing', 'error');
-        return;
-    }
-
-    Swal.fire({
-        title: 'Are you sure?',
-        text: `Do you want to ${action} this return request?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: `Yes, ${action} it!`
-    }).then((result) => {
-        if (result.isConfirmed) {
-            console.log('Sending request with:', {
-                orderId,
-                action,
-                productId,
-                size
-            });
-            fetch(`/admin/handleReturnRequest/${orderId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, productId ,size })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire('Processed!', `The return request has been ${action}ed.`, 'success')
-                            .then(() => location.reload());
-                    } else {
-                        Swal.fire('Error!', data.message || 'Error processing return request', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire('Error!', 'Error processing return request', 'error');
-                });
-        }
-    });
-}
+                    showConfirm('Are you sure?', `Do you want to ${action} this return request?`, async () => {
+                        try {
+                            const response = await fetch(`/admin/handleReturnRequest/${orderId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action, productId, size })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                showToast(`Return request ${action}ed successfully`, 'success');
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                showToast(data.message || `Error processing ${action} request`, 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showToast('Error processing return request', 'error');
+                        }
+                    });
+                }
 
             </script>
             <%- include("../../views/partials/admin/footer") %>
