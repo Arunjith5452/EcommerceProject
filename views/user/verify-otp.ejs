@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OTP Verification</title>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
     body {
@@ -142,6 +141,23 @@
   </div>
 
   <script>
+    /* Inline toast since this page has no footer partial */
+    function showOtpToast(message, type) {
+      let container = document.getElementById('otp-toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'otp-toast-container';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8';
+      toast.style.cssText = `background:${bg};color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:220px;`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
     let timerElement = document.getElementById('timer');
     let resendButton = document.getElementById('resend-btn');
     let timer = 30;
@@ -150,17 +166,12 @@
     const otpInputs = document.querySelectorAll('.otp-input');
 
     function startTimer() {
-      if (interval) {
-        clearInterval(interval);
-      }
-
+      if (interval) clearInterval(interval);
       resendButton.disabled = true;
-      timer = 30;  
-
+      timer = 30;
       interval = setInterval(() => {
         timer--;
         timerElement.textContent = `Resend OTP in ${timer} seconds`;
-
         if (timer === 0) {
           clearInterval(interval);
           timerElement.textContent = "You can resend the OTP now.";
@@ -174,29 +185,21 @@
         resendButton.disabled = true;
         resendButton.textContent = "Sending...";
 
-        const response = await $.ajax({
-          type: "POST",
-          url: "/resendotp",
-          contentType: "application/json"
+        const response = await fetch("/resendotp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
         });
+        const data = await response.json();
 
-        if (response.success) {
-          Swal.fire({
-            icon: 'success',
-            title: 'OTP Resent',
-            text: 'A new OTP has been sent to your registered email.'
-          });
-          startTimer();  
+        if (data.success) {
+          showOtpToast('A new OTP has been sent to your registered email.', 'success');
+          startTimer();
         } else {
-          throw new Error(response.message || 'Failed to resend OTP');
+          throw new Error(data.message || 'Failed to resend OTP');
         }
       } catch (error) {
         console.error('Error resending OTP:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.message || 'Failed to resend OTP. Please try again.'
-        });
+        showOtpToast(error.message || 'Failed to resend OTP. Please try again.', 'error');
         resendButton.disabled = false;
       } finally {
         resendButton.textContent = "Resend OTP";
@@ -206,11 +209,9 @@
     otpInputs.forEach((input, index) => {
       input.addEventListener('input', (e) => {
         input.value = input.value.replace(/[^0-9]/g, '');
-        
         if (input.value && index < otpInputs.length - 1) {
           otpInputs[index + 1].focus();
         }
-        
         if (isOTPComplete()) {
           document.querySelector('.btn-primary').focus();
         }
@@ -228,52 +229,37 @@
             input.value = '';
           }
         }
-        
       });
-
     });
 
     function isOTPComplete() {
       return [...otpInputs].every(input => input.value.length === 1);
     }
-function validateOTP() {
-      let otpInput = "";
-      otpInputs.forEach(input => {
-        otpInput += input.value;
-      });
 
-      $.ajax({
-        type: "POST",
-        url: "/verify-otp",
-        data: { otp: otpInput },
-        success: function(response) {
-          if (response.success) {
-            Swal.fire({
-              icon: 'success',
-              title: 'OTP Verified',
-              showConfirmButton: false,
-              timer: 1500,
-            }).then(() => {
-              window.location.href = response.redirectUrl;
-            });
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'Invalid OTP',
-              text: 'Please enter the correct OTP'
-            });
-          }
-        },
-        error: function() {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Invalid OTP'
-          });
+    async function validateOTP() {
+      let otpInput = "";
+      otpInputs.forEach(input => { otpInput += input.value; });
+
+      try {
+        const response = await fetch("/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `otp=${encodeURIComponent(otpInput)}`
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showOtpToast('OTP Verified!', 'success');
+          setTimeout(() => { window.location.href = data.redirectUrl; }, 1000);
+        } else {
+          showOtpToast(data.message || 'Invalid OTP. Please try again.', 'error');
         }
-      });
+      } catch (error) {
+        showOtpToast('Invalid OTP', 'error');
+      }
       return false;
     }
+
     document.addEventListener('DOMContentLoaded', () => {
       startTimer();
       otpInputs[0].focus();

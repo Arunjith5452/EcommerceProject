@@ -1,6 +1,5 @@
 <%- include("../../views/partials/admin/header") %>
 <head>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
 </head>
 <div class="content-header">
     <div>
@@ -95,132 +94,69 @@
 </div>
 <%-include("../../views/partials/admin/pagination")%>
  <script>
-  async function addOffer(productId) {
-    const {value:amount} =await Swal.fire({
-        title:'Offer in percentage',
-        input:'number',
-        inputLabel:'percentage',
-        inputPlaceholder:'%'
-    })
-    
-    fetch("/admin/addProductOffer",{
-        method:"post",
-        headers:{
-            'Content-Type':'application/json',
-        },
-        body: JSON.stringify({
-            percentage:amount,
-            productId:productId,   
+  function addOffer(productId) {
+    showPrompt('Offer in percentage', 'Enter offer percentage (%)', (amount) => {
+        if(!amount) return;
+        fetch("/admin/addProductOffer",{
+            method:"post",
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ percentage:amount, productId:productId })
         })
-    })
         .then((response)=>response.json())
         .then(data=>{
             if(data.status===true){
-                Swal.fire(
-                    'offer added',
-                    'The offer has been added successfully',
-                    'success'
-                ).then((result) => {
-                if (result.isConfirmed) {
-                    location.reload();
-                }
-            });
+                showToast('Offer added successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
             }else{
-                Swal.fire("Failed", data.message || "Adding offer failed", "error");
+                showToast(data.message || "Adding offer failed", "error");
             }
         })
-        .catch((error)=>{
-            console.error("offer adding error",error)
-        })
-       
+        .catch(err => console.error(err));
+    });
   }
 
   function removeOffer(productId){
-    try {
-     Swal.fire({
-        title:'Remove offer',
-        text:'Are you sure you want to remove this offer',
-        icon:'warning',
-        showCancelButton:true,
-        confirmButtonColor:'#3085d6',
-        cancelButtonColor:'#d33',
-        confirmButtonText:'Yes,remove it!',
-        timer:5000,
-        timerProgressBar:true
-     }).then(async (result)=>{
-        if(result.isConfirmed){
+     showConfirm('Remove offer', 'Are you sure you want to remove this offer?', (confirmed) => {
+        if(confirmed){
            fetch("/admin/removeProductOffer",{
             method:'post',
-            headers:{
-                'Content-Type':'application/json'
-            },
-            body:JSON.stringify({
-                productId:productId
-            })
-        })
-            .then((response)=> response.json())
-            .then((data)=>{
+            headers:{ 'Content-Type':'application/json' },
+            body:JSON.stringify({ productId:productId })
+           })
+           .then((res)=> res.json())
+           .then((data)=>{
                 if(data.status===true){
-                    Swal.fire('Removed!','The offer has been removed','success').then((result) => {
-                if (result.isConfirmed) {
-                    location.reload();
+                    showToast('Offer removed successfully', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast('Failed to remove offer', 'error');
                 }
-            });
-                }else if(data.status===false){
-                    Swal.fire('failed')
-                }else{
-                    alert('Failed')
-                }
-            })
-            .catch((error)=>{
-                console.error("offer removing error",error)
-            })
-         
+           })
+           .catch(err => console.error(err));
         }
-     })
-    } catch (error) {
-       console.error(error) 
-    }
+     });
   }
 
   function deleteProduct(productId) {
-    try {
-     Swal.fire({
-        title:'Delete Product',
-        text:'Are you sure you want to delete this product?',
-        icon:'warning',
-        showCancelButton:true,
-        confirmButtonColor:'#d33',
-        cancelButtonColor:'#3085d6',
-        confirmButtonText:'Yes, delete it!'
-     }).then(async (result)=>{
-        if(result.isConfirmed){
+     showConfirm('Delete Product', 'Are you sure you want to delete this product?', (confirmed) => {
+        if(confirmed){
            fetch("/admin/deleteProduct/",{
             method:'DELETE',
-            headers:{
-                'Content-Type':'application/json'
-            },
-            body:JSON.stringify({
-                productId:productId
-            })
+            headers:{ 'Content-Type':'application/json' },
+            body:JSON.stringify({ productId:productId })
            })
-           .then((response)=>response.json())
+           .then((res)=>res.json())
            .then((data)=>{
             if(data.status===true){
-                Swal.fire('Deleted!','The product has been deleted','success');
-                location.reload()
+                showToast('Product deleted successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
             }else{
-                Swal.fire('Failed','Unable to delete product','error')
+                showToast('Unable to delete product', 'error');
             }
            })
-           .catch((error)=>{
-            console.error("product delete error",error)
-           })
+           .catch(err => console.error(err));
         }
-     })
-    } catch (error) {
-       console.error(error); 
-    }
+     });
   }
  </script>
 <%- include("../../views/partials/admin/footer") %>

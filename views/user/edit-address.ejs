@@ -1,7 +1,7 @@
 <%- include("../../views/partials/user/header") %>
 <div class="container mt-4">
    <h3 class="mt-3" style="color: #046963; margin-bottom:70px">Edit Address</h3>
-   <form id="addressForm" method="POST" action="/editAddress?id=<%= address._id.toLocaleString() %>" class="border-0 p-3">
+   <form id="addressForm" method="POST" action="/editAddress?id=<%= address._id.toString() %>" class="border-0 p-3">
        <div class="row mb-50">
            <div class="form-group col-md-4">
                <label for="addressType">Address Type:</label>
@@ -45,85 +45,96 @@
 </div>
 
 
-<script>
-   document.getElementById('submitButton').addEventListener('click', function (event) {
-       if (!validateForm()) {
-           event.preventDefault();
-       }
-   });
+ <script>
+    document.getElementById('addressForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!validateForm()) return;
 
-   function validateForm() {
-       let isValid = true;
-       const requiredFields = ["addressType", "name", "city", "landMark", "state", "pincode", "phone"];
-       
-       requiredFields.forEach(function (field) {
-           const input = document.getElementById(field);
-           if (input.value.trim() === "") {
-               Swal.fire({
-                   title: 'Error',
-                   text: `Please fill in the ${field.replace(/([A-Z])/g, ' $1')}.`,
-                   icon: 'error'
-               });
-               isValid = false;
-           }
-       });
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        const action = this.getAttribute('action');
 
-       const alphabetOnlyFields = ["addressType", "name", "city", "landMark", "state"];
-       alphabetOnlyFields.forEach(function (field) {
-           const input = document.getElementById(field);
-           if (!/^[A-Za-z\s]+$/.test(input.value.trim())) {
-               Swal.fire({
-                   title: 'Error',
-                   text: `${field.replace(/([A-Z])/g, ' $1')} should contain only alphabets.`,
-                   icon: 'error'
-               });
-               isValid = false;
-           }
-       });
+        fetch(action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => {
+            if(res.redirected) {
+                window.location.href = res.url;
+                return;
+            }
+            return res.json().catch(() => ({ success: true }));
+        })
+        .then(data => {
+            if(data && data.success === false) {
+                showToast(data.message || 'Failed to update address', 'error');
+            } else {
+                showToast('Address updated successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = '/userProfile?tab=address';
+                }, 1500);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Something went wrong', 'error');
+        });
+    });
 
-       const pincode = document.getElementById('pincode').value.trim();
-       if (!/^\d{6}$/.test(pincode)) {
-           Swal.fire({
-               title: 'Error',
-               text: 'Pincode must be exactly 6 digits.',
-               icon: 'error'
-           });
-           isValid = false;
-       }
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = ["addressType", "name", "city", "landMark", "state", "pincode", "phone"];
+        
+        for (const field of requiredFields) {
+            const input = document.getElementById(field);
+            if (input.value.trim() === "") {
+                showToast(`Please fill in the ${field.replace(/([A-Z])/g, ' $1')}.`, 'error');
+                isValid = false;
+                break;
+            }
+        }
+        if(!isValid) return false;
 
-       const phone = document.getElementById('phone').value.trim();
-       if (!/^\d{10}$/.test(phone)) {
-           Swal.fire({
-               title: 'Error',
-               text: 'Phone number must be exactly 10 digits.',
-               icon: 'error'
-           });
-           isValid = false;
-       }
+        const alphabetOnlyFields = ["addressType", "name", "city", "landMark", "state"];
+        for (const field of alphabetOnlyFields) {
+            const input = document.getElementById(field);
+            if (!/^[A-Za-z\s]+$/.test(input.value.trim())) {
+                showToast(`${field.replace(/([A-Z])/g, ' $1')} should contain only alphabets.`, 'error');
+                isValid = false;
+                break;
+            }
+        }
+        if(!isValid) return false;
 
-       const altPhone = document.getElementById('altPhone').value.trim();
-       if (altPhone !== "") {
-           if (!/^\d{10}$/.test(altPhone)) {
-               Swal.fire({
-                   title: 'Error',
-                   text: 'Alternate phone number must be exactly 10 digits.',
-                   icon: 'error'
-               });
-               isValid = false;
-           } else if (altPhone === phone) {
-               Swal.fire({
-                   title: 'Error',
-                   text: 'Alternate phone number should be different from the primary phone number.',
-                   icon: 'error'
-               });
-               isValid = false;
-           }
-       }
+        const pincode = document.getElementById('pincode').value.trim();
+        if (!/^\d{6}$/.test(pincode)) {
+            showToast('Pincode must be exactly 6 digits.', 'error');
+            isValid = false;
+        }
+        if(!isValid) return false;
 
-       return isValid;
-   }
+        const phone = document.getElementById('phone').value.trim();
+        if (!/^\d{10}$/.test(phone)) {
+            showToast('Phone number must be exactly 10 digits.', 'error');
+            isValid = false;
+        }
+        if(!isValid) return false;
 
-</script>
+        const altPhone = document.getElementById('altPhone').value.trim();
+        if (altPhone !== "") {
+            if (!/^\d{10}$/.test(altPhone)) {
+                showToast('Alternate phone number must be exactly 10 digits.', 'error');
+                isValid = false;
+            } else if (altPhone === phone) {
+                showToast('Alternate phone number should be different from primary.', 'error');
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+ </script>
 
 <%- include("../../views/partials/user/footer") %>
 

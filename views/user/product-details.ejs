@@ -418,7 +418,7 @@
 
     function adjustQty(n) {
         if(!activeSize) {
-            Swal.fire({ title: 'Note', text: 'Select a size first', icon: 'info' });
+            showToast('Please select a size first', 'info');
             return;
         }
         let v = orderQty + n;
@@ -430,7 +430,7 @@
 
     function addToCart(pid) {
         if(!activeSize) {
-            Swal.fire({ title: 'Required', text: 'Pick a size', icon: 'error' });
+            showToast('Please pick a size', 'error');
             return;
         }
         fetch("/addToCart", {
@@ -441,10 +441,10 @@
         .then(res => res.json())
         .then(data => {
             if(data.success) {
-                Swal.fire({ title: 'Added!', text: 'Saved to bag', icon: 'success' });
+                showToast('Success! Saved to bag', 'success');
                 if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
             } else {
-                Swal.fire({ title: 'Error', text: data.message, icon: 'error' });
+                showToast(data.message || 'Error adding to cart', 'error');
             }
         });
     }

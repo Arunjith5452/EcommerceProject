@@ -325,7 +325,7 @@
 
 <div class="success-container">
     <div class="success-card">
-        <% if (order.paymentStatus === 'Failed') { %>
+        <% if (order.paymentStatus === 'Failed' || (order.paymentMethod === 'RAZORPAY' && order.paymentStatus === 'Pending')) { %>
             <div class="failure-icon">
                 <i class="fas fa-times"></i>
             </div>
@@ -514,14 +514,8 @@
 
                     const verificationData = await verificationResponse.json();
                     if (verificationData.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Payment Successful',
-                            text: 'Your payment has been completed successfully!',
-                            confirmButtonText: 'OK'
-                        }).then(() => {
-                            window.location.reload();
-                        });
+                        showToast('Payment completed successfully!', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
                     } else {
                         throw new Error(verificationData.message || 'Verification failed');
                     }
@@ -535,21 +529,13 @@
 
             const rzp = new Razorpay(options);
             rzp.on('payment.failed', function (response) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Payment Failed',
-                    text: response.error.description
-                });
+                showToast(response.error.description || 'Payment failed', 'error');
             });
             rzp.open();
 
         } catch (error) {
             console.error('Retry error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message || 'Something went wrong while initiating payment'
-            });
+            showToast(error.message || 'Something went wrong while initiating payment', 'error');
         }
     }
 </script>

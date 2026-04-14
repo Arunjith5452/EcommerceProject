@@ -263,7 +263,7 @@
         function addToCartFromWishlist(productId) {
             const size = document.getElementById(`size-${productId}`).value;
             if (!size) {
-                showNotification('Please select a size');
+                showToast('Please select a size', 'info');
                 return;
             }
 
@@ -275,38 +275,63 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    fetch(`/removeFromWishlist?productId=${productId}`)
-                        .then(() => {
-                            showNotification('Moving item to bag...');
+                    fetch(`/removeFromWishlist?productId=${productId}`, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(res => res.json())
+                    .then(removeData => {
+                        if (removeData.status) {
+                            showToast('Moving item to bag...', 'success');
+                            const row = document.querySelector(`button[onclick="addToCartFromWishlist('${productId}')"]`).closest('tr');
+                            if (row) row.remove();
+                            
+                            const tbody = document.querySelector('.table tbody');
+                            if (tbody && tbody.children.length === 0) {
+                                document.querySelector('.table-responsive').parentElement.innerHTML = `
+                                    <div class="empty-wishlist">
+                                        <i class="far fa-heart mb-3" style="font-size: 48px; color: #eee;"></i>
+                                        <h3>Your favorites list is empty</h3>
+                                        <a href="/shop" class="btn btn-dark mt-3">Start Shopping</a>
+                                    </div>
+                                `;
+                            }
                             if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
-                            setTimeout(() => window.location.reload(), 1000);
-                        });
+                        }
+                    });
                 } else {
-                    showNotification(data.message || 'Error adding to bag');
+                    showToast(data.message || 'Error adding to bag', 'error');
                 }
             });
         }
 
         function confirmRemove(productId) {
-            Swal.fire({
-                title: 'Remove item?',
-                text: 'This will remove the item from your wishlist.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#e53637',
-                confirmButtonText: 'Yes, remove'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/removeFromWishlist?productId=${productId}`;
+            showConfirm('Remove item?', 'This will remove the item from your wishlist.', (confirmed) => {
+                if (confirmed) {
+                    fetch(`/removeFromWishlist?productId=${productId}`, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status) {
+                            showToast('Item removed from wishlist', 'success');
+                            const btn = document.querySelector(`button[onclick="confirmRemove('${productId}')"]`);
+                            if (btn) btn.closest('tr').remove();
+                            
+                            const tbody = document.querySelector('.table tbody');
+                            if (tbody && tbody.children.length === 0) {
+                                document.querySelector('.table-responsive').parentElement.innerHTML = `
+                                    <div class="empty-wishlist">
+                                        <i class="far fa-heart mb-3" style="font-size: 48px; color: #eee;"></i>
+                                        <h3>Your favorites list is empty</h3>
+                                        <a href="/shop" class="btn btn-dark mt-3">Start Shopping</a>
+                                    </div>
+                                `;
+                            }
+                            if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
+                        }
+                    });
                 }
             });
-        }
-
-        function showNotification(msg) {
-            const n = document.getElementById('notification');
-            n.textContent = msg;
-            n.style.display = 'block';
-            setTimeout(() => n.style.display = 'none', 3000);
         }
     </script>
 

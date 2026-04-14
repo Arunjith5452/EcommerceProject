@@ -429,12 +429,7 @@
                         </table>
                     </div>
 
-                    <div id="notification" class="notification" style="display: none;" role="alert">
-                        <div class="notification-content">
-                            <span id="notification-message"></span>
-                            <button class="close-notification" aria-label="Close notification">×</button>
-                        </div>
-                    </div>
+
 
 
                     <div class="cart-actions">
@@ -486,16 +481,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlParams = new URLSearchParams(window.location.search);
     const errorMessage = urlParams.get("error");
 
-    if (errorMessage === "insufficient_stock") {
-        Swal.fire({
-            title: "Error",
-            text: "Insufficient stock for one or more items in your cart.",
-            icon: "error",
-            confirmButtonColor: "#3399cc"
-        });
-        history.replaceState(null, null, '/cart');
-    }
-});
+        if (errorMessage === "insufficient_stock") {
+            showToast("Insufficient stock for some items.", "error");
+            history.replaceState(null, null, '/cart');
+        }
+    });
 
 const checkoutButton = document.querySelector('#checkoutButton');
 checkoutButton.addEventListener("click", async () => {
@@ -511,24 +501,14 @@ checkoutButton.addEventListener("click", async () => {
 
         const contentType = response.headers.get("Content-Type");
 
-        if (contentType && contentType.includes("application/json")) {
-            const result = await response.json();
-            if (!result.success) {
-                Swal.fire({
-                    title: 'Error',
-                    text: result.message || 'Error processing order',
-                    icon: 'error',
-                    confirmButtonColor: '#3399cc'
-                });
-            }
-        } else {
+            if (contentType && contentType.includes("application/json")) {
+                const result = await response.json();
+                if (!result.success) {
+                    showToast(result.message || 'Error processing order', 'error');
+                }
+            } else {
             if (response.url.includes('error=insufficient_stock')) {
-                Swal.fire({
-                    title: "Error",
-                    text: "Insufficient stock for one or more items in your cart.",
-                    icon: "error",
-                    confirmButtonColor: "#3399cc"
-                });
+                showToast("Insufficient stock for some items.", "error");
                 history.replaceState(null, null, '/cart');
                 return;
             }
@@ -540,12 +520,7 @@ checkoutButton.addEventListener("click", async () => {
         }
     } catch (error) {
         console.error("Checkout error:", error);
-        Swal.fire({
-            title: "Error",
-            text: error.message || "An error occurred during checkout",
-            icon: "error",
-            confirmButtonColor: "#3399cc"
-        });
+        showToast("An error occurred during checkout", "error");
     }
 });
         document.querySelectorAll('.quantity-controls button').forEach(button => {
@@ -579,7 +554,7 @@ checkoutButton.addEventListener("click", async () => {
             const data = await response.json();
 
             if (!response.ok && isIncreasing) {
-                showNotification(data.message || 'Error updating quantity', 'error');
+                showToast(data.message || 'Error updating quantity', 'error');
                 inputField.value = originalQuantity;
                 return;
             }
@@ -597,7 +572,7 @@ checkoutButton.addEventListener("click", async () => {
         } catch (error) {
             console.error('Error updating quantity:', error);
             inputField.value = originalQuantity;
-            showNotification('Failed to update quantity. Please try again.', 'error');
+            showToast('Failed to update quantity', 'error');
         }
     });
 })
@@ -621,51 +596,26 @@ checkoutButton.addEventListener("click", async () => {
                 summaryTotal.textContent = `₹ ${newTotal}`;
             }
         }
-        document.querySelectorAll('.remove-item').forEach(button => {
-            button.addEventListener('click', async (e) => {
+    document.querySelectorAll('.remove-item').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            const tr = e.target.closest('tr');
+            const cartItemId = tr.getAttribute('data-cart-item-id');
 
-                const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
+            showConfirm('Remove item?', 'Are you sure you want to remove this item from your cart?', async (confirmed) => {
+                if(confirmed) {
+                    const response = await fetch(`/removeFromCart/${cartItemId}`, {
+                        method: 'DELETE',
+                    });
 
-                const response = await fetch(`/removeFromCart/${cartItemId}`, {
-                    method: 'DELETE',
-                });
-
-                const data = await response.json();
-                if (data.status) {
-                    e.target.closest('tr').remove();
-
-                    updateCartSummary()
-                    showNotification('Item removed from cart successfully');
+                    const data = await response.json();
+                    if (data.status) {
+                        tr.remove();
+                        updateCartSummary();
+                        showToast('Item removed from cart');
+                    }
                 }
             });
         });
-
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            const messageElement = document.getElementById('notification-message');
-
-            messageElement.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
-
-            const timeout = setTimeout(() => {
-                hideNotification();
-            }, 3000);
-
-            document.querySelector('.close-notification').onclick = () => {
-                clearTimeout(timeout);
-                hideNotification();
-            };
-        }
-
-        function hideNotification() {
-            const notification = document.getElementById('notification');
-            notification.style.animation = 'slideOut 0.5s ease-out';
-            setTimeout(() => {
-                notification.style.display = 'none';
-                notification.style.animation = 'slideIn 0.5s ease-out';
-            }, 500);
-        }
-
+    });
 
     </script>

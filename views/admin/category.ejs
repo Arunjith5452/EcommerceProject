@@ -140,19 +140,7 @@
                     location.reload();
                 })
                 .catch(error => {
-                    if (error.message === "Category already exists") {
-                        Swal.fire({
-                            icon: 'error',
-                            title: "Oops",
-                            text: "Category already exists"
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Oops",
-                            text: "An error occurred while adding the category",
-                        });
-                    }
+                    showToast(error.message || "An error occurred while adding the category", "error");
                 });
         }
 
@@ -194,88 +182,52 @@
             });
         }
 
-        async function addOffer(categoryId) {
-            const { value: amount } = await Swal.fire({
-                title: "Offer in percentage",
-                input: "number",
-                inputLabel: "Percentage",
-                inputPlaceholder: "%",
-            });
-
-            if (amount) {
+        function addOffer(categoryId) {
+            showPrompt("Offer in percentage", "Enter offer percentage (%)", async (amount) => {
+                if (!amount) return;
+                const numericAmount = parseFloat(amount);
+                if (isNaN(numericAmount) || numericAmount <= 0 || numericAmount > 100) {
+                    showToast("Please enter a valid percentage between 1 and 100", "error");
+                    return;
+                }
                 try {
-
                     const response = await fetch("/admin/addCategoryOffer", {
                         method: "POST",
-                        headers: {
-                            'content-type': "application/json",
-                        },
-                        body: JSON.stringify({
-                            percentage: amount,
-                            categoryId: categoryId,
-                        }),
+                        headers: { 'content-type': "application/json" },
+                        body: JSON.stringify({ percentage: numericAmount, categoryId }),
                     });
-
                     const data = await response.json();
                     if (response.ok && data.status === true) {
-                        Swal.fire(
-                            "Offer added",
-                            "The offer has been added",
-                            "success"
-                        ).then(() => {
-                            location.reload();
-                        })
+                        showToast("Offer added successfully", "success");
+                        setTimeout(() => location.reload(), 1500);
                     } else {
-                        Swal.fire("Failed", data.message || "Adding offer failed", "error");
+                        showToast(data.message || "Adding offer failed", "error");
                     }
                 } catch (error) {
-
-                    Swal.fire(
-                        "Error",
-                        "An error occured while adding the offer",
-                        "error"
-                    );
-
-                    console.error("Error adding offer", error)
+                    showToast("An error occurred while adding the offer", "error");
+                    console.error("Error adding offer", error);
                 }
-            }
-
+            });
         }
 
         async function removeOffer(categoryId) {
             try {
-
                 const response = await fetch("/admin/removeCategoryOffer", {
                     method: "POST",
-                    headers: {
-                        'content-type': "application/json"
-                    },
-                    body: JSON.stringify({
-                        categoryId: categoryId,
-                    })
-                })
+                    headers: { 'content-type': "application/json" },
+                    body: JSON.stringify({ categoryId })
+                });
                 const data = await response.json();
 
                 if (response.ok && data.status === true) {
-                    Swal.fire(
-                        "Offer removed",
-                        "The offer has been removed",
-                        "success"
-                    ).then(() => {
-                        location.reload();
-                    })
+                    showToast("Offer removed successfully", "success");
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    Swal.fire("Failed", data.message || "Removing offer failed", "error");
+                    showToast(data.message || "Removing offer failed", "error");
                 }
             } catch (error) {
-
-                Swal.fire(
-                    "Error",
-                    "An error occured while removing the offer",
-                    "error"
-                );
-
-                console.error("Error removing offer", error)
+                showToast("An error occurred while removing the offer", "error");
+                console.error("Error removing offer", error);
             }
         }
 

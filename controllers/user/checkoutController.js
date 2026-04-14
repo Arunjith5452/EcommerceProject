@@ -110,7 +110,12 @@ const addAddressCheckout = async (req, res) => {
             userAddress.address.push({ addressType, name, city, landMark, state, pincode, phone, altPhone });
             await userAddress.save();
         }
-        res.json({ success: true, message: 'Address added successfully!' });
+        
+        // Get the newly added address (it will be the last one in the array)
+        const updatedUserAddress = await Address.findOne({ userId: userData._id });
+        const newAddressObj = updatedUserAddress.address[updatedUserAddress.address.length - 1];
+        
+        res.json({ success: true, message: 'Address added successfully!', address: newAddressObj });
     } catch (error) {
         console.error("Error adding address:", error)
         return res.redirect("/pageNotFound")
@@ -863,6 +868,7 @@ const getOrderSuccess = async (req, res) => {
 
 
         const formattedOrder = {
+            _id: order._id,
             orderId: order.orderId,
             createdOn: order.createdOn,
             finalAmount: order.finalAmount,
@@ -873,6 +879,7 @@ const getOrderSuccess = async (req, res) => {
             address: selectedAddress,
             status: order.status,
             paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
         };
 
         ('Formatted order for template:', JSON.stringify(formattedOrder, null, 2));

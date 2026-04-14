@@ -74,9 +74,96 @@
 <script src="/js/mixitup.min.js"></script>
 <script src="/js/owl.carousel.min.js"></script>
 <script src="/js/main.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<!-- Custom Toast Container -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; pointer-events: none;"></div>
+
+<!-- Custom Confirmation Modal -->
+<div id="confirm-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+    <div style="background: #fff; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h4 id="confirm-title" style="margin-bottom: 10px; font-weight: 800;">Confirm</h4>
+        <p id="confirm-message" style="color: #666; margin-bottom: 25px; font-size: 14px;"></p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="confirm-cancel" style="padding: 10px 20px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; font-weight: 600;">Cancel</button>
+            <button id="confirm-ok" style="padding: 10px 20px; border: none; background: #e53637; color: #fff; border-radius: 4px; cursor: pointer; font-weight: 600;">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-toast {
+        background: #333;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-family: 'Nunito Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        opacity: 0;
+        transform: translateX(50px);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+        pointer-events: auto;
+    }
+    .custom-toast.show { opacity: 1; transform: translateX(0); }
+    .custom-toast.success { border-left: 4px solid #2ecc71; }
+    .custom-toast.error { border-left: 4px solid #e53637; }
+    .custom-toast.info { border-left: 4px solid #3498db; }
+    .custom-toast i { font-size: 18px; }
+    .custom-toast.success i { color: #2ecc71; }
+    .custom-toast.error i { color: #e53637; }
+    .custom-toast.info i { color: #3498db; }
+</style>
 
 <script>
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        
+        let icon = 'fa-check-circle';
+        if(type === 'error') icon = 'fa-times-circle';
+        if(type === 'info') icon = 'fa-info-circle';
+        
+        toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 400);
+        }, 3000);
+    }
+
+    function showConfirm(title, message, callback) {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-title').innerText = title;
+        document.getElementById('confirm-message').innerText = message;
+        
+        modal.style.display = 'flex';
+        
+        const cleanup = () => {
+            modal.style.display = 'none';
+            document.getElementById('confirm-ok').onclick = null;
+            document.getElementById('confirm-cancel').onclick = null;
+        };
+        
+        document.getElementById('confirm-ok').onclick = () => {
+            cleanup();
+            callback(true);
+        };
+        
+        document.getElementById('confirm-cancel').onclick = () => {
+            cleanup();
+            callback(false);
+        };
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const currentPath = window.location.pathname;
         const navItems = { '/': '.nav-item-home', '/shop': '.nav-item-shop', '/about': '.nav-item-about' };
@@ -94,12 +181,8 @@
         var isNewUser = false;
         <% if (typeof isNewUser !== 'undefined') { %> isNewUser = <%= isNewUser %>; <% } %>
         if (isNewUser) {
-            Swal.fire({
-                title: 'Welcome to FashionKart!',
-                text: 'Enjoy your shopping experience with us.',
-                icon: 'success',
-                confirmButtonText: 'Let\'s Shop!'
-            }).then(() => { fetch('/remove-new-user-flag'); });
+            showToast('Welcome to FashionKart! Enjoy your shopping.', 'success');
+            fetch('/remove-new-user-flag');
         }
     });
 </script>

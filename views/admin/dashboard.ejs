@@ -463,19 +463,11 @@
 
        if(quickFilter === 'custom'){
         if(!startDate || !endDate){
-            Swal.fire({
-                icon:'error',
-                title:'Oops...',
-                text:'Please provide both start and end dates for the custom date range,'
-            });
+            showToast('Please provide both start and end dates', 'error');
             return
         }
         if(new Date(endDate) < new Date(startDate)){
-            Swal.fire({
-                icon: 'error',
-                title: 'Invalid Date Range',
-                text: 'End date cannot be smaller than start date.'
-            })
+            showToast('End date cannot be earlier than start date', 'error');
             return
         }
        }
@@ -503,19 +495,27 @@
     window.location.href = url;
 }
 
-    document.getElementById('exportPdf').addEventListener('click', function () {
-        const quickFilter = document.getElementById('quickFilter').value;
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        window.location.href = `/download-sales-report-pdf?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`;
-    });
+    const exportPdf = document.getElementById('exportPdf');
+    if (exportPdf) {
+        exportPdf.addEventListener('click', function (e) {
+            e.preventDefault();
+            const quickFilter = document.getElementById('quickFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            window.location.href = `/admin/download/pdf?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`;
+        });
+    }
 
-    document.getElementById('exportExcel').addEventListener('click', function () {
-        const quickFilter = document.getElementById('quickFilter').value;
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        window.location.href = `/download-sales-report-excel?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`;
-    });
+    const exportExcel = document.getElementById('exportExcel');
+    if (exportExcel) {
+        exportExcel.addEventListener('click', function (e) {
+            e.preventDefault();
+            const quickFilter = document.getElementById('quickFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            window.location.href = `/admin/download/excel?filter=${quickFilter}&startDate=${startDate}&endDate=${endDate}`;
+        });
+    }
 
  
 
