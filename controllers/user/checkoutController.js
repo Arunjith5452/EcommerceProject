@@ -128,6 +128,13 @@ const editAddressCheckout = async (req, res) => {
         const data = req.body;
         const userId = req.session.user;
 
+        if (!addressId) {
+            return res.status(400).json({
+                success: false,
+                message: "Address id is required"
+            });
+        }
+
         const findAddress = await Address.findOne({
             userId,
             "address._id": addressId
@@ -141,7 +148,7 @@ const editAddressCheckout = async (req, res) => {
         }
 
         await Address.updateOne(
-            { "address._id": addressId },
+            { userId, "address._id": addressId },
             {
                 $set: {
                     "address.$": {
