@@ -431,9 +431,15 @@ const verifyChangePassOtp = (req, res) => {
 
 const addAddress = async (req, res) => {
     try {
+	
+        const userId = req.session.user;
+        const user = await User.findById(userId);
 
-        const user = req.session.user;
-        return res.render("add-address", { user: user })
+        if (!user) {
+            return res.redirect("/login");
+        }
+
+        return res.render("add-address", { user })
 
     } catch (error) {
         return res.redirect("pageNotFound")
@@ -471,8 +477,19 @@ const editAddress = async (req, res) => {
     try {
 
         const addressId = req.query.id;
-        const user = req.session.user;
+        const userId = req.session.user;
+
+        if (!addressId || !userId) {
+            return res.redirect("/pageNotFound");
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.redirect("/login");
+        }
+
         const currAddress = await Address.findOne({
+            userId,
             "address._id": addressId,
         });
         if (!currAddress) {
@@ -488,7 +505,7 @@ const editAddress = async (req, res) => {
         }
 
 
-        return res.render("edit-address", { address: addressData, user: user });
+        return res.render("edit-address", { address: addressData, user });
 
     } catch (error) {
         console.log("Error in edit address", error)
@@ -502,11 +519,25 @@ const postEditAddress = async (req, res) => {
         const data = req.body;
         const addressId = req.query.id;
         const user = req.session.user;
-        const findAddress = await Address.findOne({ "address._id": addressId });
+
+        if (!addressId || !user) {
+            if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+                return res.status(400).json({ success: false, message: "Address id is required" });
+            }
+            return res.redirect("/pageNotFound");
+        }
+
+        const findAddress = await Address.findOne({
+            userId: user,
+            "address._id": addressId
+        });
         if (!findAddress) {
+            if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+                return res.status(404).json({ success: false, message: "Address not found" });
+            }
             return res.redirect("/pageNotFound")
         }
-        await Address.updateOne({ "address._id": addressId },
+        await Address.updateOne({ userId: user, "address._id": addressId },
             {
                 $set: {
                     "address.$": {
@@ -525,10 +556,17 @@ const postEditAddress = async (req, res) => {
             }
         )
 
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.json({ success: true, message: "Address updated successfully" });
+        }
+
         return res.redirect("/userProfile?tab=address")
 
     } catch (error) {
         console.error("Error in edit address", error);
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.status(500).json({ success: false, message: "Error updating address" });
+        }
         res.redirect("/pageNotFound")
     }
 }

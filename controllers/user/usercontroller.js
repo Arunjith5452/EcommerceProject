@@ -195,15 +195,17 @@ const securePassword = async (password) => {
 
 const verifyOtp = async (req, res) => {
     try {
-
         const { otp } = req.body;
-        console.log(otp);
 
-        if (otp == req.session.userOtp) {
-            const user = req.session.userData
-            const passwordHash = await securePassword(user.password)
+        if (otp === req.session.userOtp) {
+            const user = req.session.userData;
+            
+            if (!user) {
+                return res.status(400).json({ success: false, message: "Session expired. Please try signing up again." });
+            }
 
-            const referralCode = generateReferralCode()
+            const passwordHash = await securePassword(user.password);
+            const referralCode = generateReferralCode();
 
             const saveUserData = new User({
                 username: user.username,
@@ -213,41 +215,47 @@ const verifyOtp = async (req, res) => {
                 referralCode: referralCode,
                 referredBy: user.referredBy,
                 wallet: user.referredBy ? 50 : 0
-            })
+            });
 
             await saveUserData.save();
 
             if (user.referredBy) {
-                const referrerUser = await User.findOne({ referralCode: user.referredBy })
+                const referrerUser = await User.findOne({ referralCode: user.referredBy });
                 if (referrerUser) {
                     referrerUser.referrals.push(saveUserData._id);
-                    referrerUser.referralEarnings += 100
-                    referrerUser.wallet += 100
+                    referrerUser.referralEarnings += 100;
+                    referrerUser.wallet += 100;
 
                     referrerUser.walletHistory.push({
                         transactionId: 'REF' + Date.now(),
                         type: 'credit',
                         amount: 100,
                         status: 'Completed'
-                    })
+                    });
 
-                    await referrerUser.save()
+                    await referrerUser.save();
                 }
-
             }
 
             req.session.user = saveUserData._id;
-            res.json({ success: true, redirectUrl: "/" })
+            
+            // Clear registration-specific session data
+            delete req.session.userOtp;
+            delete req.session.userData;
+
+            res.json({ success: true, redirectUrl: "/" });
         } else {
-            res.status(400).json({ success: false, message: "Invalid OTP,Please try again" })
+            res.status(400).json({ success: false, message: "Invalid OTP, Please try again" });
         }
 
     } catch (error) {
-
-        console.error("Error Verifying OTP", error)
-        res.status(500).json({ success: false, message: "An error occured" })
+        console.error("Error Verifying OTP", error);
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: "User already exists. Please login." });
+        }
+        res.status(500).json({ success: false, message: "An error occurred during verification" });
     }
-}
+};
 
 
 async function resendVerificationEmail(email, otp) {

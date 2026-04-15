@@ -125,7 +125,7 @@
 <body>
   <div class="otp-container">
     <h2>OTP Verification Code</h2>
-    <form action="/verify-otp" method="POST" id="otp-form" onsubmit="return validateOTP()">
+    <form action="/verify-otp" method="POST" id="otp-form">
       <div id="otp-inputs">
         <input type="text" maxlength="1" class="otp-input" id="otp1" name="otp1" required>
         <input type="text" maxlength="1" class="otp-input" id="otp2" name="otp2" required>
@@ -134,7 +134,7 @@
         <input type="text" maxlength="1" class="otp-input" id="otp5" name="otp5" required>
         <input type="text" maxlength="1" class="otp-input" id="otp6" name="otp6" required>
       </div>
-      <button type="submit" class="btn btn-primary">Verify OTP</button>
+      <button type="submit" class="btn btn-primary" id="verify-submit-btn">Verify OTP</button>
     </form>
     <div class="timer" id="timer">Resend OTP in 30 seconds</div>
     <button class="resend-btn" id="resend-btn" disabled>Resend OTP</button>
@@ -160,6 +160,8 @@
 
     let timerElement = document.getElementById('timer');
     let resendButton = document.getElementById('resend-btn');
+    let verifySubmitBtn = document.getElementById('verify-submit-btn');
+    let otpForm = document.getElementById('otp-form');
     let timer = 30;
     let interval;
 
@@ -213,7 +215,7 @@
           otpInputs[index + 1].focus();
         }
         if (isOTPComplete()) {
-          document.querySelector('.btn-primary').focus();
+          verifySubmitBtn.focus();
         }
       });
 
@@ -236,16 +238,22 @@
       return [...otpInputs].every(input => input.value.length === 1);
     }
 
-    async function validateOTP() {
+    otpForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
       let otpInput = "";
       otpInputs.forEach(input => { otpInput += input.value; });
 
       try {
+        verifySubmitBtn.disabled = true;
+        verifySubmitBtn.textContent = "Verifying...";
+
         const response = await fetch("/verify-otp", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: `otp=${encodeURIComponent(otpInput)}`
         });
+        
         const data = await response.json();
 
         if (data.success) {
@@ -253,12 +261,16 @@
           setTimeout(() => { window.location.href = data.redirectUrl; }, 1000);
         } else {
           showOtpToast(data.message || 'Invalid OTP. Please try again.', 'error');
+          verifySubmitBtn.disabled = false;
+          verifySubmitBtn.textContent = "Verify OTP";
         }
       } catch (error) {
-        showOtpToast('Invalid OTP', 'error');
+        console.error('Verification error:', error);
+        showOtpToast('An error occurred during verification. Please try again.', 'error');
+        verifySubmitBtn.disabled = false;
+        verifySubmitBtn.textContent = "Verify OTP";
       }
-      return false;
-    }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
       startTimer();

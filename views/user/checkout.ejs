@@ -778,7 +778,7 @@ function showEditAddressForm(addressId, address) {
     document.getElementById('edit-address-id').value = addressId;
     document.getElementById('edit-address-type').value = address.addressType || '';
     document.getElementById('edit-address-name').value = address.name || '';
-    document.getElementById('edit-address-landmark').value = address.landmark || address.landMark || '';
+    document.getElementById('edit-address-landMark').value = address.landmark || address.landMark || '';
     document.getElementById('edit-address-city').value = address.city || '';
     document.getElementById('edit-address-state').value = address.state || '';
     document.getElementById('edit-address-pincode').value = address.pincode || '';
@@ -790,9 +790,22 @@ function hideEditAddressForm() {
     document.getElementById('edit-address-form').style.display = 'none';
 }
 
+function populateEditAddressForm(addressData) {
+    document.getElementById('edit-address-id').value = addressData._id || '';
+    document.getElementById('edit-address-type').value = addressData.addressType || '';
+    document.getElementById('edit-address-name').value = addressData.name || '';
+    document.getElementById('edit-address-landMark').value = addressData.landMark || addressData.landmark || '';
+    document.getElementById('edit-address-city').value = addressData.city || '';
+    document.getElementById('edit-address-state').value = addressData.state || '';
+    document.getElementById('edit-address-pincode').value = addressData.pincode || '';
+    document.getElementById('edit-address-phone').value = addressData.phone || '';
+    document.getElementById('edit-address-altPhone').value = addressData.altPhone || '';
+    document.getElementById('edit-address-form').style.display = 'block';
+}
+
 function validateAddAddressForm() {
     let isValid = true;
-    const requiredFields = ["address-type", "address-name", "address-landmark", "address-city", "address-state", "address-pincode", "address-phone"];
+    const requiredFields = ["address-type", "address-name", "address-landMark", "address-city", "address-state", "address-pincode", "address-phone"];
 
     requiredFields.forEach(field => {
         const input = document.getElementById(field);
@@ -811,7 +824,7 @@ function validateAddAddressForm() {
     return validateFormData({
         name: document.getElementById('address-name').value,
         city: document.getElementById('address-city').value,
-        landMark: document.getElementById('address-landmark').value,
+        landMark: document.getElementById('address-landMark').value,
         state: document.getElementById('address-state').value,
         pincode: document.getElementById('address-pincode').value,
         phone: document.getElementById('address-phone').value,
@@ -821,7 +834,7 @@ function validateAddAddressForm() {
 
 function validateEditAddressForm() {
     let isValid = true;
-    const requiredFields = ["edit-address-type", "edit-address-name", "edit-address-landmark", "edit-address-city", "edit-address-state", "edit-address-pincode", "edit-address-phone"];
+    const requiredFields = ["edit-address-type", "edit-address-name", "edit-address-landMark", "edit-address-city", "edit-address-state", "edit-address-pincode", "edit-address-phone"];
 
     requiredFields.forEach(field => {
         const input = document.getElementById(field);
@@ -840,7 +853,7 @@ function validateEditAddressForm() {
     return validateFormData({
         name: document.getElementById('edit-address-name').value,
         city: document.getElementById('edit-address-city').value,
-        landMark: document.getElementById('edit-address-landmark').value,
+        landMark: document.getElementById('edit-address-landMark').value,
         state: document.getElementById('edit-address-state').value,
         pincode: document.getElementById('edit-address-pincode').value,
         phone: document.getElementById('edit-address-phone').value,
@@ -1166,21 +1179,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.querySelectorAll('.edit-address-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const addressData = JSON.parse(this.getAttribute('data-address'));
-            const editForm = document.getElementById('edit-address-form');
-            
-            document.getElementById('edit-address-id').value = addressData._id;
-            document.getElementById('edit-address-type').value = addressData.addressType || '';
-            document.getElementById('edit-address-name').value = addressData.name || '';
-            document.getElementById('edit-address-landMark').value = addressData.landMark || '';
-            document.getElementById('edit-address-city').value = addressData.city || '';
-            document.getElementById('edit-address-state').value = addressData.state || '';
-            document.getElementById('edit-address-pincode').value = addressData.pincode || '';
-            document.getElementById('edit-address-phone').value = addressData.phone || '';
-            document.getElementById('edit-address-altPhone').value = addressData.altPhone || '';
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
 
-            document.getElementById('edit-address-form').style.display = 'block';
+            try {
+                const addressData = JSON.parse(this.getAttribute('data-address'));
+                populateEditAddressForm(addressData);
+            } catch (error) {
+                console.error('Error opening edit address form:', error);
+                showSwalError('Unable to load this address for editing. Please try again.');
+            }
         });
     });
 
@@ -1260,20 +1269,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     // Attach edit listener
-                    newBox.querySelector('.edit-address-btn').addEventListener('click', function(e) {
-                         e.stopPropagation();
-                         const addressData = JSON.parse(this.getAttribute('data-address'));
-                         const editForm = document.getElementById('edit-address-form');
-                         document.getElementById('edit-address-id').value = addressData._id;
-                         document.getElementById('edit-address-type').value = addressData.addressType || '';
-                         document.getElementById('edit-address-name').value = addressData.name || '';
-                         document.getElementById('edit-address-landMark').value = addressData.landMark || '';
-                         document.getElementById('edit-address-city').value = addressData.city || '';
-                         document.getElementById('edit-address-state').value = addressData.state || '';
-                         document.getElementById('edit-address-pincode').value = addressData.pincode || '';
-                         document.getElementById('edit-address-phone').value = addressData.phone || '';
-                         document.getElementById('edit-address-altPhone').value = addressData.altPhone || '';
-                         document.getElementById('edit-address-form').style.display = 'block';
+                    newBox.querySelector('.edit-address-btn').addEventListener('click', function(event) {
+                         event.preventDefault();
+                         event.stopPropagation();
+
+                         try {
+                             const addressData = JSON.parse(this.getAttribute('data-address'));
+                             populateEditAddressForm(addressData);
+                         } catch (error) {
+                             console.error('Error opening new address for editing:', error);
+                             showSwalError('Unable to load this address for editing. Please try again.');
+                         }
                     });
 
                     showToast('Address added successfully', 'success');
@@ -1294,6 +1300,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!validateEditAddressForm()) return;
 
             const addressId = document.getElementById('edit-address-id').value;
+            if (!addressId) {
+                showSwalError('Please select an address to edit first.');
+                return;
+            }
             const formData = {
                 addressType: document.getElementById('edit-address-type').value.trim(),
                 name: document.getElementById('edit-address-name').value.trim(),
@@ -1385,3 +1395,5 @@ function applyCouponCode(couponCode) {
 }
 
     </script>
+
+<%- include("../../views/partials/user/footer") %>
