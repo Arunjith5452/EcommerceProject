@@ -587,13 +587,14 @@
                                         <h6 class="mb-0">Order #<%=order.orderId.slice(0,8)%>
                                         </h6>
                                         <span class="badge rounded-pill 
-                      <% if(order.status === 'Pending') { %>bg-warning
-                      <% } else if(order.status === 'Processing') { %>bg-info
-                      <% } else if(order.status === 'Shipped') { %>bg-primary
-                      <% } else if(order.status === 'Delivered') { %>bg-success
-                      <% } else if(order.status === 'Cancelled') { %>bg-danger
-                      <% } else if(order.status === 'Return Request') { %>bg-secondary
-                      <% } else if(order.status === 'Returned') { %>bg-dark<% } %>">
+                       <% if(order.status === 'Pending') { %>
+                        <%= order.paymentStatus === 'Failed' ? 'bg-danger' : 'bg-warning' %>
+                       <% } else if(order.status === 'Processing') { %>bg-info
+                       <% } else if(order.status === 'Shipped') { %>bg-primary
+                       <% } else if(order.status === 'Delivered') { %>bg-success
+                       <% } else if(order.status === 'Cancelled') { %>bg-danger
+                       <% } else if(order.status === 'Return Request') { %>bg-secondary
+                       <% } else if(order.status === 'Returned') { %>bg-dark<% } %>">
                                           <%= order.status %>
                                         </span>
                                       </div>
@@ -658,6 +659,12 @@
                                               data-bs-target="#orderModal">
                                               View Details
                                             </button>
+                                            <% if (order.paymentStatus === 'Failed' && (order.paymentRetryCount || 0) < 3) { %>
+                                              <button class="btn btn-sm btn-warning"
+                                                onclick="retryPaymentForOrder('<%= order._id %>', <%= displayAmount %>)">
+                                                Retry Payment
+                                              </button>
+                                            <% } %>
                                           </div>
                                         </div>
                                       </div>
@@ -1377,31 +1384,6 @@
                     if (data.success) {
                     showToast(reason || 'Your payment was not successful.', 'error');
                     setTimeout(() => viewOrderDetails(orderId), 2000);
-                    }
-                  })
-                  .catch(error => {
-                    console.error('Error handling payment failure:', error);
-                    showToast('Something went wrong. Please check your order status.', 'error');
-                  });
-              }
-
-              function handlePaymentFailure(orderId, reason = 'Payment was declined') {
-                return fetch('/updateOrderStatus', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    orderId: orderId,
-                    status: 'Failed',
-                    reason: reason
-                  })
-                })
-                  .then(response => response.json())
-                  .then(data => {
-                    if (data.success) {
-                    showToast('Payment Failed. Your payment didn\'t go through.', 'error');
-                    setTimeout(() => viewOrderDetails(orderId), 2000);
-                    } else {
-                      throw new Error(data.message || 'Failed to update order status');
                     }
                   })
                   .catch(error => {
