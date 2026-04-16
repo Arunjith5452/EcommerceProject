@@ -40,7 +40,7 @@ const addCategory = async (req, res) => {
     try {
 
       const existingCategory = await Category.findOne({ 
-        categoryName: { $regex: new RegExp(`^${name}$`, 'i') }
+        name: { $regex: new RegExp(`^${name}$`, 'i') }
       })
       
         if (existingCategory) {
@@ -172,7 +172,10 @@ const editCategory = async (req, res) => {
       const id = req.params.id;
       const { categoryName, description } = req.body;
 
-      const existingCategory = await Category.findOne({ categoryName });
+      const existingCategory = await Category.findOne({ 
+        name: { $regex: new RegExp(`^${categoryName}$`, 'i') }, 
+        _id: { $ne: id } 
+      });
       if (existingCategory) {
         return res.status(400).json({ error: "Category already exists, please choose another name" });
       }

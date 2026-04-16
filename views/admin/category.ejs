@@ -153,11 +153,11 @@
             if (name === "") {
                 displayErrorMessage("name-error", "Please enter a name");
                 isValid = false;
-            } else if (!/^[a-zA-Z\s]+$/.test(name)) {
-                displayErrorMessage("name-error", "Category name should contain only alphabetic characters");
+            } else if (!/^[a-zA-Z0-9\s]+$/.test(name)) {
+                displayErrorMessage("name-error", "Category name should contain only alphanumeric characters");
                 isValid = false;
             }else if(name.trim().length < 3 || name.trim().length > 25){
-                displayErrorMessage('productName-error','Product name must be between 3 and 50 characters')
+                displayErrorMessage('name-error','Category name must be between 3 and 25 characters')
                 isValid = false;
             }
 
