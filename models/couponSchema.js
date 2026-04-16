@@ -25,6 +25,11 @@ const couponSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    maximumDiscount: {
+        type: Number,
+        required: true,
+        default: 0
+    },
     isList: {
         type: Boolean,
         default: true

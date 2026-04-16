@@ -210,6 +210,19 @@
              </div>
 
 
+             <div>
+               <label for="maximum-discount" class="form-label">Maximum Discount</label>
+               <input
+                 type="text"
+                 name="maximumDiscount"
+                 id="maximum-discount"
+                 placeholder="Type here"
+                 class="form-control"
+               />
+               <div id="error-maximum-discount" class="error-message"></div>
+             </div>
+
+
              <div class="d-grid">
                <button
                  class="btn btn-primary mt-20"
@@ -233,6 +246,7 @@
                 <th>Expire On</th>
                 <th>Offer Price</th>
                 <th>Minimum Price</th>
+                <th>Maximum Discount</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -245,6 +259,7 @@
                 <td><%=new Date(coupons[i].expireOn).toLocaleDateString('en-US')%></td>
                 <td>₹<%=coupons[i].offerPrice%></td>
                 <td>₹<%=coupons[i].minimumPrice%></td>
+                <td>₹<%=coupons[i].maximumDiscount || 0 %></td>
                 <td><%=coupons[i].isList%></td>
                 <td>
                   <div class="btn-group">
@@ -257,6 +272,17 @@
             </tbody>
           </table>
         </div>
+       <div class="pagination-area mt-30 mb-50">
+           <nav aria-label="Page navigation example">
+             <ul class="pagination justify-content-start">
+               <% for(let i=1; i<=totalPages; i++) { %>
+                 <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
+                   <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                 </li>
+               <% } %>
+             </ul>
+           </nav>
+         </div>
       </div>
     </div>
   </div>

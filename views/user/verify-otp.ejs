@@ -169,15 +169,26 @@
 
     function startTimer() {
       if (interval) clearInterval(interval);
+      
+      const storedTimer = localStorage.getItem('otpTimerExpiry');
+      const now = Date.now();
+      
+      if (storedTimer && parseInt(storedTimer) > now) {
+        timer = Math.ceil((parseInt(storedTimer) - now) / 1000);
+      } else {
+        timer = 30;
+        localStorage.setItem('otpTimerExpiry', Date.now() + 30000);
+      }
+
       resendButton.disabled = true;
-      timer = 30;
       interval = setInterval(() => {
         timer--;
         timerElement.textContent = `Resend OTP in ${timer} seconds`;
-        if (timer === 0) {
+        if (timer <= 0) {
           clearInterval(interval);
           timerElement.textContent = "You can resend the OTP now.";
           resendButton.disabled = false;
+          localStorage.removeItem('otpTimerExpiry');
         }
       }, 1000);
     }
@@ -195,6 +206,7 @@
 
         if (data.success) {
           showOtpToast('A new OTP has been sent to your registered email.', 'success');
+          localStorage.removeItem('otpTimerExpiry');
           startTimer();
         } else {
           throw new Error(data.message || 'Failed to resend OTP');
