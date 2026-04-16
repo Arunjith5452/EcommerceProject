@@ -54,6 +54,7 @@
                             <div class="mb-4">
                                 <label class="form-label">Category</label>
                                 <select name="category" class="form-control" id="category">
+                                    <option value="">Select Category</option>
                                     <%for(let i=0; i<cat.length;i++){%>
                                         <option value="<%=cat[i].name%>">
                                             <%=cat[i].name%>
@@ -464,18 +465,12 @@
             if (name.trim() === "") {
                 displayErrorMessage('productName-error', 'Please enter a product name.');
                 isValid = false;
-            } else if (!/^[a-zA-Z\s]+$/.test(name.trim())) {
-                displayErrorMessage('productName-error', 'Product name should contain only alphabetic characters.');
-                isValid = false;
-            } else if (name.trim().length < 3 || name.trim().length > 25) {
+            } else if (name.trim().length < 3 || name.trim().length > 50) {
                 displayErrorMessage('productName-error', 'Product name must be between 3 and 50 characters')
                 isValid = false;
             }
             if (description.trim() === "") {
                 displayErrorMessage('description-error', 'Please enter a product description.');
-                isValid = false;
-            } else if (!/^[a-zA-Z\s]+$/.test(description.trim())) {
-                displayErrorMessage('description-error', 'Product description should contain only alphabetic characters.');
                 isValid = false;
             }
 
@@ -496,6 +491,11 @@
             }
             if (parseFloat(price) <= parseFloat(saleprice)) {
                 displayErrorMessage('regularPrice-error', 'Regular price must be greater than sale price.');
+                isValid = false;
+            }
+
+            if (category === "") {
+                displayErrorMessage('category-error', 'Please select a category.');
                 isValid = false;
             }
 
