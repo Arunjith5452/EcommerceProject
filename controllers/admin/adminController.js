@@ -278,7 +278,7 @@ const loadDashboard = async (req, res) => {
 
     const deliveredFilter = {
       ...dateFilter,
-      "orderedItems.status": "Delivered"
+      "orderedItems.status": { $ne: "Cancelled" }
     };
 
     const [
@@ -299,7 +299,7 @@ const loadDashboard = async (req, res) => {
       Order.aggregate([
         { $match: dateFilter },
         { $unwind: "$orderedItems" },
-        { $match: { "orderedItems.status": "Delivered" } },
+        { $match: { "orderedItems.status": { $ne: "Cancelled" } } },
         {
           $group: {
             _id: null,
