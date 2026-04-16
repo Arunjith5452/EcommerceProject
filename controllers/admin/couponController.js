@@ -3,9 +3,23 @@ const mongoose = require("mongoose")
 
 const loadCoupon = async (req,res) => {
     try {
-                
+        const page = parseInt(req.query.page) || 1;
+        const limit = 5;
+        const skip = (page - 1) * limit;
+
+        const totalCoupons = await Coupon.countDocuments();
         const findCoupons = await Coupon.find({})
-        return res.render("coupon",{coupons:findCoupons})
+            .sort({ createdOn: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const totalPages = Math.ceil(totalCoupons / limit);
+
+        return res.render("coupon", { 
+            coupons: findCoupons, 
+            currentPage: page, 
+            totalPages: totalPages 
+        });
     } catch (error) {
         return res.redirect("/admin/pageerror")
     }
@@ -20,6 +34,7 @@ const createCoupon = async (req,res) => {
             endDate : new Date(req.body.endDate + "T00:00:00"),
             offerPrice : parseInt(req.body.offerPrice),
             minimumPrice : parseInt(req.body.minimumPrice),
+            maximumDiscount : parseInt(req.body.maximumDiscount) || 0
         }
 
         const newCoupon = new Coupon({
@@ -27,7 +42,8 @@ const createCoupon = async (req,res) => {
             createdOn:data.startDate,
             expireOn:data.endDate,
             offerPrice:data.offerPrice,
-            minimumPrice:data.minimumPrice
+            minimumPrice:data.minimumPrice,
+            maximumDiscount: data.maximumDiscount
         })
         await newCoupon.save();
         return res.redirect("/admin/coupon");
