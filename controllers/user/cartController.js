@@ -18,13 +18,18 @@ const loadCart = async (req, res) => {
             })
         }  
 
-        const filteredItems = cart.items.filter(item => 
+        const originalItemCount = cart.items.length;
+        cart.items = cart.items.filter(item => 
             item.productId && !item.productId.isBlocked
         );
 
+        if (cart.items.length !== originalItemCount) {
+            await cart.save();
+        }
+
         return res.render("cart", {
             user: await User.findById(userId),
-            cart: filteredItems
+            cart: cart.items
         })
 
 

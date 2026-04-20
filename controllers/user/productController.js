@@ -14,6 +14,9 @@ const productDetails = async (req,res) => {
           return res.redirect("/pageNotFound");
       }
         const product = await Product.findById(productId).populate('category');
+        if (!product || product.isBlocked) {
+            return res.redirect("/pageNotFound");
+        }
         const findCategory = product.category;
         const relatedProduct = await Product.find({category:findCategory,_id:{$ne:productId}}).sort({ createdAt: -1 }).limit(4)
         const categoryOffer = findCategory ? findCategory.categoryOffer || 0 : 0

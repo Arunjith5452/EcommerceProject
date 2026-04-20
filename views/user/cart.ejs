@@ -484,6 +484,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (errorMessage === "insufficient_stock") {
             showToast("Insufficient stock for some items.", "error");
             history.replaceState(null, null, '/cart');
+        } else if (errorMessage === "blocked_items") {
+            showToast("Some items are no longer available and have been removed.", "error");
+            history.replaceState(null, null, '/cart');
         }
     });
 
@@ -619,3 +622,6 @@ checkoutButton.addEventListener("click", async () => {
     });
 
     </script>
+    <%- include("../../views/partials/user/footer") %>
+</body>
+</html>
