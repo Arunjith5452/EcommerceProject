@@ -491,7 +491,7 @@
                         <div class="modal-content">
                           <div class="modal-header">
                             <h5 class="modal-title">Edit Profile</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="window.editModal.hide()"></button>
                           </div>
                           <div class="modal-body">
                             <form id="editProfileForm">
@@ -505,7 +505,7 @@
                                 <input type="text" name="mobile" class="form-control" value="<%=user.mobile%>" required>
                               </div>
                               <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.editModal.hide()">Close</button>
                                 <button type="submit" class="btn btn-primary">Save Changes</button>
                               </div>
                             </form>
@@ -842,10 +842,10 @@
                     <script>
 
                       document.addEventListener('DOMContentLoaded', function () {
-                        const editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+                        window.editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
 
                         window.openEditModal = function () {
-                          editModal.show();
+                          window.editModal.show();
                         };
                         document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
                           e.preventDefault();
@@ -861,7 +861,7 @@
 
                             if (response.ok) {
                               const data = await response.json();
-                              editModal.hide();
+                              window.editModal.hide();
                               
                               // Update UI dynamically
                               const formDataObj = Object.fromEntries(formData);
@@ -898,6 +898,10 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+    </main>
             <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script src="https://kit.fontawesome.com/a-valid-fontawesome-kit-code.js" crossorigin="anonymous"></script>
@@ -1199,7 +1203,8 @@
                 const reasonOptions = cancelReasons.map((r, i) => `<option value="${r}">${r}</option>`).join('');
                 const selectHtml = `<select id="cancelReasonSelect" class="form-select mt-2"><option value="">Select a reason...</option>${reasonOptions}</select>`;
 
-                showConfirm('Select Cancellation Reason', selectHtml, async () => {
+                showConfirm('Select Cancellation Reason', selectHtml, async (confirmed) => {
+                  if (!confirmed) return;
                   const select = document.getElementById('cancelReasonSelect');
                   const selectedReason = select ? select.value : '';
                   if (!selectedReason) {
@@ -1256,7 +1261,8 @@
                 const options = Object.entries(returnReasons).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
                 const selectHtml = `<select id="returnReasonSelect" class="form-select mt-2"><option value="">Select a reason...</option>${options}</select>`;
 
-                showConfirm('Return Product', selectHtml, async () => {
+                showConfirm('Return Product', selectHtml, async (confirmed) => {
+                  if (!confirmed) return;
                   const select = document.getElementById('returnReasonSelect');
                   const selectedReason = select ? select.value : '';
                   if (!selectedReason) {
@@ -1449,3 +1455,6 @@
                 }
               });
             </script>
+            <%- include("../../views/partials/user/footer") %>
+          </body>
+        </html>

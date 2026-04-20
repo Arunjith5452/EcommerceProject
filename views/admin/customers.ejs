@@ -81,14 +81,18 @@
     </section>
     <script>
         function confirmBlock(userId) {
-            showConfirm("Block User", "Are you sure you want to block this user?", () => {
-                window.location.href = `/admin/blockCustomer?id=${userId}`;
+            showConfirm("Block User", "Are you sure you want to block this user?", (confirmed) => {
+                if (confirmed) {
+                    window.location.href = `/admin/blockCustomer?id=${userId}`;
+                }
             });
         }
     
         function confirmUnblock(userId) {
-            showConfirm("Unblock User", "Are you sure you want to unblock this user?", () => {
-                window.location.href = `/admin/UnblockCustomer?id=${userId}`;
+            showConfirm("Unblock User", "Are you sure you want to unblock this user?", (confirmed) => {
+                if (confirmed) {
+                    window.location.href = `/admin/UnblockCustomer?id=${userId}`;
+                }
             });
         }
     </script>

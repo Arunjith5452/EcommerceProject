@@ -9,35 +9,42 @@ const loadWishlist = async (req,res) => {
     try {
         const userId = req.session.user;
         
-        const wishlist = await Wishlist.findOne({userId:userId})
-        .populate({
-            path: 'products.productId', 
-            model: 'Product',
-            select: 'productName productImage salePrice category sizeVariants',
-            populate: {
-                path: 'category',  
-                model: 'Category'  
-            } 
-        })
-        
+        const wishlist = await Wishlist.findOne({ userId: userId })
+            .populate({
+                path: 'products.productId',
+                model: 'Product',
+                select: 'productName productImage salePrice category sizeVariants isBlocked',
+                populate: {
+                    path: 'category',
+                    model: 'Category'
+                }
+            })
+
         const user = await User.findById(userId);
-        
-        if(!wishlist || wishlist.products.length === 0){
+
+        if (!wishlist || wishlist.products.length === 0) {
             return res.render("wishlist", {
                 user: user,
                 wishlist: [],
                 products: []
             })
         }
-        
-        const validProducts = wishlist.products
-            .filter(item => item.productId !== null && item.productId !== undefined)
-            .map(item => item.productId);
+
+        const originalProductCount = wishlist.products.length;
+        wishlist.products = wishlist.products.filter(item => 
+            item.productId && !item.productId.isBlocked
+        );
+
+        if (wishlist.products.length !== originalProductCount) {
+            await wishlist.save();
+        }
+
+        const products = wishlist.products.map(item => item.productId);
         
         return res.render("wishlist", {
             user: user,
             wishlist: wishlist.products,
-            products: validProducts
+            products: products
         })
       
     } catch (error) {

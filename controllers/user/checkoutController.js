@@ -24,7 +24,7 @@ const getCheckoutPage = async (req, res) => {
 
         const cart = await Cart.findOne({ userId }).populate({
             path: 'items.productId',
-            select: 'productName sizeVariants'
+            select: 'productName sizeVariants isBlocked'
         });
 
         const validCoupons = await Coupon.find({
@@ -37,10 +37,15 @@ const getCheckoutPage = async (req, res) => {
             .select('name offerPrice minimumPrice');
 
 
-        ("cart products", cart)
+        console.log("cart products", cart)
 
         if (!cart || cart.items.length === 0) {
             return res.redirect('/cart');
+        }
+
+        const hasBlockedItems = cart.items.some(item => !item.productId || item.productId.isBlocked);
+        if (hasBlockedItems) {
+            return res.redirect('/cart?error=blocked_items');
         }
 
         let isStockSufficient = true;
@@ -404,6 +409,14 @@ const placeOrder = async (req, res) => {
         const selectedAddress = addressDoc.address.find(addr =>
             addr._id.toString() === addressId
         );
+
+        const hasBlockedItemsPlaceOrder = cart.items.some(item => !item.productId || item.productId.isBlocked);
+        if (hasBlockedItemsPlaceOrder) {
+            return res.status(400).json({
+                success: false,
+                message: 'One or more items in your cart are no longer available. Please return to your cart.'
+            });
+        }
 
         const actualDiscount = req.session.activeCoupon ? (req.session.couponDiscount || 0) : 0;
         const coupon = req.session.activeCoupon

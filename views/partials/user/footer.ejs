@@ -1,4 +1,5 @@
 <!-- Modern Dark Footer -->
+<% if (typeof hideFooter === 'undefined' || !hideFooter) { %>
 <footer class="footer" style="background: #111111; color: #b7b7b7; padding: 40px 0 20px 0; margin-top: 0; width: 100%; position: relative; overflow: hidden; text-align: center;">
     <div class="container">
         <div class="row justify-content-center">
@@ -62,6 +63,7 @@
         </div>
     </div>
 </footer>
+<% } %>
 
 <!-- JS Plugins -->
 <script src="/js/jquery-3.3.1.min.js"></script>
@@ -83,7 +85,7 @@
 <div id="confirm-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
     <div style="background: #fff; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
         <h4 id="confirm-title" style="margin-bottom: 10px; font-weight: 800;">Confirm</h4>
-        <p id="confirm-message" style="color: #666; margin-bottom: 25px; font-size: 14px;"></p>
+        <div id="confirm-message" style="color: #666; margin-bottom: 25px; font-size: 14px; text-align: center;"></div>
         <div style="display: flex; gap: 10px; justify-content: center;">
             <button id="confirm-cancel" style="padding: 10px 20px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; font-weight: 600;">Cancel</button>
             <button id="confirm-ok" style="padding: 10px 20px; border: none; background: #e53637; color: #fff; border-radius: 4px; cursor: pointer; font-weight: 600;">Confirm</button>
@@ -143,7 +145,7 @@
     function showConfirm(title, message, callback) {
         const modal = document.getElementById('confirm-modal');
         document.getElementById('confirm-title').innerText = title;
-        document.getElementById('confirm-message').innerText = message;
+        document.getElementById('confirm-message').innerHTML = message;
         
         modal.style.display = 'flex';
         

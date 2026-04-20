@@ -185,7 +185,7 @@ const userProfile = async (req, res) => {
             _id: { $in: userData.orderHistory }
         })
         .sort({createdOn: -1})
-        .populate('orderedItems.product', 'productName')
+        .populate('orderedItems.product', 'productName productImage')
 
         
         res.render('profile', {
