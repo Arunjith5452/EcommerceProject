@@ -357,8 +357,9 @@ function validateForm() {
  }
 
 
- function confirmDelete(couponId) {
-    showConfirm("Delete Coupon", "You won't be able to revert this!", async () => {
+  function confirmDelete(couponId) {
+    showConfirm("Delete Coupon", "You won't be able to revert this!", async (confirmed) => {
+        if (!confirmed) return;
         try {
             const response = await fetch(`/admin/deleteCoupon?id=${couponId}`, {
                 method: 'GET',

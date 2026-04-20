@@ -139,7 +139,8 @@
 
             <script>
                 function updateOrderStatus(orderId, status) {
-                    showConfirm(`Change status to "${status}"?`, "This action cannot be undone!", async () => {
+                    showConfirm(`Change status to "${status}"?`, "This action cannot be undone!", async (confirmed) => {
+                        if (!confirmed) return;
                         try {
                             const response = await fetch(`/admin/updateOrderStatus/${orderId}`, {
                                 method: 'PATCH',
@@ -276,7 +277,8 @@ ${data.order.orderedItems.map(item => `
                         });
                 }
                 function cancelSingleItem(orderId, productId, size) {
-                    showConfirm('Are you sure?', 'Do you want to cancel this item?', async () => {
+                    showConfirm('Are you sure?', 'Do you want to cancel this item?', async (confirmed) => {
+                        if (!confirmed) return;
                         try {
                             const response = await fetch(`/admin/userOrderCancel/${orderId}`, {
                                 method: 'PATCH',
@@ -303,7 +305,8 @@ ${data.order.orderedItems.map(item => `
                         return;
                     }
 
-                    showConfirm('Are you sure?', `Do you want to ${action} this return request?`, async () => {
+                    showConfirm('Are you sure?', `Do you want to ${action} this return request?`, async (confirmed) => {
+                        if (!confirmed) return;
                         try {
                             const response = await fetch(`/admin/handleReturnRequest/${orderId}`, {
                                 method: 'PATCH',
