@@ -239,7 +239,6 @@ const verifyOtp = async (req, res) => {
 
             req.session.user = saveUserData._id;
             
-            // Clear registration-specific session data
             delete req.session.userOtp;
             delete req.session.userData;
 
