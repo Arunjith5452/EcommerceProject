@@ -96,8 +96,15 @@
                                         <% } else { %>
                                             <select class="form-select form-select-sm status-select"
                                                 onchange="updateOrderStatus('<%= order.orderId %>', this.value)">
-                                                <% ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled' , 'Returned' ].forEach(status=> { %>
-                                                    <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %>>
+                                                <% 
+                                                const statusFlow = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+                                                const currentIdx = statusFlow.indexOf(order.status);
+                                                
+                                                ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled' , 'Returned' ].forEach(status=> { 
+                                                    const optionIdx = statusFlow.indexOf(status);
+                                                    const isDisabled = (currentIdx !== -1 && optionIdx !== -1 && optionIdx < currentIdx);
+                                                %>
+                                                    <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %> <%= isDisabled ? 'disabled' : '' %>>
                                                         <%= status %>
                                                     </option>
                                                 <% }) %>
