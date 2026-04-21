@@ -262,6 +262,10 @@
                 const quantityInput = row.querySelector('input[type="number"]');
 
                 if (sizeSelect && quantityInput) {
+                    if (quantityInput.value === '' || parseInt(quantityInput.value) < 0) {
+                        displayErrorMessage('variant-error', 'Quantity cannot be empty or negative.');
+                        isValid = false;
+                    }
                     const variantData = {
                         size: sizeSelect.value,
                         quantity: quantityInput.value
@@ -286,7 +290,7 @@
                 console.log(pair[0] + ': ' + pair[1]);
             }
 
-            return true;
+            return isValid;
         }
 
 
