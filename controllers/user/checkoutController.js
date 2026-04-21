@@ -348,6 +348,16 @@ const placeOrder = async (req, res) => {
                         throw new Error("Payment signature verification failed");
                     }
 
+                    // Validate stock before confirming order
+                    for (const item of existingOrder.orderedItems) {
+                        const product = await Product.findById(item.product);
+                        if (!product) throw new Error("Product not found");
+                        const sizeVariant = product.sizeVariants.find(v => v.size === item.size);
+                        if (!sizeVariant || sizeVariant.quantity < item.quantity) {
+                            throw new Error(`Insufficient stock for ${product.productName} (Size: ${item.size}). Contact support for refund.`);
+                        }
+                    }
+
                     await Promise.all([
                         Order.findByIdAndUpdate(orderId, {
                             paymentStatus: "Success",
@@ -416,6 +426,19 @@ const placeOrder = async (req, res) => {
                 success: false,
                 message: 'One or more items in your cart are no longer available. Please return to your cart.'
             });
+        }
+
+        for (const item of cart.items) {
+            const product = item.productId;
+            if (!product) continue;
+            
+            const sizeVariant = product.sizeVariants.find(v => v.size === item.size);
+            if (!sizeVariant || sizeVariant.quantity < item.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Insufficient stock for ${product.productName} (Size: ${item.size}). Only ${sizeVariant ? sizeVariant.quantity : 0} left in stock. Please update your cart.`
+                });
+            }
         }
 
         const actualDiscount = req.session.activeCoupon ? (req.session.couponDiscount || 0) : 0;
