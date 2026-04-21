@@ -125,6 +125,24 @@ const updateOrderStatus = async (req, res) => {
             });
         }
 
+        // Determine current status based on whether we are updating a specific item or the whole order
+        let currentStatus = order.status;
+        if (productId) {
+            const tempItem = order.orderedItems.find(item => item.product.toString() === productId);
+            if (tempItem) currentStatus = tempItem.status;
+        }
+
+        // Prevent moving order status backwards (e.g. Delivered -> Pending)
+        const statusFlow = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+        if (statusFlow.includes(currentStatus) && statusFlow.includes(status)) {
+            if (statusFlow.indexOf(status) < statusFlow.indexOf(currentStatus)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Cannot move order status backwards' 
+                });
+            }
+        }
+
         if (productId) {
             const orderItem = order.orderedItems.find(
                 item => item.product.toString() === productId
