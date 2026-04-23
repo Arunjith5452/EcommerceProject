@@ -19,13 +19,23 @@ passport.use(new GoogleStrategy({
             if (user) {
                 return done(null, user);
             } else {
-                user = new User({
-                    username: profile.displayName,
-                    email: profile.emails[0].value,
-                    googleId: profile.id,
-                });
-                await user.save();
-                return done(null, user)
+                // Check if a user with this email already exists
+                user = await User.findOne({ email: profile.emails[0].value });
+                if (user) {
+                    // Link google account to existing user
+                    user.googleId = profile.id;
+                    await user.save();
+                    return done(null, user);
+                } else {
+                    // Create new user if email doesn't exist
+                    user = new User({
+                        username: profile.displayName,
+                        email: profile.emails[0].value,
+                        googleId: profile.id,
+                    });
+                    await user.save();
+                    return done(null, user);
+                }
             }
 
         } catch (error) {
