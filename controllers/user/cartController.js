@@ -9,7 +9,11 @@ const loadCart = async (req, res) => {
         const userId = req.session.user;
 
         const cart = await Cart.findOne({ userId: userId })
-            .populate('items.productId', 'productName salePrice sizeVariants productImage isBlocked');
+            .populate({
+                path: 'items.productId',
+                select: 'productName salePrice sizeVariants productImage isBlocked category',
+                populate: { path: 'category', select: 'isListed' }
+            });
 
         if (!cart) {
             return res.render("cart", {
@@ -20,7 +24,7 @@ const loadCart = async (req, res) => {
 
         const originalItemCount = cart.items.length;
         cart.items = cart.items.filter(item => 
-            item.productId && !item.productId.isBlocked
+            item.productId && !item.productId.isBlocked && (!item.productId.category || item.productId.category.isListed !== false)
         );
 
         if (cart.items.length !== originalItemCount) {
@@ -49,12 +53,12 @@ const addToCart = async (req, res) => {
             return res.status(401).json({ status: false, message: "Please login to add items to cart" });
         }
 
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).populate('category');
         if (!product) {
             return res.status(404).json({ status: false, message: "Product not found" });
         }
 
-        if (product.isBlocked) {
+        if (product.isBlocked || (product.category && product.category.isListed === false)) {
             return res.status(400).json({ status: false, message: "This product is currently unavailable" });
         }
 
@@ -147,7 +151,7 @@ const updateCartQuantity = async (req, res) => {
             });
         }
 
-        const product = await Product.findById(cartItem.productId);
+        const product = await Product.findById(cartItem.productId).populate('category');
         if (!product) {
             return res.status(404).json({ 
                 status: false, 
@@ -155,7 +159,7 @@ const updateCartQuantity = async (req, res) => {
             });
         }
 
-        if (product.isBlocked) {
+        if (product.isBlocked || (product.category && product.category.isListed === false)) {
             cart.items = cart.items.filter(item => item._id.toString() !== cartItemId);
             await cart.save();
             return res.json({ 
