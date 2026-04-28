@@ -100,7 +100,7 @@
                                                 const statusFlow = ['Pending', 'Processing', 'Shipped', 'Delivered'];
                                                 const currentIdx = statusFlow.indexOf(order.status);
                                                 
-                                                ['Pending', 'Processing' , 'Shipped' , 'Delivered' , 'Cancelled' , 'Returned' ].forEach(status=> { 
+                                                ['Pending', 'Processing' , 'Shipped' , 'Delivered'].forEach(status=> { 
                                                     const optionIdx = statusFlow.indexOf(status);
                                                     const isDisabled = (currentIdx !== -1 && optionIdx !== -1 && optionIdx < currentIdx);
                                                 %>

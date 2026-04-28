@@ -605,15 +605,19 @@
                                           <% order.orderedItems.forEach(item=> { %>
                                             <div class="d-flex align-items-center mb-2">
                                               <div class="me-3" style="width: 50px; height: 50px; overflow: hidden;">
-                                                <% if(item.product.productImage && item.product.productImage.length> 0)
+                                                <% if(item.product && item.product.productImage && item.product.productImage.length> 0)
                                                   { %>
                                                   <img src="/uploads/product-images/<%=item.product.productImage[0]%>"
                                                     alt="<%=item.product.productName%>" class="img-fluid">
+                                                  <% } else { %>
+                                                  <div class="no-image d-flex align-items-center justify-content-center h-100 bg-light text-muted">
+                                                    <i class="fas fa-box"></i>
+                                                  </div>
                                                   <% } %>
                                               </div>
                                               <div>
                                                 <span>
-                                                  <%=item.product.productName%>
+                                                  <%=item.product ? item.product.productName : 'Product Unavailable'%>
                                                 </span><br>
                                                 <small class="text-muted">Size: <%=item.size%>, Qty: <%=item.quantity%>
                                                 </small>
