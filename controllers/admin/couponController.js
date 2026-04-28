@@ -33,8 +33,7 @@ const createCoupon = async (req,res) => {
             startDate : new Date(req.body.startDate + "T00:00:00"),
             endDate : new Date(req.body.endDate + "T00:00:00"),
             offerPrice : parseInt(req.body.offerPrice),
-            minimumPrice : parseInt(req.body.minimumPrice),
-            maximumDiscount : parseInt(req.body.maximumDiscount) || 0
+            minimumPrice : parseInt(req.body.minimumPrice)
         }
 
         const newCoupon = new Coupon({
@@ -42,8 +41,7 @@ const createCoupon = async (req,res) => {
             createdOn:data.startDate,
             expireOn:data.endDate,
             offerPrice:data.offerPrice,
-            minimumPrice:data.minimumPrice,
-            maximumDiscount: data.maximumDiscount
+            minimumPrice:data.minimumPrice
         })
         await newCoupon.save();
         return res.redirect("/admin/coupon");
