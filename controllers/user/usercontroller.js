@@ -547,11 +547,6 @@ const filterProduct = async (req, res) => {
     try {
         const user = req.session.user;
         const category = req.query.category;
-        
-        // Reset price and search when clicking a category specifically
-        // delete req.session.priceFilter; 
-        delete req.session.searchQuery;
-        if (req.body) delete req.body.query;
 
         const {
             products,
@@ -663,11 +658,12 @@ const filterByPrice = async (req, res) => {
 
 const searchProducts = async (req, res) => {
     try {
-        // Global search resets category and price filters
-        delete req.session.selectedCategory;
-        delete req.session.priceFilter;
+        if (req.body && req.body.query !== undefined) {
+            req.session.searchQuery = req.body.query;
+        } else if (req.query && req.query.query !== undefined) {
+            req.session.searchQuery = req.query.query;
+        }
         
-        req.session.searchQuery = req.body.query || req.query.query;
         req.query.sort = req.body.sort || req.query.sort || 'default';
         const {
             products,
