@@ -24,7 +24,8 @@ const getCheckoutPage = async (req, res) => {
 
         const cart = await Cart.findOne({ userId }).populate({
             path: 'items.productId',
-            select: 'productName sizeVariants isBlocked'
+            select: 'productName sizeVariants isBlocked category',
+            populate: { path: 'category', select: 'isListed' }
         });
 
         const validCoupons = await Coupon.find({
@@ -43,7 +44,11 @@ const getCheckoutPage = async (req, res) => {
             return res.redirect('/cart');
         }
 
-        const hasBlockedItems = cart.items.some(item => !item.productId || item.productId.isBlocked);
+        const hasBlockedItems = cart.items.some(item => 
+            !item.productId || 
+            item.productId.isBlocked || 
+            (item.productId.category && item.productId.category.isListed === false)
+        );
         if (hasBlockedItems) {
             return res.redirect('/cart?error=blocked_items');
         }
@@ -350,8 +355,11 @@ const placeOrder = async (req, res) => {
 
                     // Validate stock before confirming order
                     for (const item of existingOrder.orderedItems) {
-                        const product = await Product.findById(item.product);
+                        const product = await Product.findById(item.product).populate('category');
                         if (!product) throw new Error("Product not found");
+                        if (product.isBlocked || (product.category && product.category.isListed === false)) {
+                            throw new Error(`Product ${product.productName} is currently unavailable. Contact support for refund.`);
+                        }
                         const sizeVariant = product.sizeVariants.find(v => v.size === item.size);
                         if (!sizeVariant || sizeVariant.quantity < item.quantity) {
                             throw new Error(`Insufficient stock for ${product.productName} (Size: ${item.size}). Contact support for refund.`);
@@ -406,7 +414,10 @@ const placeOrder = async (req, res) => {
 
         const [addressDoc, cart] = await Promise.all([
             Address.findOne({ userId, 'address._id': addressId }),
-            Cart.findOne({ userId }).populate('items.productId')
+            Cart.findOne({ userId }).populate({
+                path: 'items.productId',
+                populate: { path: 'category' }
+            })
         ]);
 
         if (!addressDoc || !cart?.items.length) {
@@ -420,7 +431,11 @@ const placeOrder = async (req, res) => {
             addr._id.toString() === addressId
         );
 
-        const hasBlockedItemsPlaceOrder = cart.items.some(item => !item.productId || item.productId.isBlocked);
+        const hasBlockedItemsPlaceOrder = cart.items.some(item => 
+            !item.productId || 
+            item.productId.isBlocked || 
+            (item.productId.category && item.productId.category.isListed === false)
+        );
         if (hasBlockedItemsPlaceOrder) {
             return res.status(400).json({
                 success: false,
