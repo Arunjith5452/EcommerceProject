@@ -146,24 +146,18 @@ function validateForm() {
     isValid = false;
   }
 
-  const startDate = new Date(document.getElementById("startingDate").value);
-  const endDate = new Date(document.getElementById("expiringDate").value);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const sDateValue = document.getElementById("startingDate").value;
+  const eDateValue = document.getElementById("expiringDate").value;
 
-  if (!document.getElementById("startingDate").value) {
+  if (!sDateValue) {
     document.getElementById("error-start-date").innerHTML = "Start date is required";
-    isValid = false;
-  } else if (startDate < today) {
-    document.getElementById("error-start-date").innerHTML = 
-      "Start date cannot be earlier than today";
     isValid = false;
   }
 
-  if (!document.getElementById("expiringDate").value) {
+  if (!eDateValue) {
     document.getElementById("error-end-date").innerHTML = "End date is required";
     isValid = false;
-  } else if (endDate <= startDate) {
+  } else if (sDateValue && eDateValue && sDateValue >= eDateValue) {
     document.getElementById("error-end-date").innerHTML = 
       "End date must be after the start date";
     isValid = false;
