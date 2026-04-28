@@ -113,7 +113,6 @@ const addProducts = async (req, res) => {
             category: category._id,
             regularPrice,
             salePrice,
-            createdOn: new Date(),
             sizeVariants: sizeVariants,
             color,
             productImage: images,
@@ -153,7 +152,7 @@ const getAllProducts = async (req, res) => {
 
             ],
 
-        }).sort({ createdOn: -1 }).limit(limit * 1).skip((page - 1) * limit).populate("category").exec();
+        }).sort({ createdAt: -1 }).limit(limit * 1).skip((page - 1) * limit).populate("category").exec();
 
         const count = await Product.find({
             $or: [
