@@ -36,6 +36,10 @@ const createCoupon = async (req,res) => {
             minimumPrice : parseInt(req.body.minimumPrice)
         }
 
+        if (data.startDate >= data.endDate) {
+            return res.status(400).send("End date must be after the start date");
+        }
+
         const newCoupon = new Coupon({
             name:data.couponName,
             createdOn:data.startDate,
@@ -73,10 +77,12 @@ const updateCoupon = async (req,res) => {
         const oid = new mongoose.Types.ObjectId(couponId);
         const selectedCoupon = await Coupon.findOne({_id:oid});
         if(selectedCoupon){
-            const startDate = new Date(req.body.startDate)  
-            const endDate = new Date(req.body.endDate)
+            const startDate = new Date(req.body.startDate + "T00:00:00")  
+            const endDate = new Date(req.body.endDate + "T00:00:00")
 
-
+            if (startDate >= endDate) {
+                return res.status(400).send("End date must be after the start date");
+            }
             const updateCoupon = await Coupon.updateOne(
                 {_id:oid},
                 {
