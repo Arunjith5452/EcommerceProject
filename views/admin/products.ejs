@@ -1,97 +1,101 @@
 <%- include("../../views/partials/admin/header") %>
 <head>
 </head>
-<div class="content-header">
-    <div>
-        <h2 class="content-title card-title">Products</h2>
-    </div>
-</div>
-<header class="card-header text-center mb-20">
-    <form action="" method="get" class="d-inline">
-        <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px;">
-            <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products" name="search">
-            <button class="btn  border-0" type="submit">Search</button>
+<section class="content-main">
+    <div class="content-header">
+        <div>
+            <h2 class="content-title card-title">Products</h2>
         </div>
-    </form>
-</header>
-<div class="right mt-5">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th scope="col"><b>Product name</b></th>
-                <th scope="col"><b>Category</b></th>
-                <th scope="col"><b>Sale Price</b></th>
-                <th scope="col"><b>Offer Price</b></th>
-                <th scope="col"><b>Offer</b></th>
-                <th scope="col"><b>Variants</b></th>
-                <th scope="col"><b>Action</b></th>
-                <th scope="col"><b>Edit</b></th>
-                <th scope="col"><b>Delete</b></th>
-            </tr>
-        </thead>
-        <tbody>
-            <%for(let i=data.length-1;i>=0;i--){%>
-            <tr>
-                <td><%=data[i].productName%></td>
-                <td><%=data[i].category.name%></td>
-                <td><%=data[i].salePrice%></td>
-                <td>
-                  <%if(locals.data[i].productOffer){%>
-                    <%=data[i].productOffer%>%
-                    <%}else{%>
-                        0%
+    </div>
+    <div class="card mb-4">
+        <header class="card-header text-center mb-20">
+            <form action="" method="get" class="d-inline">
+                <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="max-width: 500px; margin: 0 auto;">
+                    <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products" name="search">
+                    <button class="btn border-0" type="submit">Search</button>
+                </div>
+            </form>
+        </header>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col"><b>Product name</b></th>
+                            <th scope="col"><b>Category</b></th>
+                            <th scope="col"><b>Sale Price</b></th>
+                            <th scope="col"><b>Offer Price</b></th>
+                            <th scope="col"><b>Offer</b></th>
+                            <th scope="col"><b>Variants</b></th>
+                            <th scope="col"><b>Action</b></th>
+                            <th scope="col"><b>Edit</b></th>
+                            <th scope="col"><b>Delete</b></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% for(let i=0; i<data.length; i++) { %>
+                        <tr>
+                            <td><%=data[i].productName%></td>
+                            <td><%=data[i].category.name%></td>
+                            <td><%=data[i].salePrice%></td>
+                            <td>
+                              <%if(locals.data[i].productOffer){%>
+                                <%=data[i].productOffer%>%
+                                <%}else{%>
+                                    0%
+                                    <%}%>
+                            </td>
+                            <td>
+                            <%if(locals.data[i].productOffer===0){%>
+                                <button class="btn btn-info btn-sm" onclick="addOffer('<%=data[i]._id%>')" style="width: 100px;">
+                                    <a href="#" class="text-white text-decoration-none">Add Offer</a>
+                                </button>
+                            <%}else{%>
+                                <button class="btn btn-info btn-sm" onclick="removeOffer('<%=data[i]._id%>')" style="width: 100px;">
+                                    <a href="#" class="text-white text-decoration-none">Remove</a>
+                                </button>
+                            <%}%>
+                            </td>
+                            <td>
+                                <%if(data[i].sizeVariants && data[i].sizeVariants.length > 0) {%>
+                                  <ul class="list-unstyled mb-0">
+                                    <%data[i].sizeVariants.forEach(function(variant) { %>
+                                      <li><%= variant.size %>: <%= variant.quantity %></li>
+                                    <% })%>
+                                  </ul>
+                                <%} else {%>
+                                  No Variants
+                                <%}%>
+                              </td>
+                            <td>
+                            <%if(data[i].isBlocked===false){%>
+                                <button class="btn btn-danger btn-sm" style="width: 80px;">
+                                    <a href="/admin/blockProduct?id=<%=data[i]._id%>" class="text-white text-decoration-none">Block</a>
+                                </button>
+                            <%}else{%>
+                                <button class="btn btn-success btn-sm" style="width: 80px;">
+                                    <a href="/admin/unblockProduct?id=<%=data[i]._id%>" class="text-white text-decoration-none">Unblock</a>
+                                </button>
+                            <%}%>
+                            </td>
+                            <td>
+                                <button class="btn btn-info btn-sm" style="width: 80px;">
+                                    <a href="/admin/editProduct?id=<%=data[i]._id%>" class="text-white text-decoration-none">Edit</a>
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteProduct('<%=data[i]._id%>')" style="width: 80px;">
+                                    <a href="#" class="text-white text-decoration-none">Delete</a>
+                                </button>
+                            </td>
+                        </tr>
                         <%}%>
-                </td>
-                <td>
-                <%if(locals.data[i].productOffer===0){%>
-                    <button class="btn btn-info" onclick="addOffer('<%=data[i]._id%>')" style="width: 100px;">
-                        <a href="#" class="text-white">Add Offer</a>
-                    </button>
-                <%}else{%>
-                    <button class="btn btn-info" onclick="removeOffer('<%=data[i]._id%>')" style="width: 100px;">
-                        <a href="#" class="text-white">Remove</a>
-                    </button>
-                <%}%>
-                </td>
-                <td>
-                    <%if(data[i].sizeVariants && data[i].sizeVariants.length > 0) {%>
-                      <ul class="list-unstyled">
-                        <%data[i].sizeVariants.forEach(function(variant) { %>
-                          <li><%= variant.size %>: <%= variant.quantity %></li>
-                        <% })%>
-                      </ul>
-                    <%} else {%>
-                      No Variants
-                    <%}%>
-                  </td>
-                <td>
-                <%if(data[i].isBlocked===false){%>
-                    <button class="btn btn-danger" style="width: 80px;">
-                        <a href="/admin/blockProduct?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Block</a>
-                    </button>
-                <%}else{%>
-                    <button class="btn btn-success" style="width: 80px;">
-                        <a href="/admin/unblockProduct?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Unblock</a>
-                    </button>
-                <%}%>
-                </td>
-                <td>
-                    <button class="btn btn-info" style="width: 80px;">
-                        <a href="/admin/editProduct?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Edit</a>
-                    </button>
-                </td>
-                <td>
-                    <button class="btn btn-danger" onclick="deleteProduct('<%=data[i]._id%>')" style="width: 80px;">
-                        <a href="#" class="text-white" style="text-decoration: none;">Delete</a>
-                    </button>
-                </td>
-            </tr>
-            <%}%>
-        </tbody>
-    </table>
-</div>
-</div>
-</div>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
 <%-include("../../views/partials/admin/pagination")%>
  <script>
   function addOffer(productId) {
