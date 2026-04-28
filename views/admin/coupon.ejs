@@ -279,18 +279,31 @@ function validateForm() {
   
   const sDate = document.getElementsByName("startDate")[0].value;
   const eDate = document.getElementsByName("endDate")[0].value;
+  
+  if (!sDate) {
+    document.getElementById("error-start-date").innerHTML = "Starting date is required";
+    return false;
+  }
+  if (!eDate) {
+    document.getElementById("error-end-date").innerHTML = "End date is required";
+    return false;
+  }
+
   const sDateObj = new Date(sDate);
   const eDateObj = new Date(eDate);
   const todayDateObj = new Date();
   todayDateObj.setHours(0, 0, 0, 0);
 
-  if (sDateObj < todayDateObj) {
-    document.getElementById("error-start-date").innerHTML = 
-      "Starting date must be today or a future date";
-    return false;
+  if (sDateObj.getTime() < todayDateObj.getTime() && sDate !== todayDateObj.toISOString().split('T')[0]) {
+    const todayStr = todayDateObj.getFullYear() + "-" + String(todayDateObj.getMonth()+1).padStart(2, '0') + "-" + String(todayDateObj.getDate()).padStart(2, '0');
+    if(sDate < todayStr) {
+      document.getElementById("error-start-date").innerHTML = 
+        "Starting date must be today or a future date";
+      return false;
+    }
   }
 
-  if (sDateObj >= eDateObj) {
+  if (sDate >= eDate) {
     document.getElementById("error-end-date").innerHTML = 
       "End date must be after the start date";
     return false;
