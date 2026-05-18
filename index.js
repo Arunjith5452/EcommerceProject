@@ -47,13 +47,23 @@ app.use(errorHandler);
 
 app.use((req, res, next) => {
     const isAdminRoute = req.originalUrl.startsWith('/admin');
-    const redirectUrl = isAdminRoute ? '/admin/dashboard' : '/'; 
     
-    res.status(404).render(isAdminRoute ? "pageerror" : "page-404", { 
+    if (isAdminRoute) {
+        if (!req.session || !req.session.admin) {
+            return res.redirect('/admin/login');
+        }
+        return res.status(404).render("pageerror", { 
+            title: "Page Not Found", 
+            message: "The page you are looking for does not exist.",
+            status: 404,
+        });
+    }
+
+    res.status(404).render("page-404", { 
         title: "Page Not Found", 
         message: "The page you are looking for does not exist.",
         status: 404,
-    })
+    });
 })
 
 

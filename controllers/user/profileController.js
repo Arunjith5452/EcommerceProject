@@ -618,7 +618,21 @@ const viewOrderDetails = async (req,res) => {
             return res.status(404).json({message:'Order not found'})
         }
 
-        return res.json(order);
+        let addressData = null;
+        if (order && order.address) {
+            const addressDoc = await Address.findOne({
+                'address._id': order.address
+            });
+            if (addressDoc) {
+                addressData = addressDoc.address.find(addr => 
+                    addr._id.toString() === order.address.toString()
+                ) || null;
+            }
+        }
+
+        const orderObj = order.toObject ? order.toObject() : order;
+        orderObj.address = addressData;
+        return res.json(orderObj);
 
     } catch (error) {
         console.error('Error fetching order details:', error);

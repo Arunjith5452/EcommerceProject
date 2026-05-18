@@ -12,14 +12,16 @@ const multer = require("multer");
 const storage = require("../helpers/multer");
 const uploads = multer({ storage: storage });
 
+router.get('/', (req, res) => res.redirect('/admin/dashboard'));
+
 router.get("/pageerror", adminController.pageerror);
 
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
-router.get('/dashboard/analytics', adminController.getAnalyticsData);
-router.get('/dashboard/top-performers', adminController.getTopPerformers);
-router.get('/download/excel',adminController.generateExcelReport);
-router.get('/download/pdf',adminController.generatePDFReport);
+router.get('/dashboard/analytics', adminAuth, adminController.getAnalyticsData);
+router.get('/dashboard/top-performers', adminAuth, adminController.getTopPerformers);
+router.get('/download/excel', adminAuth, adminController.generateExcelReport);
+router.get('/download/pdf', adminAuth, adminController.generatePDFReport);
 router.get("/dashboard", adminAuth, adminController.loadDashboard);             
 router.get("/logout", adminController.adminLogout);
 
