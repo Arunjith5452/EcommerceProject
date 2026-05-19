@@ -1047,22 +1047,21 @@
                         }
                     </div>`;
                     }
-                    let orderDetailsHTML = `
-                <div class="order-details-container">
+                         <div class="order-details-container">
                 <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom">
                     <h5 class="order-id mb-0 text-dark fw-bold">Order ID: #${order.orderId.slice(0, 8)}</h5>
                     <span class="badge rounded-pill px-3 py-2 ${getStatusBadgeClass(order.status)}" style="font-size: 0.85rem; letter-spacing: 0.5px;">${order.status}</span>
                 </div>
                 <div class="card border-0 bg-light rounded-3 mb-4 shadow-sm">
-                    <div class="card-body p-4">
+                    <div class="card-body p-3 p-md-4">
                         <div class="row g-3">
-                            <div class="col-md-6 border-end">
+                            <div class="col-md-6 border-bottom border-md-bottom-0 border-md-end pb-3 pb-md-0">
                                 <h6 class="text-uppercase tracking-wider text-muted small fw-bold mb-3">Order Information</h6>
                                 <p class="mb-2 text-secondary"><i class="far fa-calendar-alt me-2 text-primary"></i><strong>Placed on:</strong> ${new Date(order.createdOn).toLocaleDateString()}</p>
                                 <p class="mb-2 text-secondary"><i class="fas fa-wallet me-2 text-primary"></i><strong>Payment Method:</strong> ${order.paymentMethod}</p>
                                 <p class="mb-0 text-secondary"><i class="fas fa-info-circle me-2 text-primary"></i><strong>Payment Status:</strong> <span class="badge px-2 py-1" style="background-color: rgba(40, 167, 69, 0.1); color: #28a745;">${order.paymentStatus}</span></p>
                             </div>
-                            <div class="col-md-6 ps-md-4">
+                            <div class="col-md-6 ps-md-4 pt-3 pt-md-0">
                                 <h6 class="text-uppercase tracking-wider text-muted small fw-bold mb-3">Shipping Address</h6>
                                 ${order.address ? `
                                     <p class="mb-1 fw-bold text-dark"><i class="fas fa-user me-2 text-primary"></i>${order.address.name}</p>
@@ -1087,11 +1086,11 @@
                                                 <div class="me-3 rounded-3 overflow-hidden shadow-sm" style="width: 80px; height: 80px; flex-shrink: 0; border: 1px solid #eee;">
                                                     ${item.product.productImage && item.product.productImage.length > 0 ?
                                                       `<img src="/uploads/product-images/${item.product.productImage[0]}" 
-                                                              alt="${item.product.productName}" 
-                                                              class="w-100 h-100 object-fit-cover">` :
+                                                                alt="${item.product.productName}" 
+                                                                class="w-100 h-100 object-fit-cover">` :
                                                       `<div class="no-image rounded bg-light d-flex align-items-center justify-content-center h-100">
-                                                              <i class="fas fa-image text-muted fa-lg"></i>
-                                                          </div>`
+                                                                <i class="fas fa-image text-muted fa-lg"></i>
+                                                            </div>`
                                                     }
                                                 </div>
                                                 <div>
@@ -1100,7 +1099,7 @@
                                                     <p class="mb-0 text-primary fw-bold" style="font-size: 1.05rem;">₹${item.price.toLocaleString()}</p>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4 text-end mt-3 mt-md-0 d-flex flex-column align-items-end justify-content-center action-button-container">
+                                            <div class="col-md-4 text-start text-md-end mt-3 mt-md-0 d-flex flex-column align-items-start align-items-md-end justify-content-center action-button-container">
                                                 <span class="badge rounded-pill px-3 py-2 ${getStatusBadgeClass(itemStatus)} item-status-badge mb-2" style="font-size: 0.8rem; min-width: 90px; text-align: center;">
                                                     ${itemStatus}
                                                 </span>
@@ -1240,8 +1239,8 @@
                     if (data.success) {
                       const itemCard = buttonElement?.closest('.card');
                       if (itemCard) {
-                        const statusBadge = itemCard.querySelector('.badge');
-                        if (statusBadge) { statusBadge.className = 'badge bg-danger'; statusBadge.textContent = 'Cancelled'; }
+                         const statusBadge = itemCard.querySelector('.item-status-badge');
+                        if (statusBadge) { statusBadge.className = 'badge rounded-pill px-3 py-2 bg-danger item-status-badge mb-2'; statusBadge.textContent = 'Cancelled'; }
                         buttonElement.remove();
                         const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
                         if (orderCard) {
