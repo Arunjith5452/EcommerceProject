@@ -385,36 +385,44 @@
                         </form>
                     </div>
                     
-                    <div class="sidebar__widget">
-                        <h4 class="sidebar__title">Categories</h4>
-                        <div class="sidebar__categories">
-                            <ul>
-                                <li>
-                                    <a href="/shop" class="sidebar__link <%= !selectedCategory ? 'active' : '' %>">
-                                        All Collections <span>(<%= totalProducts || 'All' %>)</span>
-                                    </a>
-                                </li>
-                                <% for(let i=0; i<category.length; i++) { %>
+                    <!-- Mobile Filter Toggle Button -->
+                    <button class="btn btn-outline-dark w-100 d-lg-none mb-4" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilters" aria-expanded="false" aria-controls="mobileFilters">
+                        <i class="fa fa-filter"></i> Filters
+                    </button>
+                    
+                    <!-- Collapsible Filters Wrapper -->
+                    <div class="collapse d-lg-block" id="mobileFilters">
+                        <div class="sidebar__widget">
+                            <h4 class="sidebar__title">Categories</h4>
+                            <div class="sidebar__categories">
+                                <ul>
                                     <li>
-                                        <a href="/filter?category=<%= category[i]._id %>" 
-                                           class="sidebar__link <%= selectedCategory && selectedCategory.toString() === category[i]._id.toString() ? 'active' : '' %>">
-                                            <%= category[i].name %>
+                                        <a href="/shop" class="sidebar__link <%= !selectedCategory ? 'active' : '' %>">
+                                            All Collections <span>(<%= totalProducts || 'All' %>)</span>
                                         </a>
                                     </li>
-                                <% } %>
-                            </ul>
+                                    <% for(let i=0; i<category.length; i++) { %>
+                                        <li>
+                                            <a href="/filter?category=<%= category[i]._id %>" 
+                                               class="sidebar__link <%= selectedCategory && selectedCategory.toString() === category[i]._id.toString() ? 'active' : '' %>">
+                                                <%= category[i].name %>
+                                            </a>
+                                        </li>
+                                    <% } %>
+                                </ul>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="sidebar__widget">
-                        <h4 class="sidebar__title">Filter Price</h4>
-                        <div class="sidebar__price">
-                            <ul>
-                                <li><a href="/filterPrice?gt=0&lt=500" class="sidebar__link">₹0.00 - ₹500.00</a></li>
-                                <li><a href="/filterPrice?gt=500&lt=1000" class="sidebar__link">₹500.00 - ₹1000.00</a></li>
-                                <li><a href="/filterPrice?gt=1000&lt=1500" class="sidebar__link">₹1000.00 - ₹1500.00</a></li>
-                                <li><a href="/filterPrice?gt=1500&lt=1000000" class="sidebar__link">₹1500.00 +</a></li>
-                            </ul>
+                        <div class="sidebar__widget">
+                            <h4 class="sidebar__title">Filter Price</h4>
+                            <div class="sidebar__price">
+                                <ul>
+                                    <li><a href="/filterPrice?gt=0&lt=500" class="sidebar__link">₹0.00 - ₹500.00</a></li>
+                                    <li><a href="/filterPrice?gt=500&lt=1000" class="sidebar__link">₹500.00 - ₹1000.00</a></li>
+                                    <li><a href="/filterPrice?gt=1000&lt=1500" class="sidebar__link">₹1000.00 - ₹1500.00</a></li>
+                                    <li><a href="/filterPrice?gt=1500&lt=1000000" class="sidebar__link">₹1500.00 +</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
