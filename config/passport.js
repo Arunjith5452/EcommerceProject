@@ -25,10 +25,12 @@ passport.use(new GoogleStrategy({
                     await user.save();
                     return done(null, user);
                 } else {
+                    const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
                     user = new User({
                         username: profile.displayName,
                         email: profile.emails[0].value,
                         googleId: profile.id,
+                        referralCode: referralCode,
                     });
                     await user.save();
                     return done(null, user);
