@@ -351,7 +351,28 @@
         .shop__product__option__right { justify-content: flex-start; margin-top: 20px; }
         .product__item__pic { height: 250px; }
     }
-</style>
+
+    @media (max-width: 991px) {
+        .shop__sidebar {
+            text-align: center;
+            padding-right: 0;
+            margin-top: 20px;
+        }
+        .sidebar__title:after {
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+        }
+        .sidebar__link {
+            justify-content: center !important;
+            text-align: center !important;
+        }
+        .sidebar__categories ul li, .sidebar__price ul li {
+            text-align: center !important;
+        }
+        .sidebar__link:hover, .sidebar__link.active {
+            transform: translateY(-2px) !important;
+        }
+    }</style>
 
 <!-- Breadcrumb Section -->
 <section class="breadcrumb-section">
