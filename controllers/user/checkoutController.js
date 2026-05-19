@@ -12,7 +12,7 @@ const { ObjectId } = mongoose.Types;
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
-const getCheckoutPage = async (req, res) => {
+const getCheckoutPage = async (req, res, next) => {
     try {
 
         const userId = req.session.user;
@@ -32,7 +32,7 @@ const getCheckoutPage = async (req, res) => {
             isList: true,
             expireOn: { $gt: new Date() },
             createdOn: { $lt: new Date() },
-            userId: { $eq: [] }
+            userId: { $nin: [userId] }
         })
             .sort({ createdOn: -1 })
             .select('name offerPrice minimumPrice');
@@ -55,7 +55,7 @@ const getCheckoutPage = async (req, res) => {
 
         let isStockSufficient = true;
         const stockCheckDetails = cart.items.map((item) => {
-            const productStock = item.productId.sizeVariants.find(
+            const productStock = (item.productId.sizeVariants || []).find(
                 (variant) => variant.size === item.size
             )?.quantity || 0;
 
@@ -101,7 +101,7 @@ const getCheckoutPage = async (req, res) => {
 
     } catch (error) {
         console.error('Checkout page error:', error);
-        res.status(500).render('error', { message: 'Error loading checkout page' })
+        next(error);
     }
 }
 
@@ -896,7 +896,7 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-const getOrderSuccess = async (req, res) => {
+const getOrderSuccess = async (req, res, next) => {
     try {
         const orderId = req.params.orderId;
         const userId = req.session.user;
@@ -910,10 +910,7 @@ const getOrderSuccess = async (req, res) => {
             .lean();
 
         if (!order) {
-            return res.status(404).render('error', {
-                message: 'Order not found',
-                user: userId
-            });
+            return res.status(404).render('page-404');
         }
 
         const userAddress = await Address.findOne({
@@ -953,9 +950,7 @@ const getOrderSuccess = async (req, res) => {
 
     } catch (error) {
         console.error('Error in order success:', error);
-        return res.status(500).render('error', {
-            message: 'Something went wrong',
-        });
+        next(error);
     }
 };
 const downloadInvoice = async (req, res) => {
