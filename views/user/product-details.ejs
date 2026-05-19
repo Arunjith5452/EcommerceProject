@@ -384,21 +384,23 @@
         document.getElementById('mainImage').src = src;
     }
 
-    // Smooth Zoom
+    // Smooth Zoom (Desktop Only)
     const zoomContainer = document.getElementById('mainZoom');
     const mainImage = document.getElementById('mainImage');
 
-    zoomContainer.addEventListener('mousemove', (e) => {
-        const x = e.clientX - zoomContainer.getBoundingClientRect().left;
-        const y = e.clientY - zoomContainer.getBoundingClientRect().top;
-        mainImage.style.transformOrigin = `${x}px ${y}px`;
-        mainImage.style.transform = "scale(2)";
-    });
+    if (window.matchMedia("(min-width: 769px)").matches) {
+        zoomContainer.addEventListener('mousemove', (e) => {
+            const x = e.clientX - zoomContainer.getBoundingClientRect().left;
+            const y = e.clientY - zoomContainer.getBoundingClientRect().top;
+            mainImage.style.transformOrigin = `${x}px ${y}px`;
+            mainImage.style.transform = "scale(2)";
+        });
 
-    zoomContainer.addEventListener('mouseleave', () => {
-        mainImage.style.transformOrigin = "center center";
-        mainImage.style.transform = "scale(1)";
-    });
+        zoomContainer.addEventListener('mouseleave', () => {
+            mainImage.style.transformOrigin = "center center";
+            mainImage.style.transform = "scale(1)";
+        });
+    }
 
     // Selection & Cart
     let activeSize = null;

@@ -491,41 +491,11 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 const checkoutButton = document.querySelector('#checkoutButton');
-checkoutButton.addEventListener("click", async () => {
-
-    
-    try {
-        const response = await fetch("/checkout", {
-            method: "GET",
-            headers: {
-                "Accept": "text/html,application/json"
-            }
-        });
-
-        const contentType = response.headers.get("Content-Type");
-
-            if (contentType && contentType.includes("application/json")) {
-                const result = await response.json();
-                if (!result.success) {
-                    showToast(result.message || 'Error processing order', 'error');
-                }
-            } else {
-            if (response.url.includes('error=insufficient_stock')) {
-                showToast("Insufficient stock for some items.", "error");
-                history.replaceState(null, null, '/cart');
-                return;
-            }
-
-            history.pushState(null, '', '/checkout');
-            document.open();
-            document.write(await response.text());
-            document.close();
-        }
-    } catch (error) {
-        console.error("Checkout error:", error);
-        showToast("An error occurred during checkout", "error");
-    }
-});
+if (checkoutButton) {
+    checkoutButton.addEventListener("click", () => {
+        window.location.href = '/checkout';
+    });
+}
         document.querySelectorAll('.quantity-controls button').forEach(button => {
     button.addEventListener('click', async (e) => {
         const cartItemId = e.target.closest('tr').getAttribute('data-cart-item-id');
