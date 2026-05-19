@@ -661,9 +661,9 @@
                             Apply Coupon
                         </div>
                         <div class="coupon-form">
-                            <input type="text" id="coupon-code" placeholder="Enter coupon code" class="coupon-input">
-                            <button id="applyCouponBtn" onclick="applyCoupon()" class="coupon-btn">Apply</button>
-                            <button id="removeCouponBtn" style="display:none;" class="coupon-btn " onclick="removeCoupon()">Remove
+                            <input type="text" id="coupon-code" placeholder="Enter coupon code" class="coupon-input" value="<%= activeCoupon || '' %>" <%= activeCoupon ? 'disabled' : '' %>>
+                            <button id="applyCouponBtn" onclick="applyCoupon()" class="coupon-btn" style="<%= activeCoupon ? 'display:none;' : 'display:block;' %>">Apply</button>
+                            <button id="removeCouponBtn" style="<%= activeCoupon ? 'display:block;' : 'display:none;' %>" class="coupon-btn " onclick="removeCoupon()">Remove
                                 Coupon</button>
                         </div>
                         <div id="coupon-message" class="coupon-message"></div>
@@ -686,7 +686,7 @@
                                     </div>
                                 <% }) %>
                             </div>
-                        </div>`           
+                        </div>
 
                     <div class="section-heading">Order Summary</div>
                     <%cart.items.forEach(item=>{%>
@@ -714,13 +714,13 @@
                                     <span>Shipping</span>
                                     <span>Free delivery</span>
                                 </div>
-                                <div class="summary-row" id="discount-row" style="display: none;">
+                                <div class="summary-row" id="discount-row" style="<%= activeCoupon ? 'display: flex;' : 'display: none;' %>">
                                     <span>Discount</span>
-                                    <span>-₹<span id="discount-amount">0</span></span>
+                                    <span>-₹<span id="discount-amount"><%= couponDiscount %></span></span>
                                 </div>
                                 <div class="summary-row total">
                                     <span>Total</span>
-                                    <span>₹<%= subtotal %></span>
+                                    <span>₹<%= subtotal - couponDiscount %></span>
                                 </div>
                             </div>
 

@@ -84,12 +84,16 @@ const getCheckoutPage = async (req, res) => {
         const userAddress = await Address.findOne({ userId });
 
 
+        const activeCoupon = req.session.activeCoupon || null;
+        const couponDiscount = req.session.couponDiscount || 0;
         return res.render('checkout', {
             cart,
             address: userAddress ? userAddress.address : [],
             user,
             subtotal,
-            validCoupons
+            validCoupons,
+            activeCoupon,
+            couponDiscount
             // walletBalance:user.wallet || 0
         });
 
