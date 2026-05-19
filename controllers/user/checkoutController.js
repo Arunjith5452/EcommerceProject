@@ -32,7 +32,7 @@ const getCheckoutPage = async (req, res, next) => {
             isList: true,
             expireOn: { $gt: new Date() },
             createdOn: { $lt: new Date() },
-            userId: { $nin: [userId] }
+            userId: { $nin: [new mongoose.Types.ObjectId(userId)] }
         })
             .sort({ createdOn: -1 })
             .select('name offerPrice minimumPrice');
