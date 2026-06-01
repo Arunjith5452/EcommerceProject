@@ -155,6 +155,24 @@
       color: red;
       font-size: 15px;
     }
+
+    .demo-login-button {
+      width: 100%;
+      padding: 10px;
+      background-color: #e0f7fa;
+      color: #006064;
+      border: 1px solid #b2ebf2;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 15px;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .demo-login-button:hover {
+      background-color: #b2ebf2;
+    }
   </style>
 </head>
 
@@ -207,6 +225,7 @@
           <div id="referralError" class="error-message"></div>
         </div>        
           <button type="submit" class="create-button">Create an account</button>
+          <button type="button" class="demo-login-button" onclick="window.location.href='/login'">Login with Demo Credentials</button>
     </form>
 
     <div class="divider">or continue with</div>
