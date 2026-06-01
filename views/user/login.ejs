@@ -24,7 +24,8 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 380px;
-            height: 410px;
+            min-height: 410px;
+            height: auto;
         }
 
         h1 {
@@ -147,6 +148,24 @@
             justify-content: center;
             align-items: center;
         }
+        
+        .demo-login-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #e0f7fa;
+            color: #006064;
+            border: 1px solid #b2ebf2;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .demo-login-button:hover {
+            background-color: #b2ebf2;
+        }
     </style>
 </head>
 
@@ -181,6 +200,7 @@
                     <a href="/forgot-password" class="forgot-password-link ms-auto">Forgot password?</a>
                 </div>
                 <button type="submit" class="login-button">Login</button>
+                <button type="button" class="demo-login-button" onclick="fillDemoCredentials()">Fill Demo Credentials</button>
             </form>
 
             <div class="divider">or continue with</div>
@@ -193,6 +213,13 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function fillDemoCredentials() {
+            document.getElementById('email').value = 'demoFashionKart@gmail.com';
+            document.getElementById('password').value = 'demoFashionkart123';
+        }
+    </script>
 </body>
 
 </html>
