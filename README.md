@@ -15,7 +15,6 @@ A robust, full-stack e-commerce platform built with the MEN stack (MongoDB, Expr
 
 ### 👤 User Experience
 * **Secure Authentication:** Standard email/password login and Google OAuth integration via Passport.js.
-* **Demo Login:** One-click demo credentials access for rapid testing.
 * **Product Catalog:** Browse products, view detailed descriptions, and filter by categories.
 * **Shopping Cart & Wishlist:** Easily manage saved items and prepare for checkout.
 * **Checkout & Payments:** Seamless checkout process integrated with Razorpay for secure transactions.
