@@ -48,10 +48,23 @@
 
         .form-group {
             margin-bottom: 20px;
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -189,6 +202,7 @@
 
                 <div class="form-group">
                     <input type="password" name="password" id="password" placeholder="Password">
+                    <button type="button" class="toggle-password">👁</button>
                 </div>
                 <%if(locals.message && message.length>0){%>
                     <div class="error-message">
@@ -219,6 +233,15 @@
             document.getElementById('email').value = 'demoFashionKart@gmail.com';
             document.getElementById('password').value = 'demoFashionkart123';
         }
+
+        const togglePassword = document.querySelector('.toggle-password');
+        const passwordInput = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            togglePassword.textContent = type === 'password' ? '👁' : '👁‍🗨';
+        });
     </script>
 </body>
 
